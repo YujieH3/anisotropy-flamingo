@@ -3,7 +3,7 @@ The project study the anisotropy of the universe, especially the Hubble expansio
 
 ## Data description
 
-The sample data includes the following columns:
+The sample data we start from includes the following columns:
 
 | Name | Description | Unit |
 | ---- | ----------- | ---- |
@@ -28,4 +28,3 @@ The sample data includes the following columns:
 | Vx | x component of the peculiar velocity of the cluster | km/s |
 | Vy | y component of the peculiar velocity of the cluster | km/s |
 | Vz | z component of the peculiar velocity of the cluster | km/s |
-
