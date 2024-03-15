@@ -47,8 +47,10 @@ def nbloops(logY_, logX_, n_cone, scaling_relation,
     YSZ       = np.empty(n_bootstrap)  # YSZ distribution
     M         = np.empty(n_bootstrap)  # M distribution
     LcoreLtot = np.empty(n_bootstrap)  # Lcore/Ltot distribution
-    flux      = np.empty(n_bootstrap)  # flux distribution
+    logflux   = np.empty(n_bootstrap)  # flux distribution
     z_obs     = np.empty(n_bootstrap)  # observed redshift distribution
+
+    sample_logflux = np.log10(sample_flux) # Use log average for flux
 
     for i in prange(n_bootstrap):
         idx = np.random.choice(n_cone, size=n_cone, replace=True)
@@ -71,13 +73,13 @@ def nbloops(logY_, logX_, n_cone, scaling_relation,
         scat[i]      = params['scat']
         T[i]         = np.mean(sample_T[idx])
         LcoreLtot[i] = np.mean(sample_LcoreLtot[idx])
-        flux[i]      = np.mean(sample_flux[idx])
+        logflux[i]   = np.mean(sample_logflux[idx])
         z_obs[i]     = np.mean(sample_z_obs[idx])
         LX[i]        = np.mean(sample_LX[idx])
         YSZ[i]       = np.mean(sample_YSZ[idx])
         M[i]         = np.mean(sample_M[idx])
     
-    return logA, B, scat, T, LX, YSZ, M, LcoreLtot, flux, z_obs
+    return logA, B, scat, T, LX, YSZ, M, LcoreLtot, logflux, z_obs
 
 if __name__ == '__main__':
     set_num_threads(n_threads)
@@ -126,7 +128,7 @@ if __name__ == '__main__':
         sample_flux      = np.array(data_cut['Flux'])
         sample_z_obs     = np.array(data_cut['ObservedRedshift'])
 
-        logA, B, scat, T, LX, YSZ, M, LcoreLtot, flux, z_obs = nbloops(
+        logA, B, scat, T, LX, YSZ, M, LcoreLtot, logflux, z_obs = nbloops(
             logY_, logX_, n_cone, scaling_relation=scaling_relation,
             sample_T=sample_T, sample_LX=sample_LX, sample_YSZ=sample_YSZ, sample_M=sample_M,
             sample_LcoreLtot=sample_LcoreLtot, sample_flux=sample_flux, sample_z_obs=sample_z_obs,
@@ -145,7 +147,7 @@ if __name__ == '__main__':
             'YSZ'             : YSZ,
             'Mgas'            : M,
             'Lcore/Ltot'      : LcoreLtot,
-            'Flux'            : flux,
+            'logFlux'         : logflux,
             'ObservedRedshift': z_obs,
         })
         results.to_csv(output_file, index=False)
