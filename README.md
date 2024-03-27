@@ -1,5 +1,5 @@
 # Anisotropy Flamingo
-The project study the anisotropy of the universe, especially the Hubble expansion and bulk flow. 
+The project study the anisotropy of the universe using the FLAMINGO simulation, especially the Hubble expansion and bulk flow. 
 
 ## Data description
 

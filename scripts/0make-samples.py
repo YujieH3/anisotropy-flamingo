@@ -104,8 +104,6 @@ data[Columns.LX]             /= (data['redshift'] + 1)**3
 data[Columns.LXCoreExcision] /= (data['redshift'] + 1)**3
 
 
-
-
 # ---------CALCULATE PECULIAR REDSHIFT------------------------------------------
 c = 299792.458                  # the speed of light in km/s
 
