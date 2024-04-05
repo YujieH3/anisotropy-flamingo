@@ -9,7 +9,7 @@ input_file = '/data1/yujiehe/data/samples-lightcone0-clean.csv'
 output_dir = '/data1/yujiehe/data/fits'
 
 n_threads = 24
-relations = ['LX-T', 'M-T', 'LX-YSZ', 'LX-M', 'YSZ-M'] # pick from 'LX-T', 'M-T', 'LX-YSZ', 'LX-M', 'YSZ-M', 'YSZ-T'
+relations = ['LX-T', 'YSZ-T', 'M-T'] # pick from 'LX-T', 'M-T', 'LX-YSZ', 'LX-M', 'YSZ-M', 'YSZ-T'
 n_bootstrap = 500 # number of bootstrapping for each direction
 
 cone_size    = 60 # all angles in this scipt are in degrees unless with a _rad suffix
@@ -33,6 +33,25 @@ n_logA_steps = 150
 # number of steps is undefinable, depends on when can chi2 reduced ~1. 
 scat_step    = 0.007
 
+# -------------------------COMMAND LINE ARGUMENTS-------------------------------
+import argparse
+
+# Create the parser
+parser = argparse.ArgumentParser(description="Scan the sky for scaling relations with bootstrapping.")
+
+# Add arguments
+parser.add_argument('-i', '--input', type=str, help='Input file path.', default=input_file)
+parser.add_argument('-o', '--output', type=str, help='Output directory.', default=output_dir)
+parser.add_argument('-t', '--threads', type=int, help='Number of threads.', default=n_threads)
+parser.add_argument('-n', '--bootstrap', type=int, help='Number of bootstrap steps.', default=n_bootstrap)
+parser.cone_size('-s', '--cone-size', type=int, help='Cone size in degrees.', default=cone_size)
+
+# Parse the arguments
+args = parser.parse_args()
+input_file = args.input
+output_dir = args.output
+n_threads = args.threads
+n_bootstrap = args.bootstrap
 
 # ------------------------------------------------------------------------------
 
@@ -193,7 +212,7 @@ if __name__ == '__main__':
             **FIT_RANGE[scaling_relation],
         )
 
-        output_file = f'{output_dir}/scan_btstrp_{scaling_relation}_θ{cone_size}.csv'
+        output_file = f'{output_dir}/scan_bootstrap_{scaling_relation}_θ{cone_size}.csv'
         df = pd.DataFrame({
             'Glon'        : lon_c_arr, # Glon/Glat means galactic longitude/latitude
             'Glat'        : lat_c_arr,

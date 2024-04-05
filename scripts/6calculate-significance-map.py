@@ -6,11 +6,27 @@ import os
 
 # --------------------------------CONFIGURATION---------------------------------
 
-data_dir = '/home/yujiehe/anisotropy-flamingo/data/fits/'
+data_dir = '/data1/yujiehe/data/fits/'
 best_fit_scan_names = 'scan_best_fit'
-bootstrap_scan_names = 'scan_btstrp'
+bootstrap_scan_names = 'scan_bootstrap'
 
 overwrite = True
+
+# -----------------------------COMMAND LINE ARGUMENTS---------------------------
+
+import argparse
+
+# Create the parser
+parser = argparse.ArgumentParser(description="Calculate significance map for best fit scans.")
+
+# Add arguments
+parser.add_argument('-d', '--data-dir', type=str, help='Data directory.', default=data_dir)
+parser.add_argument('--overwrite', action='store_true', help='Overwrite existing.')
+
+# Parse the arguments
+args = parser.parse_args()
+data_dir = args.data_dir
+overwrite = args.overwrite
 
 # --------------------------------------MAIN------------------------------------
 

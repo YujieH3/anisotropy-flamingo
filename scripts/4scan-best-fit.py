@@ -11,7 +11,7 @@ output_dir = '/data1/yujiehe/data/fits'
 
 n_threads = 2
 
-one_relation = 'YSZ-T' # give the name of the relation to fit if you want to fit only one. Set to False if you want to fit all relations.
+one_relation = False # give the name of the relation to fit if you want to fit only one. Set to False if you want to fit all relations.
 cone_size    = 60 # all angles in this scipt are in degrees unless with a _rad suffix
 
 lon_step     = 4  # longitude step. Longitude from -180 to 180 deg
@@ -23,6 +23,25 @@ logA_step    = 0.003
 scat_step    = 0.005
 
 FIT_RANGE = const.FIVE_MAX_RANGE
+
+# --------------------------COMMAND LINE ARGUMENTS------------------------------
+import argparse
+
+# Create the parser
+parser = argparse.ArgumentParser(description="Scan the full sky and get the best fit parameters.")
+
+# Add arguments
+parser.add_argument('-i', '--input', type=str, help='Input file path.', default=input_file)
+parser.add_argument('-o', '--output', type=str, help='Output directory.', default=output_dir)
+parser.add_argument('-t', '--threads', type=int, help='Number of threads.', default=n_threads)
+parser.add_argument('-s', '--cone-size', type=int, help='Cone size in degrees.', default=cone_size)
+
+# Parse the arguments
+args = parser.parse_args()
+input_file = args.input
+output_dir = args.output
+n_threads = args.threads
+cone_size = args.cone_size
 
 # ------------------------------------------------------------------------------
 

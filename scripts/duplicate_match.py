@@ -4,12 +4,22 @@ import h5py
 import pandas as pd
 import numpy as np
 import os
-samples = pd.read_csv('../data/samples_in_lightcone0.csv')
-catalog = pd.read_hdf('../data/halo_properties_in_lightcone0.hdf5')
-vr_tree = h5py.File('/data2/FLAMINGO/L1000N1800/HYDRO_FIDUCIAL/merger_trees/vr_trees.hdf5', 'r')
+
+# --------------------------------configurations--------------------------------
+
+SAMPLES_FILE = '../data/samples_in_lightcone0.csv'
+CATALOG_FILE = '../data/halo_properties_in_lightcone0.hdf5'
+VR_TREE_FILE = '/data2/FLAMINGO/L1000N1800/HYDRO_FIDUCIAL/merger_trees/vr_trees.hdf5'
+
+# -------------------------------------main-------------------------------------
+
+# Load the data
+samples = pd.read_csv(SAMPLES_FILE)
+catalog = pd.read_hdf(CATALOG_FILE)
+vr_tree = h5py.File(VR_TREE_FILE, 'r')
 
 
-# Matching soap catalogue with merger tree ids!
+# Matching our selected sample with merger tree ids!
 samples_with_tree = '../data/samples_in_lightcone0_with_tree.csv'
 if os.path.isfile(samples_with_tree):
     samples = pd.read_csv(samples_with_tree)
@@ -29,7 +39,7 @@ dup_mask = (np.abs(samples['x_lc']) > 500) | (np.abs(samples['y_lc']) > 500) | (
 samples_dup = samples[dup_mask]
 # samples_near = samples[~dup_mask]
 
-# Matching soap catalogue with merger tree ids!
+# Matching the full lightcone soap catalogue with merger tree ids!
 catalog_with_tree = '../data/halo_properties_in_lightcone0_with_tree.csv'
 if os.path.isfile(catalog_with_tree):
     catalog = pd.read_csv(catalog_with_tree)

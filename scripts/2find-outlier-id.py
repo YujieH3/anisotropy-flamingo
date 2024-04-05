@@ -9,6 +9,29 @@ InputFile = '/data1/yujiehe/data/samples-lightcone0.csv'
 OutputFile = '/data1/yujiehe/data/samples-lightcone0-clean.csv'
 OutlierIDFile = '/data1/yujiehe/data/outliers.csv'
 
+# Actually, no need to save the outliers. You can find them comparing the input
+# output easily.
+SaveOutliers = False
+
+# ----------------------COMMAND LINE ARGUMENTS----------------------------------
+
+# Command line arguments
+import argparse
+
+# Create the parser
+parser = argparse.ArgumentParser(description="Find outliers in the sample. and remove them.")
+
+# Add arguments
+parser.add_argument('-i', '--input', type=str, help='Input file path')
+parser.add_argument('-o', '--output', type=str, help='Output file path', default=OutputFile)
+parser.add_argument('--outlier', type=str, help='Outlier ID file path', default=OutlierIDFile)
+
+# Parse the arguments
+args = parser.parse_args()
+InputFile = args.input
+OutputFile = args.output
+OutlierIDFile = args.outlier
+
 # define now the range of parameters within which to fit, change this anytime 
 # you want. But keep in mind that larger range means longer time to fit
 FIT_RANGE = { # matching the variable names in fit function.
@@ -70,9 +93,10 @@ for ScalingRelation in cf.CONST.keys():
     AllOutlierIDs = np.union1d(AllOutlierIDs, OutlierIDs)
 
 # Save outlier IDs to file
-OutlierClusterData = ClusterData[ClusterData['id'].isin(AllOutlierIDs)]
-OutlierClusterData.to_csv(OutlierIDFile, index=False)
-print(f'Outlier IDs saved: {OutlierIDFile}')
+if SaveOutliers:
+    OutlierClusterData = ClusterData[ClusterData['id'].isin(AllOutlierIDs)]
+    OutlierClusterData.to_csv(OutlierIDFile, index=False)
+    print(f'Outlier IDs saved: {OutlierIDFile}')
 
 # Remove outliers and save to file
 CleanClusterData = ClusterData[~ClusterData['id'].isin(AllOutlierIDs)]

@@ -34,7 +34,7 @@ import argparse
 import argparse
 
 # Create the parser
-parser = argparse.ArgumentParser(description="A description of what your program does")
+parser = argparse.ArgumentParser(description="Make flux and latitude cut and make our sample.")
 
 # Add arguments
 parser.add_argument('-i', '--input', type=str, help='Input file path')
@@ -148,11 +148,18 @@ fraction = (cut_data[Columns.LX] - cut_data[Columns.LXCoreExcision]) / cut_data[
 
 
 # Add other useful quantities to our samples
-cut_data['Lcore/Ltot']       = fraction
+cut_data['3DLcore/Ltot']     = fraction
 cut_data['ObservedRedshift'] = cut_z_obs
 cut_data['Flux']             = cut_flux
+
+# Use Joey's 2D Lcore/Ltot values
+frac = pd.read_csv('../data1/yujiehe/data/jay_id_core_fraction.csv')
+frac['snap_num'] = frac['snap_num'].astype(int)
+frac['SOAPID'] = frac['SOAPID'].astype(int)
+cut_data = cut_data.merge(frac, on=['SOAPID', 'snap_num']) # this should match both SOAPID and snap_num. 
+
 # Sort descending w.r.t. Lcore/Ltot
-cut_data.sort_values('Lcore/Ltot', ascending=False, inplace=True)
+cut_data.sort_values('2DLcore/Ltot', ascending=False, inplace=True)
 
 # Save
 cut_data.to_csv(output, index=False)

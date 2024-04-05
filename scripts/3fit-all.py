@@ -28,6 +28,27 @@ FIT_RANGE = cf.MID_RANGE
 # you want. But keep in mind that larger range means longer time to fit. We fixed
 # step size instead of number of steps to control accuracy over computation time.
 
+# -------------------------COMMAND LINE ARGUMENTS-------------------------------
+import argparse
+
+# Create the parser
+parser = argparse.ArgumentParser(description="Fit scaling relations with bootstrapping.")
+
+# Add arguments
+parser.add_argument('-i', '--input', type=str, help='Input file path')
+parser.add_argument('-o', '--output', type=str, help='Output file prefix', default=OutputFilePrefix)
+parser.add_argument('-t', '--threads', type=int, help='Number of threads', default=Nthreads)
+parser.add_argument('-n', '--bootstrap', type=int, help='Number of bootstrap steps', default=BootstrapSteps)
+parser.add_argument('--overwrite', action='store_true', help='Overwrite existing files')
+
+# Parse the arguments
+args = parser.parse_args()
+InputFile = args.input
+OutputFilePrefix = args.output
+Nthreads = args.threads
+BootstrapSteps = args.bootstrap
+Overwrite = args.overwrite
+
 # ------------------------------------MAIN--------------------------------------
 
 set_num_threads(Nthreads) # set core number here.
