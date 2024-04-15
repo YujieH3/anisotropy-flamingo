@@ -79,26 +79,26 @@ for ScalingRelation in cf.CONST.keys():
     Nclusters = cf.CONST[ScalingRelation]['N'] # number of clusters we'd want
 
     _ = ScalingRelation.find('-')
-    Y = ClusterData[cf.Columns[ScalingRelation[:_  ]]]
-    X = ClusterData[cf.Columns[ScalingRelation[_+1:]]]
+    Y = ClusterData[cf.COLUMNS[ScalingRelation[:_  ]]]
+    X = ClusterData[cf.COLUMNS[ScalingRelation[_+1:]]]
     z = ClusterData['ObservedRedshift']
     logY_ = cf.logY_(Y, z=z, relation=ScalingRelation)
     logX_ = cf.logX_(X, relation=ScalingRelation)
 
     BestFitParams, OutlierIDs = cf.fit(
         logY_, logX_, N=Nclusters, **FIT_RANGE[ScalingRelation],
-        remove_outlier=True, id=ClusterData['id'],
+        remove_outlier=True, id=ClusterData['TopLeafID'],
         )
     
     AllOutlierIDs = np.union1d(AllOutlierIDs, OutlierIDs)
 
 # Save outlier IDs to file
 if SaveOutliers:
-    OutlierClusterData = ClusterData[ClusterData['id'].isin(AllOutlierIDs)]
+    OutlierClusterData = ClusterData[ClusterData['TopLeafID'].isin(AllOutlierIDs)]
     OutlierClusterData.to_csv(OutlierIDFile, index=False)
     print(f'Outlier IDs saved: {OutlierIDFile}')
 
 # Remove outliers and save to file
-CleanClusterData = ClusterData[~ClusterData['id'].isin(AllOutlierIDs)]
+CleanClusterData = ClusterData[~ClusterData['TopLeafID'].isin(AllOutlierIDs)]
 CleanClusterData.to_csv(OutputFile, index=False)
 print(f'Cleaned data saved: {OutputFile}')

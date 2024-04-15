@@ -153,13 +153,16 @@ cut_data['ObservedRedshift'] = cut_z_obs
 cut_data['Flux']             = cut_flux
 
 # Use Joey's 2D Lcore/Ltot values
-frac = pd.read_csv('../data1/yujiehe/data/jay_id_core_fraction.csv')
-frac['snap_num'] = frac['snap_num'].astype(int)
-frac['SOAPID'] = frac['SOAPID'].astype(int)
-cut_data = cut_data.merge(frac, on=['SOAPID', 'snap_num']) # this should match both SOAPID and snap_num. 
+if 'lightcone0' in input: # for now we only have lightcone0 data
+    frac = pd.read_csv('/data1/yujiehe/data/jay_id_core_fraction_lightcone0.csv')
+    frac['snap_num'] = frac['snap_num'].astype(int)
+    frac['SOAPID'] = frac['SOAPID'].astype(int)
+    cut_data = cut_data.merge(frac, on=['SOAPID', 'snap_num']) # this should match both SOAPID and snap_num. 
 
-# Sort descending w.r.t. Lcore/Ltot
-cut_data.sort_values('2DLcore/Ltot', ascending=False, inplace=True)
+    # Sort descending w.r.t. Lcore/Ltot
+    cut_data.sort_values('2DLcore/Ltot', ascending=False, inplace=True)
+else:
+    cut_data.sort_values('3DLcore/Ltot', ascending=False, inplace=True)
 
 # Save
 cut_data.to_csv(output, index=False)

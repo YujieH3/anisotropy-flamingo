@@ -50,87 +50,84 @@ BootstrapSteps = args.bootstrap
 Overwrite = args.overwrite
 
 # ------------------------------------MAIN--------------------------------------
-
-set_num_threads(Nthreads) # set core number here.
-
-ClusterData = pd.read_csv(InputFile)
-
-
-for ScalingRelation in cf.CONST.keys():
-
-    if ScalingRelation not in Relations:
-        continue
+if __name__ == '__main__':
     
-    t = datetime.datetime.now()
-    print(f'[{t}] Bootstrapping fitting: {ScalingRelation}')
-    Nclusters = cf.CONST[ScalingRelation]['N'] # number of clusters we'd want
+    set_num_threads(Nthreads) # set core number here.
 
-    _ = ScalingRelation.find('-')
-    Y = ClusterData[cf.COLUMNS[ScalingRelation[:_  ]]][:Nclusters]
-    X = ClusterData[cf.COLUMNS[ScalingRelation[_+1:]]][:Nclusters]
-    z = ClusterData['ObservedRedshift'][:Nclusters]
-    logY_ = cf.logY_(Y, z=z, relation=ScalingRelation)
-    logX_ = cf.logX_(X, relation=ScalingRelation)
+    ClusterData = pd.read_csv(InputFile)
 
-    # Best fit
-    BestFitParams = cf.run_fit(
-        logY_, logX_, **FIT_RANGE[ScalingRelation],
-        scat_step  = ScatterStepSize,
-        B_step     = BStepSize,
-        logA_step  = logAStepSize,
-        weight     = 1,
-        )
-    
-    print('Best fit parameters:', BestFitParams)
 
-    # Bootstrapping
-    OutputFile = f'{OutputFilePrefix}_{ScalingRelation}.csv'
+    for ScalingRelation in cf.CONST.keys():
 
-    if os.path.exists(OutputFile) and not Overwrite:
-        print(f'File exists: {OutputFile}')
+        if ScalingRelation not in Relations:
+            continue
+        
+        t = datetime.datetime.now()
+        print(f'[{t}] Bootstrapping fitting: {ScalingRelation}')
+        Nclusters = cf.CONST[ScalingRelation]['N'] # number of clusters we'd want
 
-        df = pd.read_csv(OutputFile) # skip bootstrapping but calculate the error nonetheless
-        A  = df['A']
-        B  = df['B']
-        scat = df['TotalScatter']
-    else:
-        print(f'Begin bootstrapping steps: {BootstrapSteps}')
+        _ = ScalingRelation.find('-')
+        Y = ClusterData[cf.COLUMNS[ScalingRelation[:_  ]]][:Nclusters]
+        X = ClusterData[cf.COLUMNS[ScalingRelation[_+1:]]][:Nclusters]
+        z = ClusterData['ObservedRedshift'][:Nclusters]
+        logY_ = cf.logY_(Y, z=z, relation=ScalingRelation)
+        logX_ = cf.logX_(X, relation=ScalingRelation)
 
-        logA, B, scat = cf.bootstrap_fit(
-            Nbootstrap = BootstrapSteps,
-            weight     = None,
-            logY_      = logY_,
-            logX_      = logX_,
-            Nclusters  = Nclusters,
+        # Best fit
+        BestFitParams = cf.run_fit(
+            logY_, logX_, **FIT_RANGE[ScalingRelation],
             scat_step  = ScatterStepSize,
             B_step     = BStepSize,
             logA_step  = logAStepSize,
-            **FIT_RANGE[ScalingRelation],
             )
-        A = 10**logA # convert logA back to A
+        
+        print('Best fit parameters:', BestFitParams)
 
-        pd.DataFrame(
-            {'A': A, 'B': B, 'TotalScatter': scat,}).to_csv(OutputFile, index=False
-            )
-        t = datetime.datetime.now()
-        print(f'[{t}] Bootstrapping fit finishied: {OutputFile}')
+        # Bootstrapping
+        OutputFile = f'{OutputFilePrefix}_{ScalingRelation}.csv'
+
+        if os.path.exists(OutputFile) and not Overwrite:
+            print(f'File exists: {OutputFile}')
+
+            df = pd.read_csv(OutputFile) # skip bootstrapping but calculate the error nonetheless
+            A  = df['A']
+            B  = df['B']
+            scat = df['TotalScatter']
+        else:
+            print(f'Begin bootstrapping steps: {BootstrapSteps}')
+
+            logA, B, scat = cf.bootstrap_fit(
+                Nbootstrap = BootstrapSteps,
+                logY_      = logY_,
+                logX_      = logX_,
+                Nclusters  = Nclusters,
+                scat_step  = ScatterStepSize,
+                B_step     = BStepSize,
+                logA_step  = logAStepSize,
+                **FIT_RANGE[ScalingRelation],
+                )
+            A = 10**logA # convert logA back to A
+
+            pd.DataFrame(
+                {'A': A, 'B': B, 'TotalScatter': scat,}).to_csv(OutputFile, index=False
+                )
+            t = datetime.datetime.now()
+            print(f'[{t}] Bootstrapping fit finishied: {OutputFile}')
 
 
-    # 1 sigma uncertainty
-    LowerBoundA    = np.percentile(A, 16)
-    UpperBoundA    = np.percentile(A, 84)
-    LowerBoundB    = np.percentile(B, 16)
-    UpperBoundB    = np.percentile(B, 84)
-    LowerBoundScat = np.percentile(scat, 16)
-    UpperBoundScat = np.percentile(scat, 84)
+        # 1 sigma uncertainty
+        LowerBoundA    = np.percentile(A, 16)
+        UpperBoundA    = np.percentile(A, 84)
+        LowerBoundB    = np.percentile(B, 16)
+        UpperBoundB    = np.percentile(B, 84)
+        LowerBoundScat = np.percentile(scat, 16)
+        UpperBoundScat = np.percentile(scat, 84)
 
-    BestFitA    = 10**BestFitParams['logA']
-    BestFitB    = BestFitParams['B']
-    BestFitScat = BestFitParams['scat']
+        BestFitA    = 10**BestFitParams['logA']
+        BestFitB    = BestFitParams['B']
+        BestFitScat = BestFitParams['scat']
 
-    print(f'1-sigma bootstrapping uncertainty of {ScalingRelation} fit:')
-    print(f'A: {BestFitA:.3f} + {UpperBoundA-BestFitA:.3f} - {BestFitA-LowerBoundA:.3f}')
-    print(f'B: {BestFitB:.3f} + {UpperBoundB-BestFitB:.3f} - {BestFitB-LowerBoundB:.3f}')
-    print(f'TotalScatter: {BestFitScat:.3f} + {UpperBoundScat-BestFitScat:.3f} - {BestFitScat-LowerBoundScat:.3f}')
-
-print('All done!')  
+        print(f'1-sigma bootstrapping uncertainty of {ScalingRelation} fit:')
+        print(f'A: {BestFitA:.3f} + {UpperBoundA-BestFitA:.3f} - {BestFitA-LowerBoundA:.3f}')
+        print(f'B: {BestFitB:.3f} + {UpperBoundB-BestFitB:.3f} - {BestFitB-LowerBoundB:.3f}')
+        print(f'TotalScatter: {BestFitScat:.3f} + {UpperBoundScat-BestFitScat:.3f} - {BestFitScat-LowerBoundScat:.3f}')

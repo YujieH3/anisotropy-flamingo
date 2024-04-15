@@ -1,5 +1,6 @@
 import sys
 sys.path.append('/home/yujiehe/anisotropy-flamingo')
+import os
 import tools.clusterfit as cf
 import numpy as np
 from numba import njit, prange, set_num_threads
@@ -9,6 +10,8 @@ input_file = '/data1/yujiehe/data/samples-lightcone0-clean.csv'
 output_dir = '/data1/yujiehe/data/fits'
 
 n_threads = 24
+
+overwrite = False
 relations = ['LX-T', 'YSZ-T', 'M-T'] # pick from 'LX-T', 'M-T', 'LX-YSZ', 'LX-M', 'YSZ-M', 'YSZ-T'
 n_bootstrap = 500 # number of bootstrapping for each direction
 
@@ -44,7 +47,8 @@ parser.add_argument('-i', '--input', type=str, help='Input file path.', default=
 parser.add_argument('-o', '--output', type=str, help='Output directory.', default=output_dir)
 parser.add_argument('-t', '--threads', type=int, help='Number of threads.', default=n_threads)
 parser.add_argument('-n', '--bootstrap', type=int, help='Number of bootstrap steps.', default=n_bootstrap)
-parser.cone_size('-s', '--cone-size', type=int, help='Cone size in degrees.', default=cone_size)
+parser.add_argument('-s', '--cone_size', type=int, help='Cone size in degrees.', default=cone_size)
+parser.add_argument('--overwrite', action='store_true', help='Overwrite existing files')
 
 # Parse the arguments
 args = parser.parse_args()
@@ -52,6 +56,8 @@ input_file = args.input
 output_dir = args.output
 n_threads = args.threads
 n_bootstrap = args.bootstrap
+cone_size = args.cone_size
+overwrite = args.overwrite
 
 # ------------------------------------------------------------------------------
 
@@ -153,7 +159,14 @@ if __name__ == '__main__':
 
     for scaling_relation in cf.CONST.keys():
 
+        # Skip if the scaling relation is not in the list
         if scaling_relation not in relations:
+            continue
+
+        # Skip if the output file already exists
+        output_file = f'{output_dir}/scan_bootstrap_{scaling_relation}_θ{cone_size}.csv'
+        if os.path.exists(output_file) and not overwrite:
+            print(f'File exists: {output_file}')
             continue
 
         if n_B_steps is not None: # set the step size for A and B if the number of steps is given
@@ -212,7 +225,6 @@ if __name__ == '__main__':
             **FIT_RANGE[scaling_relation],
         )
 
-        output_file = f'{output_dir}/scan_bootstrap_{scaling_relation}_θ{cone_size}.csv'
         df = pd.DataFrame({
             'Glon'        : lon_c_arr, # Glon/Glat means galactic longitude/latitude
             'Glat'        : lat_c_arr,

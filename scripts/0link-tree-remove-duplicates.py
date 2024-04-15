@@ -6,6 +6,7 @@ the duplicates.
 import h5py
 import pandas as pd
 import numpy as np
+import sys
 import os
 
 # --------------------------------configurations--------------------------------
@@ -15,7 +16,7 @@ VR_TREE_FILE = '/data2/FLAMINGO/L1000N1800/HYDRO_FIDUCIAL/merger_trees/vr_trees.
 
 OUTPUTDIR = '../data/'
 # OUTPUT_MATCH_LIST = True
-OVERWRITE_CATALOG_WITH_TREE = True # if toggled true, will overwrite the 'catalog with tree' file. Otherwise will use existing file
+OVERWRITE = True # if toggled true, will overwrite the 'catalog with tree' file. Otherwise will use existing file
 
 # -------------------------------command line arguments-------------------------
 import argparse
@@ -26,7 +27,14 @@ parser = argparse.ArgumentParser(description="Link the lightcone catalog with th
 parser.add_argument('-i', '--input', type=str, help="Input file path. The lightcone linked catalog output by Roi's script.")
 parser.add_argument('-t', '--tree', type=str, help='Input file path. The merger tree file.', default=VR_TREE_FILE)
 parser.add_argument('-o', '--output', type=str, help='Output directory.', default=OUTPUTDIR)
-parser.add_argument('-f', '--overwrite', action='store_true', help='Overwrite the catalog with tree file.', default=False)
+parser.add_argument('--overwrite', action='store_true', help='Overwrite the catalog with tree file.', default=False)
+
+# Parse the arguments
+args = parser.parse_args()
+CATALOG_FILE = args.input
+VR_TREE_FILE = args.tree
+OUTPUTDIR = args.output
+OVERWRITE = args.overwrite
 
 # ---------------------------preset output filenames----------------------------
 
@@ -34,14 +42,8 @@ catalog_basename = os.path.basename(CATALOG_FILE)
 OUTPUT_CATALOG_WITH_TREE = os.path.join(OUTPUTDIR, catalog_basename.replace('.hdf5', '_with_trees.hdf5')) # the output catalog with tree ids
 OUTPUT_CATALOG_WITH_TREE_DUP_EXCISION = OUTPUT_CATALOG_WITH_TREE.replace('.hdf5', '_duplicate_excision.hdf5') # the output catalog with tree ids and duplicates excised
 
-# if OUTPUT_MATCH_LIST:
-#     idx = catalog_basename.find('lightcone')
-#     catalog_basename_suffix = catalog_basename[idx:]
-#     OUTPUT_MATCHED_DUPLICATES = os.path.join(OUTPUTDIR, 
-#             catalog_basename_suffix.replace('.hdf5', '_matched_duplicates.hdf5')) # the matched duplicates
-#     OUTPUT_UNMATCHED_DUPLICATES = os.path.join(OUTPUTDIR, 
-#             catalog_basename_suffix.replace('.hdf5', '_matched_duplicates.hdf5')) # the unmatched duplicates
-
+if OVERWRITE==False and os.path.isfile(OUTPUT_CATALOG_WITH_TREE_DUP_EXCISION):
+    sys.exit()
 # -------------------------------------main-------------------------------------
 
 catalog = pd.read_hdf(CATALOG_FILE)
@@ -49,7 +51,7 @@ vr_tree = h5py.File(VR_TREE_FILE, 'r')
 
 # Matching the full lightcone soap catalogue with merger tree ids!
 # Might take a few minutes
-if os.path.isfile(OUTPUT_CATALOG_WITH_TREE) and not OVERWRITE_CATALOG_WITH_TREE:
+if os.path.isfile(OUTPUT_CATALOG_WITH_TREE):
     catalog = pd.read_hdf(OUTPUT_CATALOG_WITH_TREE)
 else:
     catalog['GalaxyID'] = -1

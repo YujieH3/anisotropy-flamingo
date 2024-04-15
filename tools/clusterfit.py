@@ -5,7 +5,7 @@ import sys
 sys.path.append('/home/yujiehe/anisotropy-flamingo')
 from tools.constants import *
 
-def E(z, Omega_m=0.3, Omega_L=0.7):
+def E(z, Omega_m=0.306, Omega_L=0.694):
     z = np.array(z, dtype=np.float32) # convert to numpy array for fit()
     Ez = (Omega_m * (1 + z)**3 + Omega_L)**0.5
     return Ez
@@ -17,7 +17,7 @@ def _logX_(X, CX):
     return np.array(result, dtype=np.float32) # convert to numpy array for fit()
 
 
-def _logY_(Y, z, CY, gamma, Omega_m=0.3, Omega_L=0.7):
+def _logY_(Y, z, CY, gamma, Omega_m=0.306, Omega_L=0.694):
     """ logY' = Y / CY * E(z)^gamma """
     Ez = E(z=z, Omega_m=Omega_m, Omega_L=Omega_L)
     result = np.log10(Y / CY * Ez**gamma)
@@ -37,7 +37,7 @@ def logX_(X, relation):
     return _logX_(X=X, CX=CONST[relation]['CX'])
 
 
-def logY_(Y, z, relation, Omega_m=0.3, Omega_L=0.7):
+def logY_(Y, z, relation, Omega_m=0.306, Omega_L=0.694):
     """ Same as _logY_ but with predefined constants for specific scaling 
     relations. 
     
@@ -113,7 +113,6 @@ def fit(logY_, logX_, N,
     | YSZ-T    | 1.110 | 0.045 | 2.546 | 2.546     |
 
     """
-    print('Fit: 1')
     params = run_fit(logY_=logY_[:N], logX_=logX_[:N],
                     B_min=B_min, B_max=B_max, 
                     logA_min=logA_min, logA_max=logA_max, 
@@ -166,9 +165,6 @@ def fit(logY_, logX_, N,
 
             break # one iteration. limitation too strong otherwise.
         
-        print(f'Total outliers: {outlier_count}')
-        
-        
     # __Numba doesn't support dictionaries with non-scalar values__ 
     # __So we return outlier_id separately__
     if remove_outlier is True and id is not None:
@@ -181,8 +177,7 @@ def run_fit(logY_, logX_, B_min, B_max, logA_min, logA_max, scat_min,
             scat_max, scat_step, B_step, logA_step, weight=np.array([1.])):
 
     """ Numba accelerated function to iterate through the parameter space to
-    find the best fit. Weight is a number or an 1-D array. Specify weight = 1
-    If you don't want to use weights."""
+    find the best fits."""
     
     Nclusters = len(logY_)
     minx2 = 1e8
@@ -267,7 +262,7 @@ def bootstrap_fit(Nbootstrap,
         bootstrap_logX_  = logX_[idx]
 
         if weight is None:
-            bootstrap_weight = np.ones(len(idx)) # Setting to int 1 will invoke numba typing error, so we do this
+            bootstrap_weight = np.array([1.]) # Setting to int 1 will invoke numba typing error, so we do this
         else:
             bootstrap_weight = weight[idx]
 
@@ -356,6 +351,7 @@ def significance_map(best_fit_file, btstrp_file):
     btstrp_fits = pd.read_csv(btstrp_file) # bts is the bootstrapping results
     df = best_fit[['Glon', 'Glat']].copy()  # df stores the dipole anisotropy significance map
     df['n_sigma'] = 0.0
+    df['sigma'] = 0.0
 
     for i in range(len(df)):
         glon = df['Glon'][i]
@@ -380,10 +376,46 @@ def significance_map(best_fit_file, btstrp_file):
         lower_A2 = np.percentile(btstrp_A2, 16)
         sigma_A2 = upper_A2 - A2 if A1 > A2 else A2 - lower_A2
 
-        n_sigma = (A1 - A2) / np.sqrt(sigma_A1**2 + sigma_A2**2)
+        sigma = np.sqrt(sigma_A1**2 + sigma_A2**2)
+        n_sigma = (A1 - A2) / sigma
 
         df.loc[i, 'n_sigma'] = n_sigma
         df.loc[(df['Glon'] == dp_glon) & (df['Glat'] == dp_glat), 'n_sigma'] = - n_sigma
+        
+        df.loc[i, 'sigma'] = sigma
+        df.loc[(df['Glon'] == dp_glon) & (df['Glat'] == dp_glat), 'sigma'] = sigma
+
+    return df
+
+def A_variance_map(best_fit_file, btstrp_file):
+    """
+    Calculate the variance of A's. We calculate both the standard deviation and
+    the upper and lower 1-sigma deviation obtained by 50-16 and 84-50 percentile.
+    """
+
+    best_fit = pd.read_csv(best_fit_file) # best fit value # ft stores the best fit values
+    btstrp_fits = pd.read_csv(btstrp_file) # bts is the bootstrapping results
+    df = best_fit[['Glon', 'Glat']].copy()  # df stores the dipole anisotropy significance map
+    
+    df['A_std']   = 0.0
+    df['A_upper'] = 0.0
+    df['A_lower'] = 0.0
+
+    for i in range(len(df)):
+        glon = df['Glon'][i]
+        glat = df['Glat'][i]
+        # print(dp_glon, dp_glat)
+
+        A = best_fit.loc[i, 'A'] # query directly by index to save computation, this gives a np.float64 number directly so no need for conversion
+
+        btstrp_A = btstrp_fits.loc[(btstrp_fits['Glon'] == glon) & (btstrp_fits['Glat'] == glat), 'A'] # pandas series
+        
+        std_A = np.std(btstrp_A)
+        median_A = np.percentile(btstrp_A, 50)
+
+        df.loc[i, 'A_std']   = std_A
+        df.loc[i, 'A_lower'] = median_A - np.percentile(btstrp_A, 16)
+        df.loc[i, 'A_upper'] = np.percentile(btstrp_A, 84) - median_A
 
     return df
 

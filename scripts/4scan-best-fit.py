@@ -3,6 +3,7 @@ sys.path.append('/home/yujiehe/anisotropy-flamingo')
 import tools.clusterfit as cf
 import tools.constants as const
 import numpy as np
+import os
 from numba import njit, prange, set_num_threads
 
 # --------------------------------CONFIGURATION---------------------------------
@@ -10,6 +11,8 @@ input_file = '/data1/yujiehe/data/samples-lightcone0-clean.csv'
 output_dir = '/data1/yujiehe/data/fits'
 
 n_threads = 2
+
+overwrite = True
 
 one_relation = False # give the name of the relation to fit if you want to fit only one. Set to False if you want to fit all relations.
 cone_size    = 60 # all angles in this scipt are in degrees unless with a _rad suffix
@@ -23,7 +26,6 @@ logA_step    = 0.003
 scat_step    = 0.005
 
 FIT_RANGE = const.FIVE_MAX_RANGE
-
 # --------------------------COMMAND LINE ARGUMENTS------------------------------
 import argparse
 
@@ -34,7 +36,8 @@ parser = argparse.ArgumentParser(description="Scan the full sky and get the best
 parser.add_argument('-i', '--input', type=str, help='Input file path.', default=input_file)
 parser.add_argument('-o', '--output', type=str, help='Output directory.', default=output_dir)
 parser.add_argument('-t', '--threads', type=int, help='Number of threads.', default=n_threads)
-parser.add_argument('-s', '--cone-size', type=int, help='Cone size in degrees.', default=cone_size)
+parser.add_argument('-s', '--cone_size', type=int, help='Cone size in degrees.', default=cone_size)
+parser.add_argument('--overwrite', action='store_true', help='Overwrite existing files')
 
 # Parse the arguments
 args = parser.parse_args()
@@ -42,6 +45,7 @@ input_file = args.input
 output_dir = args.output
 n_threads = args.threads
 cone_size = args.cone_size
+overwrite = args.overwrite
 
 # ------------------------------------------------------------------------------
 
@@ -130,6 +134,12 @@ if __name__ == '__main__':
             if scaling_relation != one_relation:
                 continue
 
+        # Skip if the file already exists
+        output_file = f'{output_dir}/scan_best_fit_{scaling_relation}_θ{cone_size}.csv'
+        if os.path.exists(output_file) and not overwrite:
+            print(f'File exists: {output_file}')
+            continue
+
         t = datetime.datetime.now()
         print(f'[{t}] Scanning full sky: {scaling_relation}')
         n_clusters = cf.CONST[scaling_relation]['N']
@@ -176,7 +186,6 @@ if __name__ == '__main__':
             **FIT_RANGE[scaling_relation],
         )
 
-        output_file = f'{output_dir}/scan_best_fit_{scaling_relation}_θ{cone_size}.csv'
         pd.DataFrame({
             'Glon'        : lon_c_arr, # Glon/Glat means galactic longitude/latitude
             'Glat'        : lat_c_arr,
