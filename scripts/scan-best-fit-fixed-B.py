@@ -7,8 +7,8 @@ import os
 from numba import njit, prange, set_num_threads
 
 # --------------------------------CONFIGURATION---------------------------------
-input_file = '/data1/yujiehe/data/samples-lightcone0-clean.csv'
-output_dir = '/data1/yujiehe/data/fits'
+input_file = '/data1/yujiehe/data/samples_in_lightcone0_with_trees_duplicate_excision_outlier_excision.csv'
+output_dir = '/data1/yujiehe/data/tests/fixed_slope/'
 
 n_threads = 2
 
@@ -49,6 +49,38 @@ overwrite = args.overwrite
 
 # ------------------------------------------------------------------------------
 
+@njit(fastmath=True)
+def run_fit_fixed_b(logY_, logX_, B_min, B_max, logA_min, logA_max, scat_min, 
+            scat_max, scat_step, B_step, logA_step, weight=np.array([1.])):
+
+    """ Numba accelerated function to iterate through the parameter space to
+    find the best fits."""
+    
+    Nclusters = len(logY_)
+    minx2 = 1e8
+
+    if (weight == np.array([1])).all():
+        weight = np.ones(Nclusters)
+    for scat in np.arange(scat_min, scat_max, scat_step):
+        for B in np.arange(B_min, B_max, B_step):
+            for logA in np.arange(logA_min, logA_max, logA_step):
+                x2 = np.sum((logY_ - logA - B * logX_)**2 / (scat * weight)**2) 
+                x2 /= (Nclusters - 3)     # chi_res^2 = chi^2 / (N - dof), degree of freedom is the number of parameters to fit
+                if x2 < minx2:      # update best fit if new lowest chi2 found
+                    minx2 = x2
+                    params = {
+                        'logA' : logA,
+                        'B'    : B,
+                        'scat' : scat,
+                        'chi2' : minx2
+                    }
+            break # fixing B!
+
+        if minx2 < 1.04: # end after iterating through A and B space
+            break
+
+    return params
+
 
 @njit(fastmath=True, parallel=True)
 def scan_anisotropy(A_arr, B_arr, scat_arr, lon_c_arr, lat_c_arr,
@@ -74,7 +106,7 @@ def scan_anisotropy(A_arr, B_arr, scat_arr, lon_c_arr, lat_c_arr,
 
         for lat_c in range(-90, 90):
 
-            if lat_c % lat_step != 0: # if you are wondering, 0 % lat_step = 0
+            if lat_c % lat_step != 0:
                 continue
             lat_c_rad = lat_c * np.pi / 180
 
@@ -89,7 +121,7 @@ def scan_anisotropy(A_arr, B_arr, scat_arr, lon_c_arr, lat_c_arr,
             costheta = costheta[mask]
 
             # fit the relation
-            best_fit = cf.run_fit(cone_logY_, cone_logX_,
+            best_fit = run_fit_fixed_b(cone_logY_, cone_logX_,
                                 logA_min  = logA_min,
                                 logA_max  = logA_max,
                                 B_min     = B_min,
@@ -135,10 +167,13 @@ if __name__ == '__main__':
                 continue
 
         # Skip if the file already exists
-        output_file = f'{output_dir}/scan_best_fit_{scaling_relation}_θ{cone_size}.csv'
+        output_file = f'{output_dir}/fixed_slope_scan_best_fit_{scaling_relation}_θ{cone_size}.csv'
         if os.path.exists(output_file) and not overwrite:
             print(f'File exists: {output_file}')
             continue
+
+        # Fix B to the best fit
+        FIT_RANGE[scaling_relation]['B_min'] = cf.LC0_BEST_FIT[scaling_relation]['B']
 
         t = datetime.datetime.now()
         print(f'[{t}] Scanning full sky: {scaling_relation}')

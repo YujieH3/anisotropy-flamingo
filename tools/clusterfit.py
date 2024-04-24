@@ -258,8 +258,8 @@ def bootstrap_fit(Nbootstrap,
 
     for i in prange(Nbootstrap):
         idx = np.random.choice(Nclusters, size=Nclusters, replace=True)
-        bootstrap_logY_  = logY_[idx]
-        bootstrap_logX_  = logX_[idx]
+        bootstrap_logY_ = logY_[idx]
+        bootstrap_logX_ = logX_[idx]
 
         if weight is None:
             bootstrap_weight = np.array([1.]) # Setting to int 1 will invoke numba typing error, so we do this
@@ -356,7 +356,7 @@ def significance_map(best_fit_file, btstrp_file):
     for i in range(len(df)):
         glon = df['Glon'][i]
         glat = df['Glat'][i]
-        if glat < 0 or glat == 90.0: # only need to do half of the directions
+        if glat < 0: # only need to do half of the directions # I also skipped glat=90, why?
             continue
         dp_glon = glon + 180 if glon < 0 else glon - 180 # zero to - 180
         dp_glat = - glat
@@ -386,6 +386,7 @@ def significance_map(best_fit_file, btstrp_file):
         df.loc[(df['Glon'] == dp_glon) & (df['Glat'] == dp_glat), 'sigma'] = sigma
 
     return df
+
 
 def A_variance_map(best_fit_file, btstrp_file):
     """
@@ -454,3 +455,39 @@ def angular_separation(lon1, lat1, lon2, lat2):
     separation = np.degrees(separation)
 
     return separation
+
+def opposite_direction(lon, lat):
+    """ Calculate the opposite direction of a given longitude and latitude. """
+    lon = lon + 180 if lon < 0 else lon - 180
+    lat = - lat
+    return lon, lat
+
+def _map_to_dipole_map_(f, mid):
+    f = np.array(f)
+    assert len(f)==8100, "Only support 4 deg longitude and 2 deg latitude resolution. Cause I'm lazy."
+    
+    lons = np.arange(-180, 180, 4)
+    lats = np.arange(-90, 90, 2)
+    coord = np.meshgrid(lons, lats, indexing='ij')
+    coord = np.array(coord)
+    coord = np.reshape(coord, (2, 8100))
+
+    for i in range(8100):
+        lon, lat = coord[:, i]
+        if lat < 0: # do only positive directions
+            continue
+
+        # Find the direction
+        dp1 = f[i]
+        
+        # Find the opposite direction
+        lon_dp, lat_dp = opposite_direction(lon, lat)
+        i_dp = np.where((coord[0] == lon_dp) & (coord[1] == lat_dp))[0][0]
+        dp2 = f[i_dp]
+
+        # Symmetrize around mid while keep there difference f[i]-f[i_dp] = dp1 - dp2
+        f[i] = (dp1 - dp2)/2 + mid
+        f[i_dp] = (dp2 - dp1)/2 + mid
+
+    return f
+        

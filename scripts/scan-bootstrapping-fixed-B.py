@@ -1,3 +1,7 @@
+""" This script is modified from 5scan-bootstrapping.py to calculate the sky
+distribution of A with fixed B to best-fit. What I do in the code is to break loop
+in the first iteration. So set min_B to the fixed value you want. """
+
 import sys
 sys.path.append('/home/yujiehe/anisotropy-flamingo')
 import os
@@ -6,10 +10,10 @@ import numpy as np
 from numba import njit, prange, set_num_threads
 
 # --------------------------------CONFIGURATION---------------------------------
-input_file = '/data1/yujiehe/data/samples-lightcone0-clean.csv'
-output_dir = '/data1/yujiehe/data/fits'
+input_file = '/data1/yujiehe/data/samples_in_lightcone0_with_trees_duplicate_excision_outlier_excision.csv'
+output_dir = '/data1/yujiehe/data/tests/'
 
-n_threads = 24
+n_threads = 16
 
 overwrite = False
 relations = ['LX-T', 'YSZ-T', 'M-T', 'LX-YSZ', 'LX-M', 'YSZ-M'] # pick from 'LX-T', 'M-T', 'LX-YSZ', 'LX-M', 'YSZ-M', 'YSZ-T'
@@ -24,13 +28,13 @@ lat_step     = 2  # latitude step. Latitude from -90 to 90 deg
 # Set the parameter space
 FIT_RANGE = cf.FIVE_MAX_RANGE
 
-# Set the step size or number of steps for A
+# Set the step size or number of steps for B
 B_step    = 0.003
 n_B_steps = 150
 
-# And B
+# And A
 logA_step    = 0.003
-n_logA_steps = 150
+n_logA_steps = 300
 
 # Set the step size for the total scatter. The scatter is on the outer loop so 
 # number of steps is undefinable, depends on when can chi2 reduced ~1. 
@@ -61,7 +65,94 @@ overwrite = args.overwrite
 
 # ------------------------------------------------------------------------------
 
-#TODO: write a planner to calculate roughly the time needed
+@njit(fastmath=True)
+def run_fit_fixed_b(logY_, logX_, B_min, B_max, logA_min, logA_max, scat_min, 
+            scat_max, scat_step, B_step, logA_step, weight=np.array([1.])):
+
+    """ Numba accelerated function to iterate through the parameter space to
+    find the best fits."""
+    
+    Nclusters = len(logY_)
+    minx2 = 1e8
+
+    if (weight == np.array([1])).all():
+        weight = np.ones(Nclusters)
+    for scat in np.arange(scat_min, scat_max, scat_step):
+        for B in np.arange(B_min, B_max, B_step):
+            for logA in np.arange(logA_min, logA_max, logA_step):
+                x2 = np.sum((logY_ - logA - B * logX_)**2 / (scat * weight)**2) 
+                x2 /= (Nclusters - 3)     # chi_res^2 = chi^2 / (N - dof), degree of freedom is the number of parameters to fit
+                if x2 < minx2:      # update best fit if new lowest chi2 found
+                    minx2 = x2
+                    params = {
+                        'logA' : logA,
+                        'B'    : B,
+                        'scat' : scat,
+                        'chi2' : minx2
+                    }
+            break # fixing B!
+
+        if minx2 < 1.04: # end after iterating through A and B space
+            break
+
+    return params
+
+
+
+@njit(fastmath=True, parallel=False)
+def bootstrap_fit_non_parallel_fixed_b(Nbootstrap, 
+                  logY_, logX_, Nclusters,
+                  B_min, B_max, 
+                  logA_min, logA_max, 
+                  scat_min, scat_max, weight = None,
+                  scat_step=0.007, B_step=0.001, logA_step=0.003):
+
+    """
+    The non-parallel counter-part of the `bootstrap_fit` function. Only thing
+    different is the `parallel=False` argument in the @njit decorator.
+
+    Examples
+    ---
+    >>> logA, B, scat = bootstrap_fit(Nbootstrap=1000, ... )
+
+    then the bootstrapping uncertainty can be given by `np.quantile`
+    e.g. 1-sigma uncertainty is given by `np.quantile(logA, [0.16, 0.84])`.
+    """
+
+    logA = np.zeros(Nbootstrap)  # logA distribution
+    B    = np.zeros(Nbootstrap)  # B distribution
+    scat = np.zeros(Nbootstrap)  # scatter distribution
+
+    if len(logY_) != Nclusters or len(logX_) != Nclusters:
+        raise ValueError('Length of logY_ and logX_ must be equal to Nclusters.')
+
+    for i in prange(Nbootstrap):
+        idx = np.random.choice(Nclusters, size=Nclusters, replace=True)
+        bootstrap_logY_  = logY_[idx]
+        bootstrap_logX_  = logX_[idx]
+
+        if weight is None:
+            bootstrap_weight = np.ones(len(idx)) # Setting to int 1 will invoke numba typing error, so we do this
+        else:
+            bootstrap_weight = weight[idx]
+
+        params = run_fit_fixed_b(
+            logY_          = bootstrap_logY_,
+            logX_          = bootstrap_logX_,
+            B_min          = B_min,     B_max    = B_max,
+            logA_min       = logA_min,  logA_max = logA_max,
+            scat_min       = scat_min,  scat_max = scat_max,
+            scat_step      = scat_step,
+            B_step         = B_step,
+            logA_step      = logA_step,
+            weight         = bootstrap_weight
+            )
+        
+        logA[i] = params['logA']
+        B[i]    = params['B']
+        scat[i] = params['scat']
+
+    return logA, B, scat
 
 
 @njit(fastmath=True, parallel=True)
@@ -109,12 +200,12 @@ def scan_bootstrapping(Nbootstrap, A_arr, B_arr, scat_arr, lon_c_arr,
             # Prevent nested by making a non-parallel version of the function.
             # We'd still want scan_bootstrapping to be parallel because this
             # is a cleaner parallelized loop.
-            logA, B, scat = cf.bootstrap_fit_non_parallel(
+            logA, B, scat = bootstrap_fit_non_parallel_fixed_b(
                 Nbootstrap = Nbootstrap,
                 Nclusters = n_clusters,
                 logY_     = cone_logY_,
                 logX_     = cone_logX_,
-                weight    = 1 / costheta, # inverse because weight is applied on the denominator
+                weight    = 1 / costheta,
                 logA_min  = logA_min,
                 logA_max  = logA_max,
                 B_min     = B_min,
@@ -164,7 +255,7 @@ if __name__ == '__main__':
             continue
 
         # Skip if the output file already exists
-        output_file = f'{output_dir}/scan_bootstrap_{scaling_relation}_θ{cone_size}.csv'
+        output_file = f'{output_dir}/fixed_slope_scan_bootstrap_{scaling_relation}_θ{cone_size}.csv'
         if os.path.exists(output_file) and not overwrite:
             print(f'File exists: {output_file}')
             continue
@@ -173,6 +264,9 @@ if __name__ == '__main__':
             B_step = (FIT_RANGE[scaling_relation]['B_max'] - FIT_RANGE[scaling_relation]['B_min']) / n_B_steps
         if n_logA_steps is not None:
             logA_step = (FIT_RANGE[scaling_relation]['logA_max'] - FIT_RANGE[scaling_relation]['logA_min']) / n_logA_steps
+
+        # Fix B to the best fit
+        FIT_RANGE[scaling_relation]['B_min'] = cf.LC0_BEST_FIT[scaling_relation]['B']
 
         # Prepare the data, convert to logX_, logY_. Requires redshift for logY_
         t0 = datetime.datetime.now()
