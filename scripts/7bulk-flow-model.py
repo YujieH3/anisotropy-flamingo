@@ -46,8 +46,8 @@ LON_STEP = 20 # maybe change to 8. Considering we still need to bootstrap later
 LAT_STEP = 10
 
 # Specify number of steps for each parameter 
-B_NSTEPS    = 100
-LOGA_NSTEPS = 100
+B_NSTEPS    = 200
+LOGA_NSTEPS = 200
 SCAT_STEP = 0.001
 
 # B_STEP    = 0.009
