@@ -115,17 +115,26 @@ if __name__ == '__main__':
             print(f'[{t}] Bootstrapping fit finishied: {OutputFile}')
 
 
-        # 1 sigma uncertainty
-        LowerBoundA    = np.percentile(A, 16)
-        UpperBoundA    = np.percentile(A, 84)
-        LowerBoundB    = np.percentile(B, 16)
-        UpperBoundB    = np.percentile(B, 84)
-        LowerBoundScat = np.percentile(scat, 16)
-        UpperBoundScat = np.percentile(scat, 84)
+        # 1 sigma uncertainty around the best fit
+
+
 
         BestFitA    = 10**BestFitParams['logA']
         BestFitB    = BestFitParams['B']
         BestFitScat = BestFitParams['scat']
+
+        # Calculate the +- 34th percentile from the best fit value, as in M20, M21.
+        BestFitAPer = np.sum(A < BestFitA) / len(A) * 100
+        BestFitBPer = np.sum(B < BestFitB) / len(B) * 100
+        BestFitScatPer = np.sum(scat < BestFitScat) / len(scat) * 100
+
+        LowerBoundA    = np.percentile(A, BestFitAPer - 34)
+        UpperBoundA    = np.percentile(A, BestFitAPer + 34)
+        LowerBoundB    = np.percentile(B, BestFitBPer - 34)
+        UpperBoundB    = np.percentile(B, BestFitBPer + 34)
+        LowerBoundScat = np.percentile(scat, BestFitScatPer - 34)
+        UpperBoundScat = np.percentile(scat, BestFitScatPer + 34)
+
 
         print(f'1-sigma bootstrapping uncertainty of {ScalingRelation} fit:')
         print(f'A: {BestFitA:.3f} + {UpperBoundA-BestFitA:.3f} - {BestFitA-LowerBoundA:.3f}')

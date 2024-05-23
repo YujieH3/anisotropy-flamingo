@@ -1,12 +1,13 @@
 import numpy as np
+from numba import njit
 
 # Make a namespace for our descriptive yet horribly long column names
 COLUMNS ={
     'LX'             : 'LX0InRestframeWithoutRecentAGNHeating',
+    'LXCoreExcision' : 'LX0InRestframeWithoutRecentAGNHeatingCoreExcision',
     'T'              : 'SpectroscopicLikeTemperatureWithoutRecentAGNHeatingCoreExcision',
     'YSZ'            : 'Y5R500WithoutRecentAGNHeating',
     'M'              : 'GasMass',
-    'LXCoreExcision' : 'LX0InRestframeWithoutRecentAGNHeatingCoreExcision',
 }
 
 # Parameters as in M21 (doi.org/10.1051/0004-6361/202140296) table 2
@@ -49,6 +50,45 @@ CONST = {
         'N'    : 300, # temporary
     },
 }
+
+# Global variables for function get_const(). Using of dict have to be outside of the function.
+NAMES = list(CONST.keys())
+ARRAY_CONST = [list(CONST[relation].values()) for relation in CONST.keys()]
+ARRAY_CONST = np.array(ARRAY_CONST, dtype=np.float64)
+
+@njit()
+def get_const(relation, key, array_const=ARRAY_CONST):
+    """
+    A numba compatible function that does not use dictionary directly.
+    Works almost the same as CONST dictionary, except the key words are variables.
+    Beware, this is about to get ugly.
+    """
+    if relation == 'LX-T':
+        idx = 0
+    elif relation == 'YSZ-T':
+        idx = 1
+    elif relation == 'M-T':
+        idx = 2
+    elif relation == 'LX-YSZ':
+        idx = 3
+    elif relation == 'LX-M':
+        idx = 4
+    elif relation == 'YSZ-M':
+        idx = 5
+    else:
+        raise ValueError(f'Invalid relation: {relation}')
+    
+    if key == 'CY':
+        return array_const[idx,0]
+    elif key == 'CX':
+        return array_const[idx,1]
+    elif key == 'gamma':
+        return array_const[idx,2]
+    elif key == 'N':
+        return array_const[idx,3]
+    else:
+        raise ValueError(f'Invalid key: {key}')
+    
 
 LARGE_RANGE = {
     'LX-T': {
@@ -116,7 +156,9 @@ MID_RANGE = { # round 5 sigma range to .5. Round up upper range and round down l
     },
 }
 
-FIVE_MAX_RANGE = { # Use check_set_range.ipynb to set this range
+# Use check_set_range.ipynb to set this range. Five times the max-min range.
+# The scatter follows the MID_RANGE scatter range.
+FIVE_MAX_RANGE = { 
     'LX-T': {
         'logA_min': np.log10(1.19), 'logA_max': np.log10(1.84),
         'B_min'   : 1.69,           'B_max'   : 3.31,
@@ -146,6 +188,44 @@ FIVE_MAX_RANGE = { # Use check_set_range.ipynb to set this range
         'logA_min': np.log10(3.11), 'logA_max': np.log10(4.56),
         'B_min'   : 1.09,           'B_max'   : 1.63,
         'scat_min': 0.05,           'scat_max': 1,
+    },
+}
+
+# Use check_set_range.ipynb to set this range. Five times the max-min range.
+# Set the scatter range tighter for bulk flow model. In this case we need very small
+# scatter step to see the small difference. Small steps leads to computational cost,
+# so we compensate by settting a shorter range. I round down the lower range to 
+# 0.005 and minus another 0.015.
+FIVE_MAX_RANGE_TIGHT_SCAT = { 
+    'LX-T': {
+        'logA_min': np.log10(1.19), 'logA_max': np.log10(1.84),
+        'B_min'   : 1.69,           'B_max'   : 3.31,
+        'scat_min': 0.100,           'scat_max': 1,
+    },
+    'YSZ-T': {
+        'logA_min': np.log10(0.80), 'logA_max': np.log10(1.60),
+        'B_min'   : 2.40,           'B_max'   : 3.40,
+        'scat_min': 0.075,          'scat_max': 1,
+    },
+    'M-T': {
+        'logA_min': np.log10(0.93), 'logA_max': np.log10(1.21),
+        'B_min'   : 1.55,           'B_max'   : 2.45,
+        'scat_min': 0.050,           'scat_max': 1,
+    },
+    'LX-YSZ': {
+        'logA_min': np.log10(2.27), 'logA_max': np.log10(3.68),
+        'B_min'   : 0.70,           'B_max'   : 1.06,
+        'scat_min': 0.120,           'scat_max': 1,
+    },
+    'LX-M': {
+        'logA_min': np.log10(0.99), 'logA_max': np.log10(1.46),
+        'B_min'   : 1.09,           'B_max'   : 1.42,
+        'scat_min': 0.060,           'scat_max': 1,
+    },
+    'YSZ-M': {
+        'logA_min': np.log10(3.11), 'logA_max': np.log10(4.56),
+        'B_min'   : 1.09,           'B_max'   : 1.63,
+        'scat_min': 0.075,           'scat_max': 1,
     },
 }
 

@@ -5,25 +5,25 @@ import sys
 sys.path.append('/home/yujiehe/anisotropy-flamingo')
 from tools.constants import *
 
+@njit(fastmath=True)
 def E(z, Omega_m=0.306, Omega_L=0.694):
-    z = np.array(z, dtype=np.float32) # convert to numpy array for fit()
     Ez = (Omega_m * (1 + z)**3 + Omega_L)**0.5
     return Ez
 
-
+@njit(fastmath=True)
 def _logX_(X, CX):
     """ logX' = X / CX """
     result = np.log10(X / CX)
-    return np.array(result, dtype=np.float32) # convert to numpy array for fit()
+    return result
 
-
+@njit(fastmath=True)
 def _logY_(Y, z, CY, gamma, Omega_m=0.306, Omega_L=0.694):
     """ logY' = Y / CY * E(z)^gamma """
     Ez = E(z=z, Omega_m=Omega_m, Omega_L=Omega_L)
     result = np.log10(Y / CY * Ez**gamma)
-    return np.array(result, dtype=np.float32) # convert to numpy array for fit()
+    return result
 
-
+@njit(fastmath=True)
 def logX_(X, relation):
     """ Same as _logX_ but with predifined constants for specific scaling 
     relations. 
@@ -34,9 +34,10 @@ def logX_(X, relation):
         Accepts one of three options: 'LX-T', 'LX-YSZ', 'YSZ-T'
     Specify relation to use default parameters.
     """
-    return _logX_(X=X, CX=CONST[relation]['CX'])
+    return _logX_(X=X, CX=get_const(relation, 'CX'))
 
 
+@njit(fastmath=True)
 def logY_(Y, z, relation, Omega_m=0.306, Omega_L=0.694):
     """ Same as _logY_ but with predefined constants for specific scaling 
     relations. 
@@ -50,8 +51,8 @@ def logY_(Y, z, relation, Omega_m=0.306, Omega_L=0.694):
     """
     return _logY_(Y        = Y, 
                   z        = z,
-                  CY       = CONST[relation]['CY'],
-                  gamma    = CONST[relation]['gamma'],
+                  CY       = get_const(relation, 'CY'),
+                  gamma    = get_const(relation, 'gamma'),
                   Omega_m  = Omega_m,
                   Omega_L  = Omega_L
             )
@@ -421,6 +422,7 @@ def A_variance_map(best_fit_file, btstrp_file):
     return df
 
 
+@njit(fastmath=True)
 def angular_separation(lon1, lat1, lon2, lat2):
     """
     Calculate the angular separation between two points on the sky.
@@ -456,13 +458,19 @@ def angular_separation(lon1, lat1, lon2, lat2):
 
     return separation
 
+
+@njit(fastmath=True)
 def opposite_direction(lon, lat):
     """ Calculate the opposite direction of a given longitude and latitude. """
     lon = lon + 180 if lon < 0 else lon - 180
     lat = - lat
     return lon, lat
 
+
 def _map_to_dipole_map_(f, mid):
+    """Convert a map to a dipole map by force symmetry between one point and its
+    opposite."""
+
     f = np.array(f)
     assert len(f)==8100, "Only support 4 deg longitude and 2 deg latitude resolution. Cause I'm lazy."
     

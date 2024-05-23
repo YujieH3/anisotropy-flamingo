@@ -115,9 +115,14 @@ x = data['x_lc']
 y = data['y_lc']
 z = data['z_lc']
 
+bx = vx / c
+by = vy / c
+bz = vz / c
+
 los_v = (vx*x + vy*y + vz*z) / (x**2 + y**2 + z**2)**0.5
-beta = los_v / c
-z_pec = (1 + los_v/c) / (1 - beta**2)**0.5 - 1
+
+gamma = (1 - (bx**2+by**2+bz**2))**(-0.5)
+z_pec = (1 + los_v/c)*gamma  - 1 # eq.4 from https://www.atnf.csiro.au/people/Tobias.Westmeier/tools_redshift.php
 z_obs = (data['redshift'] + 1) * (z_pec + 1) - 1
 
 
@@ -132,7 +137,7 @@ flux = data[Columns.LX]\
         * band_conv(T=data[Columns.SpecT])\
         * k_corr(T=data[Columns.SpecT], z=z_obs)     # flux in erg/s/cm^2 # Since in observation all temperature are spectroscopic and we are in fact using the observational conversions, we use spectroscopic-like temperatures here also.
 
-
+# TODO add band conversion?
 
 
 # ---------------MAKE FLUX AND LATITUDE CUT-------------------------------------

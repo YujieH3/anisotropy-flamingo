@@ -1,3 +1,9 @@
+"""
+Calculate significance map given the best fit and bootstrapping scans.
+TODO: Use H0 to report the significance instead of A.
+"""
+
+
 import pandas as pd
 import sys
 sys.path.append('/home/yujiehe/anisotropy-flamingo')
