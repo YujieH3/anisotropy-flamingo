@@ -196,35 +196,35 @@ FIVE_MAX_RANGE = {
 # scatter step to see the small difference. Small steps leads to computational cost,
 # so we compensate by settting a shorter range. I round down the lower range to 
 # 0.005 and minus another 0.015.
-FIVE_MAX_RANGE_TIGHT_SCAT = { 
+THREE_MAX_RANGE_TIGHT_SCAT = { 
     'LX-T': {
-        'logA_min': np.log10(1.19), 'logA_max': np.log10(1.84),
-        'B_min'   : 1.69,           'B_max'   : 3.31,
+        'logA_min': np.log10(1.29), 'logA_max': np.log10(1.76),
+        'B_min'   : 1.96,           'B_max'   : 2.95,
         'scat_min': 0.100,           'scat_max': 1,
     },
     'YSZ-T': {
-        'logA_min': np.log10(0.80), 'logA_max': np.log10(1.60),
-        'B_min'   : 2.40,           'B_max'   : 3.40,
+        'logA_min': np.log10(0.90), 'logA_max': np.log10(1.23),
+        'B_min'   : 2.40,           'B_max'   : 3.06,
         'scat_min': 0.075,          'scat_max': 1,
     },
     'M-T': {
-        'logA_min': np.log10(0.93), 'logA_max': np.log10(1.21),
-        'B_min'   : 1.55,           'B_max'   : 2.45,
-        'scat_min': 0.050,           'scat_max': 1,
+        'logA_min': np.log10(0.99), 'logA_max': np.log10(1.17),
+        'B_min'   : 1.73,           'B_max'   : 2.25,
+        'scat_min': 0.060,           'scat_max': 1,
     },
     'LX-YSZ': {
-        'logA_min': np.log10(2.27), 'logA_max': np.log10(3.68),
-        'B_min'   : 0.70,           'B_max'   : 1.06,
+        'logA_min': np.log10(2.56), 'logA_max': np.log10(3.50),
+        'B_min'   : 0.70,           'B_max'   : 1.03,
         'scat_min': 0.120,           'scat_max': 1,
     },
     'LX-M': {
-        'logA_min': np.log10(0.99), 'logA_max': np.log10(1.46),
-        'B_min'   : 1.09,           'B_max'   : 1.42,
+        'logA_min': np.log10(1.10), 'logA_max': np.log10(1.36),
+        'B_min'   : 1.14,           'B_max'   : 1.36,
         'scat_min': 0.060,           'scat_max': 1,
     },
     'YSZ-M': {
-        'logA_min': np.log10(3.11), 'logA_max': np.log10(4.56),
-        'B_min'   : 1.09,           'B_max'   : 1.63,
+        'logA_min': np.log10(3.36), 'logA_max': np.log10(4.17),
+        'B_min'   : 1.18,           'B_max'   : 1.54,
         'scat_min': 0.075,           'scat_max': 1,
     },
 }

@@ -201,8 +201,15 @@ def run_fit(logY_, logX_, B_min, B_max, logA_min, logA_max, scat_min,
 
         if minx2 < 1.04: # end after iterating through A and B space
             break
-
-    return params
+    if minx2 < 1.04:
+        return params
+    else:
+        return {         # No fit is found if chi2 >= 1.04 for all parameters
+            'logA' : np.nan,
+            'B'    : np.nan,
+            'scat' : np.nan,
+            'chi2' : np.nan
+        }      
 
 
 def find_outlier(logY_, logX_, best_fit_params, outlier_sigma=4):
