@@ -473,6 +473,11 @@ def opposite_direction(lon, lat):
     lat = - lat
     return lon, lat
 
+def opposite_direction_arr(lons, lats):
+    for i in range(len(lons)):
+        lons[i], lats[i] = opposite_direction(lons[i], lats[i])
+    return lons, lats
+
 
 def _map_to_dipole_map_(f, mid):
     """Convert a map to a dipole map by force symmetry between one point and its

@@ -35,6 +35,8 @@ cosmo = FlatLambdaCDM(H0=68.1, Om0=0.306)
 # Input file is a halo catalog with lightcone data.
 INPUT_FILE = '/data1/yujiehe/data/samples_in_lightcone0_with_trees_duplicate_excision_outlier_excision.csv'
 OUTPUT_FILE = '/data1/yujiehe/data/fits/bulk_flow_lightcone0.csv'
+# INPUT_FILE = '/data1/yujiehe/data/samples_in_lightcone1_with_trees_duplicate_excision_outlier_excision.csv'
+# OUTPUT_FILE = '/data1/yujiehe/data/fits/bulk_flow_lightcone1.csv'
 OVERWRITE = True
 
 # Relations to fit
@@ -59,7 +61,7 @@ SCAT_STEP = 0.0003
 # LOGA_STEP = 0.004
 
 C = 299792.458                  # the speed of light in km/s
-FIT_RANGE = const.THREE_MAX_RANGE_TIGHT_SCAT
+FIT_RANGE = const.ONE_MAX_RANGE_TIGHT_SCAT
 
 # -----------------------END CONFIGURATION--------------------------------------
 
@@ -176,12 +178,12 @@ def fit_bulk_flow(Y, X, z_obs, phi_lc, theta_lc, yname, xname,
                     DL_zbf = cosmo.luminosity_distance(z_bf).value
                     Y_bf = Y*(DL_zbf)**2/(DL_zobs)**2
                 elif yname == 'YSZ':
-                    DA_zobs = cc.DA(z_obs, H0=68.1, Om=0.306, Ol=0.694)
-                    DA_zbf = cc.DA(z_bf, H0=68.1, Om=0.306, Ol=0.694)
+                    DA_zobs = cosmo.angular_diameter_distance(z_obs).value
+                    DA_zbf = cosmo.angular_diameter_distance(z_bf).value
                     Y_bf = Y*(DA_zbf)**2/(DA_zobs)**2
                 elif yname == 'M':
-                    DA_zobs = cc.DA(z_obs, H0=68.1, Om=0.306, Ol=0.694)
-                    DA_zbf = cc.DA(z_bf, H0=68.1, Om=0.306, Ol=0.694)
+                    DA_zobs = cosmo.angular_diameter_distance(z_obs).value 
+                    DA_zbf = cosmo.angular_diameter_distance(z_bf).value 
                     Y_bf = Y*(DA_zbf)**(5/2)/(DA_zobs)**(5/2)
 
                 # To our fit parameters
@@ -270,8 +272,8 @@ def main():
         # the cosmological redshift from lightcone (no peculiar velocity attached)
         z_obs = np.array(halo_data['ObservedRedshift'][:n_clusters])
 
-        # Go as high as 0.11
-        for zmax in np.arange(0.03, 0.12, 0.01):
+        # Go as high as 0.12
+        for zmax in np.arange(0.06, 0.13, 0.02):
             zmask = (z_obs < zmax)
 
             # initialize the arrays for later gather
@@ -314,7 +316,10 @@ def main():
                 chi2_arr_all = np.ravel(chi2_arr_all)
 
                 # The best fit index
-                fit_idx = np.nanargmin(scat_arr_all) # But when there is degeneracy argmin only selects the first occurence
+                min_sigma = np.nanmin(scat_arr_all) # But when there is degeneracy argmin only selects the first occurence
+                min_sigma_mask = (scat_arr_all == min_sigma)
+                min_chi2 = np.nanmin(chi2_arr_all[min_sigma_mask])
+                fit_idx = np.where((chi2_arr_all == min_chi2) & min_sigma_mask)[0][0]
 
                 # Save the best fit parameters
                 fit_ubf = ubf_arr_all[fit_idx]

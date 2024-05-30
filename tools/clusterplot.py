@@ -22,7 +22,7 @@ def _sky_map_(f, colorbar_label, ax=None, **kwargs):
     lon = np.linspace(-180, 180, 90)
     lat = np.linspace(-90, 90, 90)
     lons, lats = np.meshgrid(lon, lat)
-    x, y = m(lons, lats)
+    # x, y = m(lons, lats)
 
     # Reshape the input array to 90x90 as supported by imshow. In our case
     # the longitude and latitude are matched this way.

@@ -196,6 +196,40 @@ FIVE_MAX_RANGE = {
 # scatter step to see the small difference. Small steps leads to computational cost,
 # so we compensate by settting a shorter range. I round down the lower range to 
 # 0.005 and minus another 0.015.
+ONE_MAX_RANGE_TIGHT_SCAT = { 
+    'LX-T': {
+        'logA_min': np.log10(1.45), 'logA_max': np.log10(1.60),
+        'B_min'   : 2.29,           'B_max'   : 2.62,
+        'scat_min': 0.100,          'scat_max': 1,
+    },
+    'YSZ-T': {
+        'logA_min': np.log10(1.01), 'logA_max': np.log10(1.12),
+        'B_min'   : 2.62,           'B_max'   : 2.84,
+        'scat_min': 0.070,          'scat_max': 1,
+    },
+    'M-T': {
+        'logA_min': np.log10(1.05), 'logA_max': np.log10(1.11),
+        'B_min'   : 1.91,           'B_max'   : 2.08,
+        'scat_min': 0.060,          'scat_max': 1,
+    },
+    'LX-YSZ': {
+        'logA_min': np.log10(2.87), 'logA_max': np.log10(3.18),
+        'B_min'   : 0.81,           'B_max'   : 0.92,
+        'scat_min': 0.120,          'scat_max': 1,
+    },
+    'LX-M': {
+        'logA_min': np.log10(1.19), 'logA_max': np.log10(1.27),
+        'B_min'   : 1.21,           'B_max'   : 1.28,
+        'scat_min': 0.060,          'scat_max': 1,
+    },
+    'YSZ-M': {
+        'logA_min': np.log10(3.63), 'logA_max': np.log10(3.90),
+        'B_min'   : 1.30,           'B_max'   : 1.42,
+        'scat_min': 0.075,          'scat_max': 1,
+    },
+}
+
+
 THREE_MAX_RANGE_TIGHT_SCAT = { 
     'LX-T': {
         'logA_min': np.log10(1.29), 'logA_max': np.log10(1.76),
