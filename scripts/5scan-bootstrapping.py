@@ -61,8 +61,6 @@ overwrite = args.overwrite
 
 # ------------------------------------------------------------------------------
 
-#TODO: write a planner to calculate roughly the time needed
-
 
 @njit(fastmath=True, parallel=True)
 def scan_bootstrapping(Nbootstrap, A_arr, B_arr, scat_arr, lon_c_arr, 

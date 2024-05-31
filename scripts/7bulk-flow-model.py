@@ -33,10 +33,10 @@ cosmo = FlatLambdaCDM(H0=68.1, Om0=0.306)
 # -----------------------CONFIGURATION------------------------------------------
 
 # Input file is a halo catalog with lightcone data.
-INPUT_FILE = '/data1/yujiehe/data/samples_in_lightcone0_with_trees_duplicate_excision_outlier_excision.csv'
-OUTPUT_FILE = '/data1/yujiehe/data/fits/bulk_flow_lightcone0.csv'
-# INPUT_FILE = '/data1/yujiehe/data/samples_in_lightcone1_with_trees_duplicate_excision_outlier_excision.csv'
-# OUTPUT_FILE = '/data1/yujiehe/data/fits/bulk_flow_lightcone1.csv'
+# INPUT_FILE = '/data1/yujiehe/data/samples_in_lightcone0_with_trees_duplicate_excision_outlier_excision.csv'
+# OUTPUT_FILE = '/data1/yujiehe/data/fits/bulk_flow_lightcone0.csv'
+INPUT_FILE = '/data1/yujiehe/data/samples_in_lightcone1_with_trees_duplicate_excision_outlier_excision.csv'
+OUTPUT_FILE = '/data1/yujiehe/data/fits/bulk_flow_lightcone1.csv'
 OVERWRITE = True
 
 # Relations to fit
@@ -55,7 +55,6 @@ LAT_STEP = 10
 B_NSTEPS    = 100
 LOGA_NSTEPS = 100
 SCAT_STEP = 0.0003
-# LOG_SCAT_STEP = 0.001
 
 # B_STEP    = 0.009
 # LOGA_STEP = 0.004
@@ -65,76 +64,11 @@ FIT_RANGE = const.ONE_MAX_RANGE_TIGHT_SCAT
 
 # -----------------------END CONFIGURATION--------------------------------------
 
-@njit(fastmath=True)
-def run_fit_1_scat(logY_, logX_, B_min, B_max, logA_min, logA_max, scat_min, 
-            scat_max, _scat_step, B_step, logA_step, weight=np.array([1.])):
-
-    """ Numba accelerated function to iterate through the parameter space to
-    find the best fits."""
-    
-    Nclusters = len(logY_)
-    minx2 = 1e8
-
-    if (weight == np.array([1])).all():
-        weight = np.ones(Nclusters)
-    for _scat in np.arange(-1/scat_min, -1/scat_max, _scat_step):
-        for B in np.arange(B_min, B_max, B_step):
-            for logA in np.arange(logA_min, logA_max, logA_step):
-                scat = -1/_scat
-                x2 = np.sum((logY_ - logA - B * logX_)**2 / (scat * weight)**2) 
-                x2 /= (Nclusters - 3)     # chi_res^2 = chi^2 / (N - dof), degree of freedom is the number of parameters to fit
-                if x2 < minx2:      # update best fit if new lowest chi2 found
-                    minx2 = x2
-                    params = {
-                        'logA' : logA,
-                        'B'    : B,
-                        'scat' : scat,
-                        'chi2' : minx2
-                    }
-
-        if minx2 < 1.04: # end after iterating through A and B space
-            break
-
-    return params
-
-
-@njit(fastmath=True)
-def run_fit_log_scat(logY_, logX_, B_min, B_max, logA_min, logA_max, scat_min, 
-            scat_max, log_scat_step, B_step, logA_step, weight=np.array([1.])):
-
-    """ Numba accelerated function to iterate through the parameter space to
-    find the best fits."""
-    
-    Nclusters = len(logY_)
-    minx2 = 1e8
-
-    if (weight == np.array([1])).all():
-        weight = np.ones(Nclusters)
-    for log_scat in np.arange(np.log10(scat_min), np.log10(scat_max), log_scat_step):
-        for B in np.arange(B_min, B_max, B_step):
-            for logA in np.arange(logA_min, logA_max, logA_step):
-                scat = 10**log_scat
-                x2 = np.sum((logY_ - logA - B * logX_)**2 / (scat * weight)**2) 
-                x2 /= (Nclusters - 3)     # chi_res^2 = chi^2 / (N - dof), degree of freedom is the number of parameters to fit
-                if x2 < minx2:      # update best fit if new lowest chi2 found
-                    minx2 = x2
-                    params = {
-                        'logA' : logA,
-                        'B'    : B,
-                        'scat' : scat,
-                        'chi2' : minx2
-                    }
-
-        if minx2 < 1.04: # end after iterating through A and B space
-            break
-
-    return params
-
 
 # @njit(fastmath=True)
 def fit_bulk_flow(Y, X, z_obs, phi_lc, theta_lc, yname, xname,
                   B_min, B_max, scat_min, scat_max, logA_min, logA_max,
-                  rank, n_rank):
+                  rank, n_rank, comm):
     scaling_relation = f'{yname}-{xname}'
     # min_scat = 1000 # initialize a large number
 
@@ -225,6 +159,7 @@ def fit_bulk_flow(Y, X, z_obs, phi_lc, theta_lc, yname, xname,
                 # Use the minimum scatter to set the next max scatter range, 
                 # so the computational cost is reduced in each step
                 scat_max = np.nanmin(scat_arr)
+        # scat_max = np.nanmin(comm.allgather(scat_max)) # Find global minimum scatter, but this will introduce additional communication cost
 
     return ubf_arr, vlon_arr, vlat_arr, scat_arr, chi2_arr
 
@@ -296,6 +231,7 @@ def main():
                                          phi_lc=phi_lc[zmask], theta_lc=theta_lc[zmask],
                                          yname=yname, xname=xname,
                                          rank=rank, n_rank=size,
+                                         comm=comm,
                                          **FIT_RANGE[scaling_relation])
 
             # Gather the results
