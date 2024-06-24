@@ -1,4 +1,4 @@
-# mpiexec -n 17 python 8bulk-flow-model.py
+# mpiexec -n 17 python 8bulk-flow-bootstrap.py
 
 """
 For every bulk flow direction and amplitude, calculate the full sample and fit a
@@ -99,14 +99,14 @@ def fit_bulk_flow(Y, X, z_obs, phi_lc, theta_lc, yname, xname,
             for vlat in range(-90, 90, LAT_STEP):
 
                 # Calculate the redshift
-                angle = cf.angular_separation(phi_lc, theta_lc, vlon, vlat)
+                angle = cf.angular_separation(phi_lc, theta_lc, vlon, vlat) * np.pi / 180
 
-                # # From: z_bf = z_obs - ubf * (1 + z_bf) * np.cos(angle) / C # Maybe plot a bit the difference between the two
-                # z_bf = (z_obs + ubf * np.cos(angle) / C) / (1 - ubf * np.cos(angle) / C) # the ubf convention than the paper
+                # From: z_bf = z_obs + ubf * (1 + z_bf) * np.cos(angle) / C # Maybe plot a bit the difference between the two
+                z_bf = (z_obs + ubf * np.cos(angle) / C) / (1 - ubf * np.cos(angle) / C) # the ubf convention as the paper
 
-                # The relativistic correction
-                u_c_correct = ((1+z_obs)**2-1)/((1+z_obs)**2+1) + (1+z_obs)*ubf*np.cos(angle)/C
-                z_bf = np.sqrt((1+u_c_correct)/(1-u_c_correct))-1
+                # # The relativistic correction
+                # u_c_correct = ((1+z_obs)**2-1)/((1+z_obs)**2+1) + (1+z_obs)*ubf*np.cos(angle)/C
+                # z_bf = np.sqrt((1+u_c_correct)/(1-u_c_correct))-1
 
                 # Calculate the Luminosity distance
                 if yname == 'LX':
@@ -233,87 +233,89 @@ for scaling_relation in RELATIONS:
 
         # Select the redshift sphere and bootstrap the sample with one line for each quantity
         sample_size = np.sum(zmask)
-        idx = np.random.choice(sample_size, sample_size, replace=True)
-        bt_Y        = Y[zmask][idx]
-        bt_X        = X[zmask][idx]
-        bt_z_obs    = z_obs[zmask][idx]
-        bt_phi_lc   = phi_lc[zmask][idx]
-        bt_theta_lc = theta_lc[zmask][idx]
 
-        # Fit the bulk flow
-        ubf_arr, vlon_arr, vlat_arr, scat_arr, chi2_arr = fit_bulk_flow(
-                                    Y        = bt_Y,
-                                    X        = bt_X,
-                                    z_obs    = bt_z_obs,
-                                    phi_lc   = bt_phi_lc,
-                                    theta_lc = bt_theta_lc,
-                                    yname    = yname,
-                                    xname    = xname,
-                                    rank     = rank,
-                                    n_rank   = size,
-                                    comm     = comm,
-                                    **FIT_RANGE[scaling_relation])
+        for i in range(N_BOOTSTRAP):
+            idx = np.random.choice(sample_size, sample_size, replace=True)
+            bt_Y        = Y[zmask][idx]
+            bt_X        = X[zmask][idx]
+            bt_z_obs    = z_obs[zmask][idx]
+            bt_phi_lc   = phi_lc[zmask][idx]
+            bt_theta_lc = theta_lc[zmask][idx]
 
-        # Gather the results
-        comm.Gather(ubf_arr, ubf_arr_all, root=0)
-        comm.Gather(vlon_arr, vlon_arr_all, root=0)
-        comm.Gather(vlat_arr, vlat_arr_all, root=0)
-        comm.Gather(scat_arr, scat_arr_all, root=0)
-        comm.Gather(chi2_arr, chi2_arr_all, root=0)
-            
-        del ubf_arr, vlon_arr, vlat_arr, scat_arr
+            # Fit the bulk flow
+            ubf_arr, vlon_arr, vlat_arr, scat_arr, chi2_arr = fit_bulk_flow(
+                                        Y        = bt_Y,
+                                        X        = bt_X,
+                                        z_obs    = bt_z_obs,
+                                        phi_lc   = bt_phi_lc,
+                                        theta_lc = bt_theta_lc,
+                                        yname    = yname,
+                                        xname    = xname,
+                                        rank     = rank,
+                                        n_rank   = size,
+                                        comm     = comm,
+                                        **FIT_RANGE[scaling_relation])
 
-        if rank == 0:
-            # Flatten the arrays
-            ubf_arr_all = np.ravel(ubf_arr_all)
-            vlon_arr_all = np.ravel(vlon_arr_all)
-            vlat_arr_all = np.ravel(vlat_arr_all)
-            scat_arr_all = np.ravel(scat_arr_all)
-            chi2_arr_all = np.ravel(chi2_arr_all)
+            # Gather the results
+            comm.Gather(ubf_arr, ubf_arr_all, root=0)
+            comm.Gather(vlon_arr, vlon_arr_all, root=0)
+            comm.Gather(vlat_arr, vlat_arr_all, root=0)
+            comm.Gather(scat_arr, scat_arr_all, root=0)
+            comm.Gather(chi2_arr, chi2_arr_all, root=0)
+                
+            del ubf_arr, vlon_arr, vlat_arr, scat_arr
 
-            # The best fit index
-            min_sigma = np.nanmin(scat_arr_all) # But when there is degeneracy argmin only selects the first occurence
-            min_sigma_mask = (scat_arr_all == min_sigma)
-            min_chi2 = np.nanmin(chi2_arr_all[min_sigma_mask])
-            fit_idx = np.where((chi2_arr_all == min_chi2) & min_sigma_mask)[0][0]
+            if rank == 0:
+                # Flatten the arrays
+                ubf_arr_all = np.ravel(ubf_arr_all)
+                vlon_arr_all = np.ravel(vlon_arr_all)
+                vlat_arr_all = np.ravel(vlat_arr_all)
+                scat_arr_all = np.ravel(scat_arr_all)
+                chi2_arr_all = np.ravel(chi2_arr_all)
 
-            # Save the best fit parameters
-            fit_ubf = ubf_arr_all[fit_idx]
-            fit_vlon = vlon_arr_all[fit_idx]
-            fit_vlat = vlat_arr_all[fit_idx]
-            min_scat = scat_arr_all[fit_idx]
-            min_chi2 = chi2_arr_all[fit_idx]
+                # The best fit index
+                min_sigma = np.nanmin(scat_arr_all) # But when there is degeneracy argmin only selects the first occurence
+                min_sigma_mask = (scat_arr_all == min_sigma)
+                min_chi2 = np.nanmin(chi2_arr_all[min_sigma_mask])
+                fit_idx = np.where((chi2_arr_all == min_chi2) & min_sigma_mask)[0][0]
 
-            # Save the best fit parameters
-            if first_entry_best_fit:
-                mode = 'w'
-            else:
-                mode = 'a'
-            with open(OUTPUT_FILE, mode) as f:
-                # Write the header on first entry
+                # Save the best fit parameters
+                fit_ubf = ubf_arr_all[fit_idx]
+                fit_vlon = vlon_arr_all[fit_idx]
+                fit_vlat = vlat_arr_all[fit_idx]
+                min_scat = scat_arr_all[fit_idx]
+                min_chi2 = chi2_arr_all[fit_idx]
+
+                # Save the best fit parameters
                 if first_entry_best_fit:
-                    f.write('scaling_relation,zmax,ubf,lon,lat,sigma,chi2\n')
-                    first_entry_best_fit = False
-
-                # Write the data
-                f.write(f'{scaling_relation},{zmax},{fit_ubf},{fit_vlon},{fit_vlat},{min_scat},{min_chi2}\n')
-
-                # System output
-                print(f'[{datetime.datetime.now()}]', flush=True)
-                print(f'{scaling_relation},z={zmax},ubf={fit_ubf},{fit_vlon},{fit_vlat},sigma={min_scat},chi2={min_chi2}', flush=True)
-
-            # Save all the parameters
-            if SAVE_ALL_STEPS:
-                if first_entry_all:
                     mode = 'w'
                 else:
                     mode = 'a'
-                with open(OUTPUT_FILE.replace('.csv', '_all.csv'), mode) as f:
+                with open(OUTPUT_FILE, mode) as f:
                     # Write the header on first entry
-                    if first_entry_all:
+                    if first_entry_best_fit:
                         f.write('scaling_relation,zmax,ubf,lon,lat,sigma,chi2\n')
-                        first_entry_all = False
+                        first_entry_best_fit = False
 
                     # Write the data
-                    for i in range(len(ubf_arr_all)):
-                        f.write(f'{scaling_relation},{zmax},{ubf_arr_all[i]},{vlon_arr_all[i]},{vlat_arr_all[i]},{scat_arr_all[i]},{chi2_arr_all[i]}\n')
+                    f.write(f'{scaling_relation},{zmax},{fit_ubf},{fit_vlon},{fit_vlat},{min_scat},{min_chi2}\n')
+
+                    # System output
+                    print(f'[{datetime.datetime.now()}]', flush=True)
+                    print(f'{scaling_relation},z={zmax},ubf={fit_ubf},{fit_vlon},{fit_vlat},sigma={min_scat},chi2={min_chi2}', flush=True)
+
+                # Save all the parameters
+                if SAVE_ALL_STEPS:
+                    if first_entry_all:
+                        mode = 'w'
+                    else:
+                        mode = 'a'
+                    with open(OUTPUT_FILE.replace('.csv', '_all.csv'), mode) as f:
+                        # Write the header on first entry
+                        if first_entry_all:
+                            f.write('scaling_relation,zmax,ubf,lon,lat,sigma,chi2\n')
+                            first_entry_all = False
+
+                        # Write the data
+                        for i in range(len(ubf_arr_all)):
+                            f.write(f'{scaling_relation},{zmax},{ubf_arr_all[i]},{vlon_arr_all[i]},{vlat_arr_all[i]},{scat_arr_all[i]},{chi2_arr_all[i]}\n')

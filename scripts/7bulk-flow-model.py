@@ -33,10 +33,10 @@ cosmo = FlatLambdaCDM(H0=68.1, Om0=0.306)
 # -----------------------CONFIGURATION------------------------------------------
 
 # Input file is a halo catalog with lightcone data.
-# INPUT_FILE = '/data1/yujiehe/data/samples_in_lightcone0_with_trees_duplicate_excision_outlier_excision.csv'
-# OUTPUT_FILE = '/data1/yujiehe/data/fits/bulk_flow_lightcone0.csv'
-INPUT_FILE = '/data1/yujiehe/data/samples_in_lightcone1_with_trees_duplicate_excision_outlier_excision.csv'
-OUTPUT_FILE = '/data1/yujiehe/data/fits/bulk_flow_lightcone1.csv'
+INPUT_FILE = '/data1/yujiehe/data/samples_in_lightcone0_with_trees_duplicate_excision_outlier_excision.csv'
+OUTPUT_FILE = '/data1/yujiehe/data/fits/bulk_flow_lightcone0.csv'
+# INPUT_FILE = '/data1/yujiehe/data/samples_in_lightcone1_with_trees_duplicate_excision_outlier_excision.csv'
+# OUTPUT_FILE = '/data1/yujiehe/data/fits/bulk_flow_lightcone1.csv'
 OVERWRITE = True
 
 # Relations to fit
@@ -95,7 +95,7 @@ def fit_bulk_flow(Y, X, z_obs, phi_lc, theta_lc, yname, xname,
             for vlat in range(-90, 90, LAT_STEP):
 
                 # Calculate the redshift
-                angle = cf.angular_separation(phi_lc, theta_lc, vlon, vlat)
+                angle = cf.angular_separation(phi_lc, theta_lc, vlon, vlat) * np.pi/180
 
                 # # From: z_bf = z_obs - ubf * (1 + z_bf) * np.cos(angle) / C # Maybe plot a bit the difference between the two
                 # z_bf = (z_obs + ubf * np.cos(angle) / C) / (1 - ubf * np.cos(angle) / C) # the ubf convention than the paper
@@ -199,12 +199,10 @@ def main():
         xname = scaling_relation[_+1:]
         Y = np.array(halo_data[cf.COLUMNS[yname]][:n_clusters])
         X = np.array(halo_data[cf.COLUMNS[xname]][:n_clusters])
-
         # Also load the position data
         phi_lc   = np.array(halo_data['phi_on_lc'][:n_clusters])
         theta_lc = np.array(halo_data['theta_on_lc'][:n_clusters])
-        
-        # the cosmological redshift from lightcone (no peculiar velocity attached)
+        # the cosmological redshift from lightcone
         z_obs = np.array(halo_data['ObservedRedshift'][:n_clusters])
 
         # Go as high as 0.12
