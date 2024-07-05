@@ -14,8 +14,10 @@ C = 299792.458                  # the speed of light in km/s
 # Input file is a halo catalog with lightcone data.
 #INPUT_FILE = '/data1/yujiehe/data/samples_in_lightcone0_with_trees_duplicate_excision_outlier_excision.csv'
 #OUTPUT_FILE = '/data1/yujiehe/data/fits/bulk_flow_mcmc_lightcone0.csv'
+#PLOT_DIR = '/data1/yujiehe/data/fits/7bulk-flow-model-mcmc-lightcone0'
 INPUT_FILE = '/data1/yujiehe/data/samples_in_lightcone1_with_trees_duplicate_excision_outlier_excision.csv'
 OUTPUT_FILE = '/data1/yujiehe/data/fits/bulk_flow_mcmc_lightcone1.csv'
+PLOT_DIR = '/data1/yujiehe/data/fits/7bulk-flow-model-mcmc-lightcone1'
 OVERWRITE = True
 
 # Relations to fit
@@ -31,12 +33,14 @@ parser = argparse.ArgumentParser(description="Calculate significance map for bes
 # Add arguments
 parser.add_argument('-i', '--input', type=str, help='Input file', default=INPUT_FILE)
 parser.add_argument('-o', '--output', type=str, help='Output file', default=OUTPUT_FILE)
+parser.add_argument('-d', '--plotdir', type=str, help='Directory to save corner plots.', default=PLOT_DIR)
 parser.add_argument('--overwrite', action='store_true', help='Overwrite existing.', default=OVERWRITE)
 
 # Parse the arguments
 args = parser.parse_args()
 INPUT_FILE  = args.input
 OUTPUT_FILE = args.output
+PLOT_DIR = args.plotdir
 OVERWRITE   = args.overwrite
 # -----------------------END CONFIGURATION--------------------------------------
 
@@ -212,9 +216,9 @@ for scaling_relation in RELATIONS:
         fig.suptitle(f'{yname}-{xname} with z<{zmax}', fontsize=20)
 
         # Save plots
-        if not os.path.exists('../data/plots/7bulk-flow-model-mcmc'):
-            os.makedirs('../data/plots/7bulk-flow-model-mcmc')
-        fig.savefig(f'../data/plots/7bulk-flow-model-mcmc/{yname}-{xname}-zmax{zmax}.png')
+        if not os.path.exists(PLOT_DIR):
+            os.makedirs(PLOT_DIR)
+        fig.savefig(os.path.join(PLOT_DIR, f'{yname}-{xname}-zmax{zmax}.png'))
 
 
 
@@ -245,28 +249,31 @@ for scaling_relation in RELATIONS:
         print(f'vlat: {lower_vlat} ~ {upper_vlat} \nor {vlat} -{vlat_err_lower} +{vlat_err_upper}')
 
 
-        # For longitude we use the 34th percentile around the peak value
-        # Longitude is periodic so we are free to shift the peak value for convenience
-        vlon_distr = flat_samples[:, 1]
-        hist, edges = np.histogram(vlon_distr, bins=20, density=True)
-        peak_vlon = edges[np.argmax(hist)]
+        # # For longitude we use the 34th percentile around the peak value
+        # # Longitude is periodic so we are free to shift the peak value for convenience
+        # vlon_distr = flat_samples[:, 1]
+        # hist, edges = np.histogram(vlon_distr, bins=20, density=True)
+        # peak_vlon = edges[np.argmax(hist)]
 
-        # Shift to peak=0 to avoid breaking near the edge
-        vlon_distr = (vlon_distr - peak_vlon - 180) % 360 - 180 # Despite the shift, keep the range in 180 to 180
+        # # Shift to peak=0 to avoid breaking near the edge
+        # vlon_distr = (vlon_distr - peak_vlon - 180) % 360 - 180 # Despite the shift, keep the range in 180 to 180
 
-        # 34th percentile around the peak value
-        peak_percentile = np.sum(vlon_distr < 0) / len(vlon_distr) * 100
-        l = np.percentile(vlon_distr, peak_percentile - 34)
-        u = np.percentile(vlon_distr, peak_percentile + 34)
+        # # 34th percentile around the peak value
+        # peak_percentile = np.sum(vlon_distr < 0) / len(vlon_distr) * 100
+        # l = np.percentile(vlon_distr, peak_percentile - 34)
+        # u = np.percentile(vlon_distr, peak_percentile + 34)
 
-        # Convert back to the original coordinates
-        lower_vlon = (l + peak_vlon + 180) % 360 - 180
-        upper_vlon = (u + peak_vlon + 180) % 360 - 180
+        # # Convert back to the original coordinates
+        # lower_vlon = (l + peak_vlon + 180) % 360 - 180
+        # upper_vlon = (u + peak_vlon + 180) % 360 - 180
 
-        # For saving
-        vlon = peak_vlon
-        vlon_err_lower = -l
-        vlon_err_upper = u
+        # # For saving
+        # vlon = peak_vlon
+        # vlon_err_lower = -l
+        # vlon_err_upper = u
+
+        # Find the range w.r.t. the peak.
+        peak_vlon, vlon_err_lower, vlon_err_upper, lower_vlon, upper_vlon = cf.periodic_error_range(flat_samples[:,1], full_range=360) 
         print(f'vlon: {lower_vlon} ~ {upper_vlon} \nor {peak_vlon} -{vlon_err_lower} +{vlon_err_upper}')
 
         
