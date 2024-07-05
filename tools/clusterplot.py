@@ -30,7 +30,7 @@ def _sky_map_(f, colorbar_label, ax=None, **kwargs):
 
     # Plot the color map
     im = m.imshow(f,  extent=[-180, 180, -90, 90],
-                cmap='inferno', ax=ax, **kwargs)
+                cmap='magma', ax=ax, **kwargs)
 
     # Colorbar
     plt.colorbar(im, label=colorbar_label)

@@ -1,8 +1,9 @@
+import astropy.coordinates as coord
 import numpy as np
 from numba import njit, prange
 import pandas as pd
 import sys
-sys.path.append('/home/yujiehe/anisotropy-flamingo')
+sys.path.append('/data1/yujiehe/anisotropy-flamingo')
 from tools.constants import *
 
 @njit(fastmath=True)
@@ -510,4 +511,346 @@ def _map_to_dipole_map_(f, mid):
         f[i_dp] = (dp2 - dp1)/2 + mid
 
     return f
-        
+
+
+
+
+@njit(fastmath=True)
+def scan_qty(lon_c_arr, lat_c_arr, qty_arr, count_arr, 
+             lon, lat, qty, cone_size, lon_step, lat_step, cos_weight=True,
+             ):
+    """
+    Scan and average to make quantity sky map. Mainly use for bulk flow calculation, 
+    namely to calculate the line of sight velocity maps. This is the numba accelerated
+    main calculation of the code.
+    """
+
+    # unit conversions
+    theta = cone_size # set alias
+    theta_rad = theta * np.pi / 180
+    lat_rad = lat * np.pi / 180 # the memory load is not very high so we can do this
+    lon_rad = lon * np.pi / 180
+
+    n_tot = len(lon)
+
+    for lon_c in range(-180, 180):
+
+        if lon_c % lon_step != 0: # numba parallel only supports step size of 1
+            continue
+        lon_c_rad = lon_c * np.pi / 180
+
+        for lat_c in range(-90, 90):
+
+            if lat_c % lat_step != 0: # if you are wondering, 0 % lat_step = 0
+                continue
+            lat_c_rad = lat_c * np.pi / 180
+
+            a = np.pi / 2 - lat_c_rad # center of cone to zenith
+            b = np.pi / 2 - lat_rad   # cluster to zenith
+            costheta = np.cos(a)*np.cos(b) + np.sin(a)*np.sin(b)*np.cos(lon_rad - lon_c_rad) # cosθ=cosa*cosb+sina*sinb*cosA
+            mask = costheta > np.cos(theta_rad)
+            n_clusters = np.sum(mask)
+
+            # Mask selection
+            cone_qty = qty[mask]
+
+            # Indexing
+            idx = (lon_c+180)//lon_step * 180//lat_step + (lat_c+90)//lat_step
+
+            # If no cluster in the cone
+            if np.sum(cone_qty) == 0:
+                lon_c_arr[idx] = lon_c
+                lat_c_arr[idx] = lat_c
+                qty_arr[idx]   = 0
+                continue
+
+            # Inverse cosine weighting to emphasize the direction
+            if cos_weight:
+                weight = costheta[mask]
+            else:
+                weight = np.ones(n_clusters)
+
+            # Weighted mean
+            result = np.sum(cone_qty*weight)/np.sum(mask)
+
+            # Output
+            lon_c_arr[idx] = lon_c
+            lat_c_arr[idx] = lat_c
+            qty_arr[idx]   = result
+            count_arr[idx] = np.sum(mask)
+
+            # print(f'lon_c: {lon_c}, lat_c: {lat_c}, qty: {result}')
+
+    return lon_c_arr, lat_c_arr, qty_arr, count_arr
+
+
+
+
+def make_los_v_map(data, zmask, cone_size=45, lon_step=4, lat_step=2):
+    """
+    Scan and average to make quantity sky map. Mainly use for bulk flow calculation, 
+    namely to calculate the line of sight velocity maps.
+    """
+    # data = data[:n_clusters]
+    data = data[zmask]
+
+    # Coordinates
+    lon = data['phi_on_lc']
+    lat = data['theta_on_lc']
+    lon = np.array(lon)
+    lat = np.array(lat)
+
+    # Allocate memory
+    n_steps = 360//lon_step * 180//lat_step
+    qty_arr   = np.zeros(n_steps)
+    lon_c_arr = np.zeros(n_steps)
+    lat_c_arr = np.zeros(n_steps)
+    count_arr = np.zeros(n_steps)
+
+    # Peculiar los velocity
+    vx = np.array(data['Vx'])                 # velocities in km/s
+    vy = np.array(data['Vy'])
+    vz = np.array(data['Vz'])
+
+    x = np.array(data['x_lc'])
+    y = np.array(data['y_lc'])
+    z = np.array(data['z_lc'])
+
+    los_v = (vx*x + vy*y + vz*z) / (x**2 + y**2 + z**2)**0.5 # in km/s
+    los_v = np.array(los_v)
+
+    # v_vecs = los_v[...,None] * np.column_stack([x,y,z]) / (x[...,None]**2 + y[...,None]**2 + z[...,None]**2)**0.5
+
+    # Scan. los velocity is in fact a vector, and the contribution to center cone direction should be weighted with a cosine factor
+    Glon, Glat, los_v_map, count_map = scan_qty(lon_c_arr, lat_c_arr, qty_arr, count_arr,
+                                    lon, lat, los_v, cone_size, lon_step, lat_step, cos_weight=True)
+    return Glon, Glat, los_v_map, count_map
+
+
+
+
+
+@njit(fastmath=True)
+def find_max_dipole_flow(Glon, Glat, los_v_map, count_map):
+    # Find the maximum dipole flow
+    max_ubf_dp = 0
+    for lon, lat in zip(Glon, Glat):
+        if lon < 0: # only do half of the sky
+            continue
+
+        # current direction
+        los_v = los_v_map[(Glon == lon) & (Glat == lat)]
+        count = count_map[(Glon == lon) & (Glat == lat)]
+
+        # get the dipole direction
+        dp_lon, dp_lat = cf.opposite_direction(lon, lat)
+        dp_mask = (Glon == dp_lon) & (Glat == dp_lat)
+        dp_los_v = los_v_map[dp_mask]
+        dp_count = count_map[dp_mask]
+
+        # calculate the dipole flow, weighted using number of clusters
+        if np.sum(count + dp_count) > 5:
+            ubf_dp = (los_v*count - dp_los_v*dp_count)/(count + dp_count)
+            ubf_dp = ubf_dp[0]
+            if np.abs(ubf_dp) > np.abs(max_ubf_dp): # Find the maximum
+                if ubf_dp > 0:
+                    max_ubf_dp = ubf_dp
+                    max_bf_lon = lon
+                    max_bf_lat = lat
+                else:
+                    max_ubf_dp = -ubf_dp
+                    max_bf_lon = dp_lon
+                    max_bf_lat = dp_lat
+
+    return max_ubf_dp, max_bf_lon, max_bf_lat
+
+
+
+
+
+
+def true_bulk_flow_z(data, method='cluster_average', cone_size=45, n_clusters=313, lon_step=4, lat_step=2):
+    """
+    A haphazard function to calculate the bulk flow ubf, vlon, vlat as a function of redshift.
+    """
+    # Only 313 highest Lcore/Ltot clusters
+    data = data[:n_clusters]
+    redshift = data['ObservedRedshift']
+
+    # Buffer lists
+    zmaxs = []
+    ubfs = []
+    vlons = []
+    vlats = []
+    for zmax in np.arange(0.03, 0.16, 0.01):
+        zmask = (redshift < zmax)
+        Glon, Glat, los_v_map, count_map = make_los_v_map(data, zmask, cone_size=cone_size, lon_step=lon_step, lat_step=lat_step)
+
+        if method=='cone_average':
+            # The global bulk flow by averaging all the cones
+            bulk_vx = np.average(los_v_map * np.cos(Glat * np.pi / 180) * np.cos(Glon * np.pi / 180), weights=count_map)
+            bulk_vy = np.average(los_v_map * np.cos(Glat * np.pi / 180) * np.sin(Glon * np.pi / 180), weights=count_map)
+            bulk_vz = np.average(los_v_map * np.sin(Glat * np.pi / 180), weights=count_map)
+            ubf, b, l = coord.cartesian_to_spherical(bulk_vx, bulk_vy, bulk_vz) # r, lat, lon
+            vlon = l.to('deg').value
+            vlat = b.to('deg').value
+            print(f"z<{zmax:.2f}, {np.sum(zmask)} haloes {ubf:.2f} km/s ({vlon:.2f}, {vlat:.2f})")
+            #print(Glon[los_v_map.argmax()], Glat[los_v_map.argmax()], los_v_map.max())
+        elif method=='max_dipole':
+            # The maximum dipole flow
+            ubf, vlon, vlat = find_max_dipole_flow(Glon, Glat, los_v_map, count_map)
+            print(f"z<{zmax:.2f}, {np.sum(zmask)} haloes, max dipole flow: {ubf} km/s at ({vlon}, {vlat})")
+        elif method=='cluster_average':     
+            # Peculiar los velocity
+            vx = np.array(data['Vx'])                 # velocities in km/s
+            vy = np.array(data['Vy'])
+            vz = np.array(data['Vz'])
+
+            v_vecs = np.column_stack([vx, vy, vz])
+
+            # Mask and sum
+            bulk_v = np.sum(v_vecs[zmask,:], axis=0)/np.sum(zmask)
+            ubf, vlat, vlon = coord.cartesian_to_spherical(bulk_v[0], bulk_v[1], bulk_v[2]) # r, lat, lon
+            vlon = vlon.to('deg').value
+            vlat = vlat.to('deg').value
+            print(f"z<{zmax:.2f}, {np.sum(zmask)} haloes {ubf:.2f} km/s ({vlon:.2f}, {vlat:.2f})")
+
+        # Save the maximum dipole flow
+        ubfs.append(ubf)
+        zmaxs.append(zmax)
+        vlons.append(vlon)
+        vlats.append(vlat)
+
+    ubfs = np.array(ubfs)
+    zmaxs = np.array(zmaxs)
+    vlons = np.array(vlons)
+    vlats = np.array(vlats)
+    return zmaxs, ubfs, vlons, vlats 
+
+
+
+def read_bulk_flow(file, relation):
+    """
+    Read the output of 7bulk-flow-model.py into 4 arrays of zmaxs, ubfs, vlons,
+    and vlats for plotting.
+    """
+    # Load and mask the data
+    df = pd.read_csv(file)
+    zmaxs = df['zmax'].loc[df['scaling_relation']==relation] # Do LX-T for now
+    ubfs = df['ubf'].loc[df['scaling_relation']==relation]
+    vlons = df['vlon'].loc[df['scaling_relation']==relation]
+    vlats = df['vlat'].loc[df['scaling_relation']==relation]
+
+    # Change of data type 
+    zmaxs = np.array(zmaxs)
+    ubfs = np.array(ubfs)
+    vlons = np.array(vlons)
+    vlats = np.array(vlats) 
+    return zmaxs, ubfs
+
+
+def read_bulk_flow_bootstrap(bootstrap_file, best_fit_file, relation):
+    """
+    Read the output of 8bulk-flow-bootstrap.py into arrays of x, y errors 
+    around the best fit values, the best fit is read from the output of 
+    7bulk-flow-model.py. The errors are calculated as 16, 84 percentiles for
+    ubf and latitude, but shift to the center for longitude for its periodic nature.`
+
+    Note: it will lean toward the longer tail if the distribution is a lopsided
+    Gaussian. 
+    """
+    # Extract the best fit values
+    zmaxs, best_ubfs, best_vlons, best_vlats = read_bulk_flow(file=best_fit_file, relation=relation)
+
+    ubf_lowers = []
+    ubf_uppers = []
+    vlat_lowers = []
+    vlat_uppers = []
+    vlon_lowers = []
+    vlon_uppers = []
+
+    # Read the bootstrapping files
+    df = pd.read_csv(bootstrap_file)
+    for z, j in enumerate(zmaxs):
+        mask = (df['scaling_relation']==relation) & (df['zmax']==z)
+        ubfs = df['ubf'].loc[mask]
+        vlons = df['vlon'].loc[mask]
+        vlats = df['vlat'].loc[mask]
+
+        vlons = np.array(vlons)
+        vlats = np.array(vlats)
+        ubfs = np.array(ubfs)
+
+        # 16, 84 percentiles, report around best fit as in plt.errorbar
+        ubf_lower = best_ubfs[j] - np.percentile(ubfs, 16)
+        ubf_upper = np.percentile(ubfs, 84) - best_ubfs[j]
+        # Add to the list for output
+        ubf_lowers.append(ubf_lower)
+        ubf_uppers.append(ubf_upper)
+
+        # Same with vlat. Latitude have no periodicity
+        vlat_lower = best_vlats[j] - np.percentile(vlats, 16)
+        vlat_upper = np.percentile(vlats, 84) - best_vlats[j]
+        # Add to the list for output
+        vlat_lowers.append(vlat_lower)
+        vlat_uppers.append(vlat_upper)
+
+        # For vlon, shift to the center.
+        peak_value, lower_err, upper_err, lower_value, upper_value = periodic_error_range(vlons, peak_value=best_vlons[j], full_range=360, bins=30)
+        vlon_lower = lower_err
+        vlon_upper = upper_err
+        # Add to the list for output
+        vlon_lowers.append(vlon_lower)
+        vlon_uppers.append(vlon_upper)
+
+
+        ubf_lowers = np.array(ubf_lowers)
+        ubf_uppers = np.array(ubf_uppers) 
+        vlat_lowers = np.array(vlat_lowers)
+        vlat_uppers = np.array(vlat_uppers)
+        vlon_lowers = np.array(vlon_lowers)
+        vlon_uppers = np.array(vlon_uppers)
+
+    return zmaxs, ubf_lowers, ubf_uppers, vlon_lowers, vlon_uppers, vlat_lowers, vlat_uppers
+    
+    
+
+
+
+
+
+
+
+def periodic_error_range(data, peak_value=None, full_range=360, bins=30):
+    """
+    Find the +- 34 percentile for distribution of quantities that are periodic,
+    e.g. longitudes. Return peak, lower err, upper err, lower value, upper value.
+    Pick what is useful for you. For some plots you might need the lower and upper
+    value, while for others (e.g. plt.errorbar()) you might need lower err and
+    uppper err.
+
+    Note: latitude is non-periodic.
+    """
+    distr = data.copy() # make a copy so that we doesn't change the original array
+    half_range = full_range / 2
+
+    # Find peak of the distribution if not found already
+    if peak_value is None:
+        hist, edges = np.histogram(distr, bins=bins, density=True)
+        peak_value = edges[np.argmax(hist)]
+
+    # Shift to peak=0 to avoid breaking near the edge
+    distr = (distr - peak_value - half_range) % full_range - half_range # Despite the shift, keep the range in -90 to 90
+
+    # 34th percentile around the peak value
+    peak_percentile = np.sum(distr < 0) / len(distr) * 100
+    lower_err = np.percentile(distr, peak_percentile - 34)
+    upper_err = np.percentile(distr, peak_percentile + 34)
+
+    # Convert back to the original coordinates
+    lower_value = (lower_err + peak_value + half_range) % full_range - half_range
+    upper_value = (upper_err + peak_value + half_range) % full_range - half_range
+
+    return peak_value, lower_err, upper_err, lower_value, upper_value
+    
+

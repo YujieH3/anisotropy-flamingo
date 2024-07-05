@@ -12,10 +12,10 @@ C = 299792.458                  # the speed of light in km/s
 
 # -----------------------CONFIGURATION------------------------------------------
 # Input file is a halo catalog with lightcone data.
-INPUT_FILE = '/data1/yujiehe/data/samples_in_lightcone0_with_trees_duplicate_excision_outlier_excision.csv'
-OUTPUT_FILE = '/data1/yujiehe/data/fits/bulk_flow_mcmc_lightcone0.csv'
-# INPUT_FILE = '/data1/yujiehe/data/samples_in_lightcone1_with_trees_duplicate_excision_outlier_excision.csv'
-# OUTPUT_FILE = '/data1/yujiehe/data/fits/bulk_flow_mcmc_lightcone1.csv'
+#INPUT_FILE = '/data1/yujiehe/data/samples_in_lightcone0_with_trees_duplicate_excision_outlier_excision.csv'
+#OUTPUT_FILE = '/data1/yujiehe/data/fits/bulk_flow_mcmc_lightcone0.csv'
+INPUT_FILE = '/data1/yujiehe/data/samples_in_lightcone1_with_trees_duplicate_excision_outlier_excision.csv'
+OUTPUT_FILE = '/data1/yujiehe/data/fits/bulk_flow_mcmc_lightcone1.csv'
 OVERWRITE = True
 
 # Relations to fit
@@ -214,9 +214,25 @@ for scaling_relation in RELATIONS:
         ubf_err_upper = upper_ubf - median_ubf
         print(f'ubf: {lower_ubf} ~ {upper_ubf} \nor {ubf} -{ubf_err_lower} +{ubf_err_upper}')
 
-        # The highest probability values and the quantiles for vlon and vlat
+
+
+        # Same with latitude, note that latitude is not periodic!
+        vlat_distr = flat_samples[:, 2]
+        lower_vlat = np.percentile(vlat_distr, 16)
+        median_vlat = np.percentile(vlat_distr, 50)
+        upper_vlat = np.percentile(vlat_distr, 84)
+
+        # For saving
+        vlat = median_vlat
+        vlat_err_lower = median_vlat - lower_vlat
+        vlat_err_upper = upper_vlat - median_vlat
+        print(f'vlat: {lower_vlat} ~ {upper_vlat} \nor {vlat} -{vlat_err_lower} +{vlat_err_upper}')
+
+
+        # For longitude we use the 34th percentile around the peak value
+        # Longitude is periodic so we are free to shift the peak value for convenience
         vlon_distr = flat_samples[:, 1]
-        hist, edges = np.histogram(vlon_distr, bins=30, density=True)
+        hist, edges = np.histogram(vlon_distr, bins=20, density=True)
         peak_vlon = edges[np.argmax(hist)]
 
         # Shift to peak=0 to avoid breaking near the edge
@@ -237,30 +253,7 @@ for scaling_relation in RELATIONS:
         vlon_err_upper = u
         print(f'vlon: {lower_vlon} ~ {upper_vlon} \nor {peak_vlon} -{vlon_err_lower} +{vlon_err_upper}')
 
-
-        # vlat
-        vlat_distr = flat_samples[:, 2]
-        hist, edges = np.histogram(vlat_distr, bins=30, density=True)
-        peak_vlat = edges[np.argmax(hist)]
-
-        # Shift to peak=0 to avoid breaking near the edge
-        vlat_distr = (vlat_distr - peak_vlat - 90) % 180 - 90 # Despite the shift, keep the range in -90 to 90
-
-        # 34th percentile around the peak value
-        peak_percentile = np.sum(vlat_distr < 0) / len(vlat_distr) * 100
-        l = np.percentile(vlat_distr, peak_percentile - 34)
-        u = np.percentile(vlat_distr, peak_percentile + 34)
-
-        # Convert back to the original coordinates
-        lower_vlat = (l + peak_vlat + 90) % 180 - 90
-        upper_vlat = (u + peak_vlat + 90) % 180 - 90
-
-        # For saving
-        vlat = peak_vlat
-        vlat_err_lower = -l
-        vlat_err_upper = u
-        print(f'vlat: {lower_vlat} ~ {upper_vlat} \nor {peak_vlat} -{vlat_err_lower} +{vlat_err_upper}')
-
+        
 
         # Save the best fit parameters
         if first_entry:
@@ -273,7 +266,7 @@ for scaling_relation in RELATIONS:
 
             # Write the header on first entry
             if first_entry:
-                f.write('scaling_relation, zmax, ubf, ubf_err_lower, ubf_err_upper, vlon, vlon_err_lower, vlon_err_upper, vlat, vlat_err_lower, vlat_err_upper,convergence_time\n')
+                f.write('scaling_relation,zmax,ubf,ubf_err_lower,ubf_err_upper,vlon,vlon_err_lower,vlon_err_upper,vlat,vlat_err_lower,vlat_err_upper,convergence_time\n')
                 first_entry = False
 
             # Write the data
