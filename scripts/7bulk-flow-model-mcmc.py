@@ -21,7 +21,23 @@ OVERWRITE = True
 # Relations to fit
 RELATIONS = ['LX-T', 'YSZ-T', 'M-T'] # pick from 'LX-T', 'M-T', 'LX-YSZ', 'LX-M', 'YSZ-M', 'YSZ-T'
 
+# -----------------------------COMMAND LINE ARGUMENTS---------------------------
 
+import argparse
+
+# Create the parser
+parser = argparse.ArgumentParser(description="Calculate significance map for best fit scans.")
+
+# Add arguments
+parser.add_argument('-i', '--input', type=str, help='Input file', default=INPUT_FILE)
+parser.add_argument('-o', '--output', type=str, help='Output file', default=OUTPUT_FILE)
+parser.add_argument('--overwrite', action='store_true', help='Overwrite existing.', default=OVERWRITE)
+
+# Parse the arguments
+args = parser.parse_args()
+INPUT_FILE  = args.input
+OUTPUT_FILE = args.output
+OVERWRITE   = args.overwrite
 # -----------------------END CONFIGURATION--------------------------------------
 
 

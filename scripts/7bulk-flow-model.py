@@ -45,7 +45,7 @@ RELATIONS = ['LX-T', 'YSZ-T', 'M-T'] # pick from 'LX-T', 'M-T', 'LX-YSZ', 'LX-M'
 # Amplitude range and step size
 UBFMIN = 35 # ubf for bulk flow velocity
 UBFMAX = 800
-UBF_STEP = 15
+UBF_STEP = 15 # 800-35 = 15 * 17*3
 
 # Longitude and latitude steps
 LON_STEP = 20 # maybe change to 8. Considering we still need to bootstrap later 
@@ -62,6 +62,24 @@ SCAT_STEP = 0.0003
 C = 299792.458                  # the speed of light in km/s
 FIT_RANGE = const.ONE_MAX_RANGE_TIGHT_SCAT
 
+
+# -----------------------------COMMAND LINE ARGUMENTS---------------------------
+
+import argparse
+
+# Create the parser
+parser = argparse.ArgumentParser(description="Calculate significance map for best fit scans.")
+
+# Add arguments
+parser.add_argument('-i', '--input', type=str, help='Input file', default=INPUT_FILE)
+parser.add_argument('-o', '--output', type=str, help='Output file', default=OUTPUT_FILE)
+parser.add_argument('--overwrite', action='store_true', help='Overwrite existing.', default=OVERWRITE)
+
+# Parse the arguments
+args = parser.parse_args()
+INPUT_FILE  = args.input
+OUTPUT_FILE = args.output
+overwrite   = args.overwrite
 # -----------------------END CONFIGURATION--------------------------------------
 
 
@@ -97,12 +115,12 @@ def fit_bulk_flow(Y, X, z_obs, phi_lc, theta_lc, yname, xname,
                 # Calculate the redshift
                 angle = cf.angular_separation(phi_lc, theta_lc, vlon, vlat) * np.pi/180
 
-                # # From: z_bf = z_obs - ubf * (1 + z_bf) * np.cos(angle) / C # Maybe plot a bit the difference between the two
-                # z_bf = (z_obs + ubf * np.cos(angle) / C) / (1 - ubf * np.cos(angle) / C) # the ubf convention than the paper
+                # From: z_bf = z_obs + ubf * (1 + z_bf) * np.cos(angle) / C # Maybe plot a bit the difference between the two
+                z_bf = (z_obs + ubf * np.cos(angle) / C) / (1 - ubf * np.cos(angle) / C) # the ubf convention than the paper, same direction with H0 variation but opposite to cluster movement
 
-                # The relativistic correction
-                u_c_correct = ((1+z_obs)**2-1)/((1+z_obs)**2+1) + (1+z_obs)*ubf*np.cos(angle)/C
-                z_bf = np.sqrt((1+u_c_correct)/(1-u_c_correct))-1
+                ## The relativistic correction
+                #u_c_correct = ((1+z_obs)**2-1)/((1+z_obs)**2+1) + (1+z_obs)*ubf*np.cos(angle)/C
+                #z_bf = np.sqrt((1+u_c_correct)/(1-u_c_correct))-1
 
                 # Calculate the Luminosity distance
                 if yname == 'LX':

@@ -729,7 +729,7 @@ def true_bulk_flow_z(data, method='cluster_average', cone_size=45, n_clusters=31
 
 
 
-def read_bulk_flow(file, relation):
+def read_bulk_flow(file, relation, radian=False):
     """
     Read the output of 7bulk-flow-model.py into 4 arrays of zmaxs, ubfs, vlons,
     and vlats for plotting.
@@ -738,29 +738,40 @@ def read_bulk_flow(file, relation):
     df = pd.read_csv(file)
     zmaxs = df['zmax'].loc[df['scaling_relation']==relation] # Do LX-T for now
     ubfs = df['ubf'].loc[df['scaling_relation']==relation]
-    vlons = df['vlon'].loc[df['scaling_relation']==relation]
-    vlats = df['vlat'].loc[df['scaling_relation']==relation]
+    vlons = df['lon'].loc[df['scaling_relation']==relation]
+    vlats = df['lat'].loc[df['scaling_relation']==relation]
 
     # Change of data type 
     zmaxs = np.array(zmaxs)
     ubfs = np.array(ubfs)
     vlons = np.array(vlons)
     vlats = np.array(vlats) 
-    return zmaxs, ubfs
+
+    # Radian for angles
+    if radian is True:
+        vlons *= np.pi/180
+        vlats *= np.pi/180
+    return zmaxs, ubfs, vlons, vlats
 
 
-def read_bulk_flow_bootstrap(bootstrap_file, best_fit_file, relation):
+def read_bulk_flow_bootstrap(bootstrap_file, relation, radian=True, median=True, best_fit_file=None):
     """
     Read the output of 8bulk-flow-bootstrap.py into arrays of x, y errors 
     around the best fit values, the best fit is read from the output of 
     7bulk-flow-model.py. The errors are calculated as 16, 84 percentiles for
     ubf and latitude, but shift to the center for longitude for its periodic nature.`
 
+    Parameters
+    ---
+    `median=True` : Centered around median instead of best fit, in this case 
+    `best_fit_file` is not required.
+    
     Note: it will lean toward the longer tail if the distribution is a lopsided
     Gaussian. 
     """
-    # Extract the best fit values
-    zmaxs, best_ubfs, best_vlons, best_vlats = read_bulk_flow(file=best_fit_file, relation=relation)
+    if median is False:
+        # Extract the best fit values
+        __, best_ubfs, best_vlons, best_vlats = read_bulk_flow(file=best_fit_file, relation=relation, radian=False)
 
     ubf_lowers = []
     ubf_uppers = []
@@ -771,15 +782,33 @@ def read_bulk_flow_bootstrap(bootstrap_file, best_fit_file, relation):
 
     # Read the bootstrapping files
     df = pd.read_csv(bootstrap_file)
-    for z, j in enumerate(zmaxs):
-        mask = (df['scaling_relation']==relation) & (df['zmax']==z)
-        ubfs = df['ubf'].loc[mask]
-        vlons = df['vlon'].loc[mask]
-        vlats = df['vlat'].loc[mask]
+    zmaxs = np.array(df['zmax'])
+    zmaxs = np.unique(zmaxs)
 
+    # Set the reference points to 50 percentiles if median==True
+    if median is True:
+        best_ubfs = np.empty_like(zmaxs)
+        best_vlats = np.empty_like(zmaxs)
+
+        # Set vlons to an array of Nones for input of periodic_error_range, 
+        # where the peak of distribution is used
+        best_vlons = [None for k in range(len(zmaxs))]
+
+    for j, z in enumerate(zmaxs):
+        mask = (df['scaling_relation']==relation) & ((df['zmax']-z)<1e-5)
+        ubfs = df['ubf'].loc[mask]
+        vlons = df['lon'].loc[mask]
+        vlats = df['lat'].loc[mask]
+
+        # Use array for better manipulation
         vlons = np.array(vlons)
         vlats = np.array(vlats)
         ubfs = np.array(ubfs)
+
+        if median is True:
+            best_ubfs[j] = np.percentile(ubfs, 50)
+            best_vlats[j] = np.percentile(vlats, 50)
+            # In case you are wondering, best_vlons[j] is None. See 20 lines above
 
         # 16, 84 percentiles, report around best fit as in plt.errorbar
         ubf_lower = best_ubfs[j] - np.percentile(ubfs, 16)
@@ -796,22 +825,32 @@ def read_bulk_flow_bootstrap(bootstrap_file, best_fit_file, relation):
         vlat_uppers.append(vlat_upper)
 
         # For vlon, shift to the center.
-        peak_value, lower_err, upper_err, lower_value, upper_value = periodic_error_range(vlons, peak_value=best_vlons[j], full_range=360, bins=30)
+        peak_vlon, lower_err, upper_err, lower_value, upper_value = periodic_error_range(vlons, peak_value=best_vlons[j], full_range=360, bins=30)
         vlon_lower = lower_err
         vlon_upper = upper_err
         # Add to the list for output
         vlon_lowers.append(vlon_lower)
         vlon_uppers.append(vlon_upper)
 
+        if median is True:
+            best_vlons[j] = peak_vlon
 
-        ubf_lowers = np.array(ubf_lowers)
-        ubf_uppers = np.array(ubf_uppers) 
-        vlat_lowers = np.array(vlat_lowers)
-        vlat_uppers = np.array(vlat_uppers)
-        vlon_lowers = np.array(vlon_lowers)
-        vlon_uppers = np.array(vlon_uppers)
+    # Return arrays
+    ubf_lowers = np.array(ubf_lowers)
+    ubf_uppers = np.array(ubf_uppers) 
+    vlat_lowers = np.array(vlat_lowers)
+    vlat_uppers = np.array(vlat_uppers)
+    vlon_lowers = np.array(vlon_lowers)
+    vlon_uppers = np.array(vlon_uppers)
 
-    return zmaxs, ubf_lowers, ubf_uppers, vlon_lowers, vlon_uppers, vlat_lowers, vlat_uppers
+    # Output radian
+    if radian is True:
+        vlat_lowers *= np.pi/180
+        vlat_uppers *= np.pi/180
+        vlon_lowers *= np.pi/180
+        vlon_uppers *= np.pi/180
+
+    return zmaxs, best_ubfs, ubf_lowers, ubf_uppers, best_vlons, vlon_lowers, vlon_uppers, best_vlats, vlat_lowers, vlat_uppers
     
     
 
@@ -832,25 +871,27 @@ def periodic_error_range(data, peak_value=None, full_range=360, bins=30):
     Note: latitude is non-periodic.
     """
     distr = data.copy() # make a copy so that we doesn't change the original array
-    half_range = full_range / 2
 
     # Find peak of the distribution if not found already
     if peak_value is None:
         hist, edges = np.histogram(distr, bins=bins, density=True)
         peak_value = edges[np.argmax(hist)]
 
-    # Shift to peak=0 to avoid breaking near the edge
-    distr = (distr - peak_value - half_range) % full_range - half_range # Despite the shift, keep the range in -90 to 90
+    # # Shift to peak=0 to avoid breaking near the edge
+    # distr = (distr - peak_value - half_range) % full_range - half_range # Despite the shift, keep the range as -half_range to +half_range
 
     # 34th percentile around the peak value
-    peak_percentile = np.sum(distr < 0) / len(distr) * 100
-    lower_err = np.percentile(distr, peak_percentile - 34)
-    upper_err = np.percentile(distr, peak_percentile + 34)
+    peak_percentile = np.sum(distr < peak_value) / len(distr) * 100
 
-    # Convert back to the original coordinates
-    lower_value = (lower_err + peak_value + half_range) % full_range - half_range
-    upper_value = (upper_err + peak_value + half_range) % full_range - half_range
+    lower_value = np.percentile(distr, (peak_percentile - 34) % 100)
+    upper_value = np.percentile(distr, (peak_percentile + 34) % 100)
 
+    # # Convert back to the original coordinates
+    # lower_value = (lower_err + peak_value + half_range) % full_range - half_range
+    # upper_value = (upper_err + peak_value + half_range) % full_range - half_range
+
+    lower_err = (peak_value - lower_value) % full_range
+    upper_err = (upper_value - peak_value) % full_range
     return peak_value, lower_err, upper_err, lower_value, upper_value
     
 

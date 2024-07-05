@@ -29,7 +29,6 @@ from astropy.cosmology import FlatLambdaCDM
 cosmo = FlatLambdaCDM(H0=68.1, Om0=0.306)
 
 
-# import astropy.coordinates as coord
 # -----------------------CONFIGURATION------------------------------------------
 
 # Input file is a halo catalog with lightcone data.
@@ -44,9 +43,9 @@ SAVE_ALL_STEPS = True # Save all the steps in another output file with _all suff
 RELATIONS = ['LX-T', 'YSZ-T', 'M-T'] # pick from 'LX-T', 'M-T', 'LX-YSZ', 'LX-M', 'YSZ-M', 'YSZ-T'
 
 # Amplitude range and step size
-UBFMIN = 140 # ubf for bulk flow velocity
-UBFMAX = 650
-UBF_STEP = 15
+UBFMIN = 0 # ubf for bulk flow velocity
+UBFMAX = 1020
+UBF_STEP = 30 # 34*30=1020
 
 # Longitude and latitude steps
 LON_STEP = 20 # maybe change to 8. Considering we still need to bootstrap later 
@@ -66,7 +65,27 @@ N_BOOTSTRAP = 100
 C = 299792.458                  # the speed of light in km/s
 FIT_RANGE = const.ONE_MAX_RANGE_TIGHT_SCAT
 
-# -----------------------END CONFIGURATION--------------------------------------
+# -----------------------------COMMAND LINE ARGUMENTS---------------------------
+
+import argparse
+
+# Create the parser
+parser = argparse.ArgumentParser(description="Calculate significance map for best fit scans.")
+
+# Add arguments
+parser.add_argument('-i', '--input', type=str, help='Input file', default=INPUT_FILE)
+parser.add_argument('-o', '--output', type=str, help='Output file', default=OUTPUT_FILE)
+parser.add_argument('--overwrite', action='store_true', help='Overwrite existing.', default=OVERWRITE)
+
+# Parse the arguments
+args = parser.parse_args()
+INPUT_FILE  = args.input
+OUTPUT_FILE = args.output
+OVERWRITE   = args.overwrite
+
+
+
+
 
 
 # @njit(fastmath=True)
