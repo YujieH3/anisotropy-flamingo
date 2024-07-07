@@ -273,8 +273,8 @@ for scaling_relation in RELATIONS:
         # vlon_err_upper = u
 
         # Find the range w.r.t. the peak.
-        peak_vlon, vlon_err_lower, vlon_err_upper, lower_vlon, upper_vlon = cf.periodic_error_range(flat_samples[:,1], full_range=360) 
-        print(f'vlon: {lower_vlon} ~ {upper_vlon} \nor {peak_vlon} -{vlon_err_lower} +{vlon_err_upper}')
+        vlon, vlon_err_lower, vlon_err_upper, lower_vlon, upper_vlon = cf.periodic_error_range(flat_samples[:,1], full_range=360) 
+        print(f'vlon: {lower_vlon} ~ {upper_vlon} \nor {vlon} -{vlon_err_lower} +{vlon_err_upper}')
 
         
 

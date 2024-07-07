@@ -475,9 +475,11 @@ def opposite_direction(lon, lat):
     return lon, lat
 
 def opposite_direction_arr(lons, lats):
+    lons_dp = np.empty_like(lons)
+    lats_dp = np.empty_like(lats)
     for i in range(len(lons)):
-        lons[i], lats[i] = opposite_direction(lons[i], lats[i])
-    return lons, lats
+        lons_dp[i], lats_dp[i] = opposite_direction(lons[i], lats[i])
+    return lons_dp, lats_dp
 
 
 def _map_to_dipole_map_(f, mid):
@@ -669,7 +671,7 @@ def find_max_dipole_flow(Glon, Glat, los_v_map, count_map):
 
 
 
-def true_bulk_flow_z(data, method='cluster_average', cone_size=45, n_clusters=313, lon_step=4, lat_step=2):
+def true_bulk_flow_z(data, zrange0=0.03, zrange1=0.16, zstep=0.01, method='cluster_average', cone_size=45, n_clusters=313, lon_step=4, lat_step=2):
     """
     A haphazard function to calculate the bulk flow ubf, vlon, vlat as a function of redshift.
     """
@@ -682,7 +684,7 @@ def true_bulk_flow_z(data, method='cluster_average', cone_size=45, n_clusters=31
     ubfs = []
     vlons = []
     vlats = []
-    for zmax in np.arange(0.03, 0.16, 0.01):
+    for zmax in np.arange(zrange0, zrange1, zstep):
         zmask = (redshift < zmax)
         Glon, Glat, los_v_map, count_map = make_los_v_map(data, zmask, cone_size=cone_size, lon_step=lon_step, lat_step=lat_step)
 
@@ -836,8 +838,11 @@ def read_bulk_flow_bootstrap(bootstrap_file, relation, radian=True, median=True,
             best_vlons[j] = peak_vlon
 
     # Return arrays
+    # best_ubfs = np.array(best_ubfs) # created as an array
+    # best_vlats = np.array(best_vlats) # created as an array
+    best_vlons = np.array(best_vlons) # created as a list
     ubf_lowers = np.array(ubf_lowers)
-    ubf_uppers = np.array(ubf_uppers) 
+    ubf_uppers = np.array(ubf_uppers)
     vlat_lowers = np.array(vlat_lowers)
     vlat_uppers = np.array(vlat_uppers)
     vlon_lowers = np.array(vlon_lowers)
@@ -845,6 +850,8 @@ def read_bulk_flow_bootstrap(bootstrap_file, relation, radian=True, median=True,
 
     # Output radian
     if radian is True:
+        best_vlons *= np.pi/180
+        best_vlats *= np.pi/180
         vlat_lowers *= np.pi/180
         vlat_uppers *= np.pi/180
         vlon_lowers *= np.pi/180
@@ -857,6 +864,30 @@ def read_bulk_flow_bootstrap(bootstrap_file, relation, radian=True, median=True,
 
 
 
+def lonshift(lon, x, radian=True):
+    """
+    For a longitude in (-180, 180) or (-np.pi, np.pi) with `radian=True`, shift
+    it to the positive direction x degree or radian. The output is kept in 
+    (-180, 180) or (-np.pi, np.pi).
+    """
+    if type(lon) == list:
+        lon = np.array(lon)
+    
+    if type(lon) == np.ndarray:
+        lon_ = lon.copy()
+    else:
+        lon_ = lon
+
+    if radian is True:
+        lon_ = (lon + np.pi + x) % (np.pi*2) - np.pi
+    else:
+        lon_ = (lon + 180 + x) % (360) - 180
+
+    return lon_
+        
+        
+
+    
 
 
 
