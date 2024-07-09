@@ -860,6 +860,46 @@ def read_bulk_flow_bootstrap(bootstrap_file, relation, radian=True, median=True,
     return zmaxs, best_ubfs, ubf_lowers, ubf_uppers, best_vlons, vlon_lowers, vlon_uppers, best_vlats, vlat_lowers, vlat_uppers
     
     
+def read_bulk_flow_mcmc(file, relation, radian=True):
+    """
+    Read the output of 7bulk-flow-model-mcmc.py, output in the same form as 
+    `read_bulk_flow_bootstrap()` for easier usage.
+    """
+
+    # Read MCMC file
+    df = pd.read_csv(file)
+    zmaxs = np.array(df['zmax'])
+    zmaxs = np.unique(zmaxs)
+
+    mask = df['scaling_relation']==relation
+
+    # Load the best fits
+    ubfs = np.array(df['ubf'].loc[mask])
+    vlons = np.array(df['vlon'].loc[mask])
+    vlats = np.array(df['vlat'].loc[mask])
+
+    # Load the lower and upper ranges
+    ubf_lowers = np.array(df['ubf_err_lower'].loc[mask])
+    ubf_uppers = np.array(df['ubf_err_upper'].loc[mask])
+
+    vlon_lowers = np.array(df['vlon_err_lower'].loc[mask])
+    vlon_uppers = np.array(df['vlon_err_upper'].loc[mask])
+        
+    vlat_lowers = np.array(df['vlat_err_lower'].loc[mask])
+    vlat_uppers = np.array(df['vlat_err_upper'].loc[mask])
+
+    if radian == True:
+        vlons *= np.pi/180
+        vlats *= np.pi/180
+        vlon_lowers *= np.pi/180
+        vlon_uppers *= np.pi/180
+        vlat_lowers *= np.pi/180
+        vlat_uppers *= np.pi/180
+
+
+
+
+    return zmaxs, ubfs, ubf_lowers, ubf_uppers, vlons, vlon_lowers, vlon_uppers, vlats, vlat_lowers, vlat_uppers
 
 
 
@@ -886,7 +926,6 @@ def lonshift(lon, x, radian=True):
     return lon_
         
         
-
     
 
 
