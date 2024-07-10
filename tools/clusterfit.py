@@ -3,8 +3,8 @@ import numpy as np
 from numba import njit, prange
 import pandas as pd
 import sys
-sys.path.append('/data1/yujiehe/anisotropy-flamingo')
-from tools.constants import *
+sys.path.append('../tools')
+from constants import *
 
 @njit(fastmath=True)
 def E(z, Omega_m=0.306, Omega_L=0.694):
@@ -645,7 +645,7 @@ def find_max_dipole_flow(Glon, Glat, los_v_map, count_map):
         count = count_map[(Glon == lon) & (Glat == lat)]
 
         # get the dipole direction
-        dp_lon, dp_lat = cf.opposite_direction(lon, lat)
+        dp_lon, dp_lat = opposite_direction(lon, lat)
         dp_mask = (Glon == dp_lon) & (Glat == dp_lat)
         dp_los_v = los_v_map[dp_mask]
         dp_count = count_map[dp_mask]
@@ -964,4 +964,57 @@ def periodic_error_range(data, peak_value=None, full_range=360, bins=30):
     upper_err = (upper_value - peak_value) % full_range
     return peak_value, lower_err, upper_err, lower_value, upper_value
     
+
+
+def make_dipole_map(map, lons, lats, central):
+    """
+    Symmetrize a sky map. Works for any resolution as long as the longitudes and
+    latitudes are given, in the same shape as lons and lats.
+    """
+    for j in range(len(map)):
+        lon = lons[j]
+        lat = lats[j]
+        if lat < 0: # only need to do half of the directions
+            continue
+        
+        dp_lon, dp_lat = opposite_direction(lon=lon, lat=lat)
+        # print(dp_lon, dp_lat)
+        H1 = map[j] # query directly by index to save computation, this gives a np.float64 number directly so no need for conversion
+        dp_mask = (lons == dp_lon) & (lats == dp_lat)
+        H2 = map[dp_mask]
+        H2 = float(H2)
+        
+        map[j] = (H1 - H2) / 2 + central
+        map[dp_mask] = (H2 - H1) / 2 + central
+
+    return map
+    
+
+
+
+def find_dipole_in_dipole_map(map, lons, lats):
+    """
+    Identify the most extreme dipole of the given dipole map. For general maps, 
+    use `make_dipole_map()` to symmetrize the map first.
+    """
+
+    maxloc = np.argmax(map)
+    maxlon = lons[maxloc]
+    maxlat = lats[maxloc]
+
+    maxvalue = map[maxloc]
+
+    # sanity check
+    minloc = np.argmin(map)
+    minlon = lons[minloc]
+    minlat = lats[minloc]
+    minvalue = map[minloc]
+    if (minlon, minlat) != opposite_direction(maxlon, maxlat):
+        print('Warning: The minimum is not the opposite direction of the maximum.')
+        print('max:', maxlon, maxlat, 'min', minlon, minlat)
+
+    return maxvalue, minvalue, maxlon, maxlat, maxloc 
+
+
+
 
