@@ -28,7 +28,7 @@ def _logY_(Y, z, CY, gamma, Omega_m=0.306, Omega_L=0.694):
 def logX_(X, relation):
     """ Same as _logX_ but with predifined constants for specific scaling 
     relations. 
-    
+
     Parameters
     ---
     `relation`
@@ -365,7 +365,7 @@ def significance_map(best_fit_file, btstrp_file):
     for i in range(len(df)):
         glon = df['Glon'][i]
         glat = df['Glat'][i]
-        if glat < 0: # only need to do half of the directions # I also skipped glat=90, why?
+        if glat > 0: # only need to do half of the directions # I also skipped glat=90, why?
             continue
         dp_glon = glon + 180 if glon < 0 else glon - 180 # zero to - 180
         dp_glat = - glat
@@ -470,9 +470,19 @@ def angular_separation(lon1, lat1, lon2, lat2):
 @njit(fastmath=True)
 def opposite_direction(lon, lat):
     """ Calculate the opposite direction of a given longitude and latitude. """
-    lon = lon + 180 if lon < 0 else lon - 180
-    lat = - lat
-    return lon, lat
+    dp_lon = lon + 180 if lon < 0 else lon - 180
+    dp_lat = - lat
+
+    # An ad-hoc solution, because the positive 90 deg pole is never reached (we goes from -90 to 88),
+    # there was a bug that the dipole map -90 value is not calculated. We now map
+    # -90 to 88 to solve this. Make sure to iterate over the negative values to 
+    # use it. Or else the -90 deg will still be missed. 
+    if lat == -90: 
+        dp_lat = 88
+    # elif lat == 88:
+    #     dp_lat = -90
+
+    return dp_lon, dp_lat
 
 def opposite_direction_arr(lons, lats):
     lons_dp = np.empty_like(lons)
@@ -497,7 +507,7 @@ def _map_to_dipole_map_(f, mid):
 
     for i in range(8100):
         lon, lat = coord[:, i]
-        if lat < 0: # do only positive directions
+        if lat > 0: # do only positive directions
             continue
 
         # Find the direction
@@ -586,6 +596,31 @@ def scan_qty(lon_c_arr, lat_c_arr, qty_arr, count_arr,
     return lon_c_arr, lat_c_arr, qty_arr, count_arr
 
 
+def make_qty_map(data, qty=str, cone_size=45, lon_step=4, lat_step=2):
+    """
+    Scan and average to make quantity sky map.
+    """
+    # Coordinates
+    lon = data['phi_on_lc']
+    lat = data['theta_on_lc']
+    lon = np.array(lon)
+    lat = np.array(lat)
+
+    # Allocate memory
+    n_steps = 360//lon_step * 180//lat_step
+    qty_arr   = np.zeros(n_steps)
+    lon_c_arr = np.zeros(n_steps)
+    lat_c_arr = np.zeros(n_steps)
+    count_arr = np.zeros(n_steps)
+
+    # Quantity
+    qty = np.array(data[qty])
+
+    # Scan
+    Glon, Glat, qty_map, count_map = scan_qty(lon_c_arr, lat_c_arr, qty_arr, count_arr,
+                                    lon, lat, qty, cone_size, lon_step, lat_step, cos_weight=True)
+    return Glon, Glat, qty_map, count_map
+
 
 
 def make_los_v_map(data, zmask, cone_size=45, lon_step=4, lat_step=2):
@@ -637,7 +672,7 @@ def find_max_dipole_flow(Glon, Glat, los_v_map, count_map):
     # Find the maximum dipole flow
     max_ubf_dp = 0
     for lon, lat in zip(Glon, Glat):
-        if lon < 0: # only do half of the sky
+        if lon > 0: # only do half of the sky
             continue
 
         # current direction
@@ -974,10 +1009,16 @@ def make_dipole_map(map, lons, lats, central):
     for j in range(len(map)):
         lon = lons[j]
         lat = lats[j]
-        if lat < 0: # only need to do half of the directions
+        
+        if lat > 0: # only need to do half of the directions
             continue
         
         dp_lon, dp_lat = opposite_direction(lon=lon, lat=lat)
+
+        if lat == -90:
+            map[j] = central
+            continue
+
         # print(dp_lon, dp_lat)
         H1 = map[j] # query directly by index to save computation, this gives a np.float64 number directly so no need for conversion
         dp_mask = (lons == dp_lon) & (lats == dp_lat)

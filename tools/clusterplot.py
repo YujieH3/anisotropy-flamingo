@@ -4,7 +4,7 @@ plt.style.use('./nice.mplstyle')
 from mpl_toolkits.basemap import Basemap
 
 
-def _sky_map_(f, colorbar_label, ax=None, **kwargs):
+def _sky_map_(f, colorbar_label, ax=None, cmap='magma', **kwargs):
     """Plot the sky map of the given function f. This is an internal helper function
     because f only support 4 deg longitude resolution and 2 deg latitude resolution.
     """
@@ -29,8 +29,8 @@ def _sky_map_(f, colorbar_label, ax=None, **kwargs):
     f = f.reshape(90, 90).T
 
     # Plot the color map
-    im = m.imshow(f,  extent=[-180, 180, -90, 90],
-                cmap='magma', ax=ax, **kwargs)
+    im = m.imshow(f,  extent=[-180, 180, -90, 90],cmap=cmap,
+                 ax=ax, **kwargs)
 
     # Colorbar
     plt.colorbar(im, label=colorbar_label)

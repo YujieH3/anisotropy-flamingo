@@ -7,8 +7,10 @@ import pandas as pd
 import datetime
 
 # --------------------------------CONFIGURATION---------------------------------
-input_file = '/data1/yujiehe/data/samples-lightcone0-clean.csv'
-output_dir = '/data1/yujiehe/data/fits'
+
+lc = 0
+input_file = f'../data/samples_in_lightcone{lc}_with_trees_duplicate_excision_outlier_excision.csv'
+output_dir = '../data/fits'
 
 n_threads = 20
 relations = ['LX-T', 'YSZ-T', 'M-T', 'LX-YSZ', 'LX-M', 'YSZ-M'] # pick from 'LX-T', 'M-T', 'LX-YSZ', 'LX-M', 'YSZ-M', 'YSZ-T'
@@ -33,6 +35,26 @@ cone_size = 60
 
 # ------------------------------------------------------------------------------
 
+import argparse
+
+# Create the parser
+parser = argparse.ArgumentParser(description='Physical properties correlation')
+
+# Add arguments
+parser.add_argument('-i', '--input', type=str, help='Input file path', default=input_file)
+parser.add_argument('-o', '--output', type=str, help='Output directory', default=output_dir)
+parser.add_argument('-n', '--threads', type=int, help='Number of threads', default=n_threads)
+
+# Parse the arguments
+args = parser.parse_args()
+input_file = args.input
+output_dir = args.output
+n_threads = args.threads
+
+
+
+
+# 
 @njit(fastmath=True, parallel=True)
 def nbloops(logY_, logX_, n_cone, scaling_relation,
             sample_T, sample_LX, sample_YSZ, sample_M,
@@ -53,7 +75,8 @@ def nbloops(logY_, logX_, n_cone, scaling_relation,
     sample_logflux = np.log10(sample_flux) # Use log average for flux
 
     for i in prange(n_bootstrap):
-        idx = np.random.choice(n_cone, size=n_cone, replace=True)
+        #idx = np.random.choice(n_cone, size=n_cone, replace=True) # !!!!!!!!!!!!THIS IS VERY WRONG!!!!!!
+        idx = np.random.choice(len(logY_), size=n_cone, replace=True)
         bootstrap_logY_  = logY_[idx]
         bootstrap_logX_  = logX_[idx]
 
@@ -124,7 +147,7 @@ if __name__ == '__main__':
         sample_LX        = np.array(data_cut[cf.COLUMNS['LX']])
         sample_YSZ       = np.array(data_cut[cf.COLUMNS['YSZ']])
         sample_M         = np.array(data_cut[cf.COLUMNS['M']])
-        sample_LcoreLtot = np.array(data_cut['Lcore/Ltot'])
+        sample_LcoreLtot = np.array(data_cut['2DLcore/Ltot'])
         sample_flux      = np.array(data_cut['Flux'])
         sample_z_obs     = np.array(data_cut['ObservedRedshift'])
 
@@ -137,7 +160,7 @@ if __name__ == '__main__':
         )
 
         # Save the results
-        output_file = f'{output_dir}/physical-properties-corr-{scaling_relation}-{cone_size}deg.csv'
+        output_file = f'{output_dir}/physical-properties-corr-{scaling_relation}-{cone_size}deg-lc{lc}.csv'
         results = pd.DataFrame({
             'logA'            : logA,
             'B'               : B,
