@@ -1,6 +1,6 @@
 import sys
-sys.path.append('/home/yujiehe/anisotropy-flamingo')
-import tools.clusterfit as cf
+sys.path.append('../tools/')
+import clusterfit as cf
 import numpy as np
 from numba import njit, prange, set_num_threads
 import pandas as pd
@@ -134,6 +134,9 @@ if __name__ == '__main__':
         Y = data_cut[cf.COLUMNS[scaling_relation[:_  ]]]
         X = data_cut[cf.COLUMNS[scaling_relation[_+1:]]]
         z = data_cut['ObservedRedshift']
+        Y = np.array(Y)
+        X = np.array(X)
+        z = np.array(z)
 
         logY_ = cf.logY_(Y, z=z, relation=scaling_relation)
         logX_ = cf.logX_(X, relation=scaling_relation)
