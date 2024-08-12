@@ -583,7 +583,7 @@ def scan_qty(lon_c_arr, lat_c_arr, qty_arr, count_arr,
                 weight = np.ones(n_clusters)
 
             # Weighted mean
-            result = np.sum(cone_qty*weight)/np.sum(mask)
+            result = np.sum(cone_qty*weight)/np.sum(weight) # This should be right
 
             # Output
             lon_c_arr[idx] = lon_c
