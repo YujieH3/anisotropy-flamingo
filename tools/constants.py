@@ -49,7 +49,42 @@ CONST = {
         'gamma': -2/3,
         'N'    : 300, # temporary
     },
+    }
+
+
+def gamma_to_str(gamma):
+    if gamma == 1:
+        return ''
+    elif gamma == -8/5:
+        return '-8/5'
+    elif gamma == -2/3:
+        return '-2/3'
+    else:
+        return str(gamma)
+
+labels = {
+    'LX-T': {
+        'label': '$L_\\mathrm{{X}}-T$',
+    },
+    'YSZ-T': {
+        'label': '$Y_\\mathrm{{SZ}}-T$'
+    },
+    'M-T': {
+        'label': '$M_\\mathrm{{gas}}-T$'
+    },
+    'LX-YSZ': {
+        'label':'$L_\\mathrm{{X}}-Y_\\mathrm{{SZ}}$'  
+    },
+    'LX-M': {
+        'label':'$L_\\mathrm{{X}}-M_\\mathrm{{gas}}$'
+        
+    },
+    'YSZ-M': {
+        'label':'Y_\\mathrm{{SZ}}-M_\\mathrm{{gas}}'
+        
+    },
 }
+
 
 # Global variables for function get_const(). Using of dict have to be outside of the function.
 NAMES = list(CONST.keys())
