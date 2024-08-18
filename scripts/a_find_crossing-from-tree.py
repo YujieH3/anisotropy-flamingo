@@ -11,9 +11,9 @@ galaxies, and to save disk space.
 import h5py
 import pandas as pd # Use pandas' simple I/O
 import numpy as np
-import tqdm
+from tqdm import tqdm
 
-REDSHIFT_RANGE = 0.3
+REDSHIFT_RANGE = 0.25
 MERGER_TREE_FILE = '/data2/FLAMINGO/L1000N1800/HYDRO_FIDUCIAL/merger_trees/vr_trees.hdf5'
 OUTPUT = '/data1/yujiehe/data/halo_crossing.hdf5'
 OBSERVER_NUM = 0
@@ -35,7 +35,7 @@ def is_light_like(z, r, cosmo):
     light-like = (cdt/a(t))^2 > (dr)^2
     space-like = (cdt/a(t))^2 < (dr)^2
     """
-    flags = (cosmo.comoving_distance(z) > r)  # Bool or a list of bool
+    flags = (cosmo.comoving_distance(z).value > r)  # Bool or a list of bool
 
     return flags
 
@@ -61,7 +61,7 @@ snapshot_names = snapshot_names[::-1] # In reversed order, redshift 0, snapshot 
 # Create/Open hdf5 file, and create group for the observer
 f0 = h5py.File(OUTPUT, 'a')
 observer_name = f'observer{OBSERVER_NUM}'
-f0.create_group(observer_name)
+f0.require_group(observer_name)
 
 # Save the observer coordinates, in Mpc
 f = f0[observer_name] # We only do one observer at a time
@@ -70,16 +70,15 @@ f.attrs['Yobserver'] = Yobserver
 f.attrs['Zobserver'] = Zobserver
 
 # Create groups for lightlike and spacelike
-f.create_group('lightlike')
-f.create_group('spacelike')
+f.require_group('lightlike')
+f.require_group('spacelike')
 f_lightlike = f['lightlike']
 f_spacelike = f['spacelike']
 
 
 # Initialize
 redshift = 0.0
-for i in range(snapshot_names):
-    snap0 = snapshot_names[i]       # snapshot with redshift z
+for i, snap0 in tqdm(enumerate(snapshot_names)):
     snap1 = snapshot_names[i + 1]   # snapshot with redshift z + 0.05
     print(snap0, snap1)                    # log
 
@@ -98,15 +97,16 @@ for i in range(snapshot_names):
     
 
     # Go to SOAP find the GalaxyID of the clusters in a catalogue
-    galaxy_ids0 = merger_tree['SOAP/' + snap0][:] 
+    galaxy_ids0 = merger_tree['SOAP/' + snap0][:] + 1
 
     # Also the SOAP ids, soap ids are array indices in the SOAP catalogue, starts from 0.
     soap_ids0 = np.arange(len(galaxy_ids0))
     
     # Sanity check if the galaxy ids & soap ids are matching
-    assert merger_tree['Subhalo/ID'][:][galaxy_ids0 - 1] - 1 == soap_ids0 # The Subhalo/ID is 1 + the SOAP id (array index in the SOAP catalogue)
+    print(np.sum(merger_tree['Subhalo/ID'][:][galaxy_ids0 - 1] -1 - soap_ids0))
+    assert np.sum(merger_tree['Subhalo/ID'][:][galaxy_ids0 - 1] -1 - soap_ids0) == 0 # The Subhalo/ID is 1 + the SOAP id (array index in the SOAP catalogue)
     print('SOAP ids and Galaxy ids matched.')
-
+ 
     # Retrieve the galaxy id of the last progenitor
     last_prog_galaxy_ids0 = merger_tree['MergerTree/LastProgID'][:][galaxy_ids0 - 1] # beware that galaxy ids start from 1
     top_leaf_ids0 = merger_tree['MergerTree/TopLeafID'][:][galaxy_ids0 - 1]
@@ -153,7 +153,7 @@ for i in range(snapshot_names):
 
     # If the first snapshot is lightlike and the second is spacelike, the halo 
     # has crossed the lightcone in between the snapshots and we save the properties.
-    halo_crossed = (lightlike_mask0 - lightlike_mask1) > 0
+    halo_crossed = (lightlike_mask0 is True) & (lightlike_mask1 is False)
     halo_crossed_count = np.sum(halo_crossed)
     print(f'Object crossed: {halo_crossed_count}')
 
@@ -174,8 +174,8 @@ for i in range(snapshot_names):
     print(f'Object crossed: {halo_crossed_count}')
 
     # Save the properties
-    f_lightlike.create_group(snap0)
-    f_spacelike.create_group(snap1)
+    f_lightlike.require_group(snap0)
+    f_spacelike.require_group(snap1)
     f_lightlike_snap0 = f_lightlike[snap0]
     f_spacelike_snap1 = f_spacelike[snap1]
 
