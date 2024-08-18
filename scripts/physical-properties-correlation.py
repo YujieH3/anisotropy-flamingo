@@ -1,6 +1,6 @@
 import sys
-sys.path.append('/home/yujiehe/anisotropy-flamingo')
-import tools.clusterfit as cf
+sys.path.append('../tools/')
+import clusterfit as cf
 import numpy as np
 from numba import njit, prange, set_num_threads
 import pandas as pd
@@ -44,14 +44,19 @@ parser = argparse.ArgumentParser(description='Physical properties correlation')
 parser.add_argument('-i', '--input', type=str, help='Input file path', default=input_file)
 parser.add_argument('-o', '--output', type=str, help='Output directory', default=output_dir)
 parser.add_argument('-n', '--threads', type=int, help='Number of threads', default=n_threads)
+parser.add_argument('-s', '--conesize', type=int, help='Cone size in degrees', default=cone_size)
 
 # Parse the arguments
 args = parser.parse_args()
 input_file = args.input
 output_dir = args.output
 n_threads = args.threads
+cone_size = args.conesize
 
-
+# Find the lightcone number from the input file name. This is useful when you need different things for two lightcones.
+loc = input_file.find('lightcone')
+lc = input_file[loc+9]
+lc = int(lc)
 
 
 # 
@@ -110,7 +115,7 @@ if __name__ == '__main__':
     cluster_data = pd.read_csv(input_file)
 
     t00 = datetime.datetime.now()
-    print(f'[{t00}] Begin scanning: {relations} in {cone_size}°.')
+    print(f'[{t00}] Begin scanning: {relations} in {cone_size}.')
     print(f'Threads: {n_threads}')
 
     for scaling_relation in cf.CONST.keys():
@@ -125,7 +130,7 @@ if __name__ == '__main__':
 
         # Prepare the data, convert to logX_, logY_. Requires redshift for logY_
         t0 = datetime.datetime.now()
-        print(f'[{t0}] Scanning full sky: {scaling_relation}')
+        print(f'[{t0}] Running: {scaling_relation}')
         n_clusters = cf.CONST[scaling_relation]['N']
 
         data_cut = cluster_data[:n_clusters] # only use the first N clusters
@@ -134,20 +139,29 @@ if __name__ == '__main__':
         Y = data_cut[cf.COLUMNS[scaling_relation[:_  ]]]
         X = data_cut[cf.COLUMNS[scaling_relation[_+1:]]]
         z = data_cut['ObservedRedshift']
+        Y = np.array(Y)
+        X = np.array(X)
+        z = np.array(z)
 
         logY_ = cf.logY_(Y, z=z, relation=scaling_relation)
         logX_ = cf.logX_(X, relation=scaling_relation)
 
-        if cone_size == 60:
-            n_cone = round(n_clusters / 4)
-        else:
-            raise ValueError('Only support 60 deg cone size for now.')
+        # Average number of clusters in a cone, calculated by integration
+        n_cone = n_clusters * 1/2 * (1 - np.cos(cone_size*np.pi/180))
+        n_cone = round(n_cone)
+#        if cone_size == 60:
+#            n_cone = round(n_clusters / 4)
+#        else:
+#            raise ValueError('Only support 60 deg cone size for now.')
 
         sample_T         = np.array(data_cut[cf.COLUMNS['T']])
         sample_LX        = np.array(data_cut[cf.COLUMNS['LX']])
         sample_YSZ       = np.array(data_cut[cf.COLUMNS['YSZ']])
         sample_M         = np.array(data_cut[cf.COLUMNS['M']])
-        sample_LcoreLtot = np.array(data_cut['2DLcore/Ltot'])
+        if lc == 0:
+            sample_LcoreLtot = np.array(data_cut['2DLcore/Ltot'])
+        elif lc == 1:
+            sample_LcoreLtot = np.array(data_cut['3DLcore/Ltot'])
         sample_flux      = np.array(data_cut['Flux'])
         sample_z_obs     = np.array(data_cut['ObservedRedshift'])
 
