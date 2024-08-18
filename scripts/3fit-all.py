@@ -10,7 +10,7 @@ from numba import set_num_threads
 
 # --------------------------------CONFIGURATION---------------------------------
 # NOTE outliers should be removed from the dataset before running the script.
-InputFile = '/data1/yujiehe/data/samples-lightcone0-clean.csv'
+InputFile = '/data1/yujiehe/data/samples_in_lightcone0_with_trees_duplicate_excision_outlier_excision.csv'
 OutputFilePrefix = '/data1/yujiehe/data/fits/bootstrap'
 
 Nthreads = 4
