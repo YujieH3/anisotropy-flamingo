@@ -91,14 +91,14 @@ for observer in list(fin.keys()):
         galaxy_ids0 = crossing_spacelike[snap_name0]['GalaxyID'][:]
         top_leaf_ids0 = crossing_spacelike[snap_name0]['TopLeafID'][:]
         soap_ids0 = crossing_spacelike[snap_name0]['SOAPID'][:]
-        M_fof0 = crossing_spacelike[snap_name0]['M_fof'][:]
+        M_fof0 = crossing_spacelike[snap_name0]['Mass_tot'][:]
         snap_num0_arr = np.full(len(galaxy_ids0), snap_num0)
 
         # Load the last snapshot (higher redshift)
         galaxy_ids1 = crossing_lightlike[snap_name1]['GalaxyID'][:]
         top_leaf_ids1 = crossing_lightlike[snap_name1]['TopLeafID'][:]
         soap_ids1 = crossing_lightlike[snap_name1]['SOAPID'][:]
-        M_fof1 = crossing_lightlike[snap_name1]['M_fof'][:]
+        M_fof1 = crossing_lightlike[snap_name1]['Mass_tot'][:]
         snap_num1_arr = snap_num0_arr - 1
 
         Xcminpot1 = crossing_lightlike[snap_name1]['Xcminpot'][:]
@@ -133,7 +133,7 @@ for observer in list(fin.keys()):
         to_save['theta_on_lc'] = theta_lc
  
 
-        # Interpolate the properties. For now we just use the properties from the nearest snapshot.
+        # Interpolate SOAP properties. For now we just use the properties from the nearest snapshot.
         for key in to_save_tmp.keys():
             to_save[key] = np.where(use_current_snapshot, to_save[key], to_save_tmp[key])
 
