@@ -76,7 +76,7 @@ for observer in list(f.keys()):
         f_lightlike_snap1.write_dataset('MfofSOAP', data=cat["FOFSubhaloProperties/TotalMass"][:][soapid1])
         f_lightlike_snap1.write_dataset('M500', data=cat['SO/500_crit/TotalMass'][:][soapid1]) 
         f_lightlike_snap1.write_dataset('GasMass', data=cat['SO/500_crit/GasMass'][:][soapid1])
-        f_lightlike_snap1.write_dataset('LX0WIthoutRecentAGNHeating', data=cat['SO/500_crit/XRayLuminosityWithoutRecentAGNHeating'][:,0][soapid1]) # eRosita 0.2-2.3 keV band
+        f_lightlike_snap1.write_dataset('LX0WithoutRecentAGNHeating', data=cat['SO/500_crit/XRayLuminosityWithoutRecentAGNHeating'][:,0][soapid1]) # eRosita 0.2-2.3 keV band
         f_lightlike_snap1.write_dataset('LX0WithoutRecentAGNHeatingCoreExcision', data=cat['SO/500_crit/XRayLuminosityWithoutRecentAGNHeatingCoreExcision'][:,0][soapid1])
         f_lightlike_snap1.write_dataset('LX0InRestframeWithoutRecentAGNHeating', data=cat['SO/500_crit/XRayLuminosityInRestframeWithoutRecentAGNHeating'][:,0][soapid1])
         f_lightlike_snap1.write_dataset('LX0InRestframeWithoutRecentAGNHeatingCoreExcision', data=cat['SO/500_crit/XRayLuminosityInRestframeWithoutRecentAGNHeatingCoreExcision'][:,0][soapid1])

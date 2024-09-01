@@ -17,8 +17,10 @@ with h5py.File(INPUT, 'a') as fout:
                 df = pd.read_hdf(INPUT, f'{observer}/{snapshot_name}')
             else:
                 df = pd.concat([df, pd.read_hdf(INPUT, f'{observer}/{snapshot_name}')])
-        df.to_hdf(fout, key=f'{observer}', mode='a')
+        df.to_hdf(INPUT, key=f'{observer}', mode='a')
 
-        # remove the individual snapshots
+        # remove groups for individual snapshots; deletion on disc will be registered at fout.close()
         for snapshot_name in list(fout[observer].keys()):
             del fout[f'{observer}/{snapshot_name}']
+
+fout.close()

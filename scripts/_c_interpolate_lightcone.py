@@ -44,24 +44,24 @@ for observer in list(fin.keys()):
     print(f'Processing {observer}')
     
     # The observer group, in which there are lightlike and spacelike groups
-    crossing_observer = fin[observer]
+    f_lightcone = fin[observer]
 
     # The output observer group
     fout.require_group(observer)
-    halo_cat_group = fout[observer]
+    fout_lightcone = fout[observer]
 
-    # Copy the observer coordinates.
-    halo_cat_group.attrs['Xobserver'] = crossing_observer.attrs['Xobserver']
-    halo_cat_group.attrs['Yobserver'] = crossing_observer.attrs['Yobserver']
-    halo_cat_group.attrs['Zobserver'] = crossing_observer.attrs['Zobserver']
+    # Copy the observer coordinates in attrs
+    fout_lightcone.attrs['Xobs'] = f_lightcone.attrs['Xobs']
+    fout_lightcone.attrs['Yobs'] = f_lightcone.attrs['Yobs']
+    fout_lightcone.attrs['Zobs'] = f_lightcone.attrs['Zobs']
 
     # The lightlike and spacelike groups of input
-    crossing_lightlike = crossing_observer['lightlike'] # Before crossing
-    crossing_spacelike = crossing_observer['spacelike'] # After crossing
+    f_lightlike = f_lightcone['lightlike'] # Before crossing
+    f_spacelike = f_lightcone['spacelike'] # After crossing
     
     # Loop over the snapshots
     redshift = 0.0
-    for snap_name0 in reversed(list(crossing_spacelike.keys())):
+    for snap_name0 in reversed(list(f_spacelike.keys())):
         # The dictionary to save the data for each snapshot
         to_save = {}
         to_save_tmp = {}
@@ -74,10 +74,16 @@ for observer in list(fin.keys()):
         # For each snapshot, we get all quantities from the crossing data
         # and the SOAP catalogue, and interpolate the crossing time mainly.
 
-        # Get from the crossing data       
-        Xcminpot0 = crossing_spacelike[snap_name0]['Xcminpot'][:]
-        Ycminpot0 = crossing_spacelike[snap_name0]['Ycminpot'][:]
-        Zcminpot0 = crossing_spacelike[snap_name0]['Zcminpot'][:]
+        # Get from the crossing data
+        Xcminpot0 = f_spacelike[snap_name0]['Xcminpot'][:]
+        Ycminpot0 = f_spacelike[snap_name0]['Ycminpot'][:]
+        Zcminpot0 = f_spacelike[snap_name0]['Zcminpot'][:]
+
+
+        # get out of the loop if low number of clusters identified
+        if len(Xcminpot0) == 0:
+            continue
+
 
         # Get the crossing redshift with the later snapshot 
         r = (Xcminpot0**2 + Ycminpot0**2 + Zcminpot0**2)**0.5
@@ -87,23 +93,29 @@ for observer in list(fin.keys()):
         use_current_snapshot = redshift_lc < redshift + 0.025
 
 
+
         # Load the current snapshot
-        galaxy_ids0 = crossing_spacelike[snap_name0]['GalaxyID'][:]
-        top_leaf_ids0 = crossing_spacelike[snap_name0]['TopLeafID'][:]
-        soap_ids0 = crossing_spacelike[snap_name0]['SOAPID'][:]
-        M_fof0 = crossing_spacelike[snap_name0]['Mass_tot'][:]
+        galaxy_ids0 = f_spacelike[snap_name0]['GalaxyID'][:]
+        top_leaf_ids0 = f_spacelike[snap_name0]['TopLeafID'][:]
+        soap_ids0 = f_spacelike[snap_name0]['SOAPID'][:]
+        M_fof0 = f_spacelike[snap_name0]['Mass_tot'][:]
         snap_num0_arr = np.full(len(galaxy_ids0), snap_num0)
 
+
+
+
         # Load the last snapshot (higher redshift)
-        galaxy_ids1 = crossing_lightlike[snap_name1]['GalaxyID'][:]
-        top_leaf_ids1 = crossing_lightlike[snap_name1]['TopLeafID'][:]
-        soap_ids1 = crossing_lightlike[snap_name1]['SOAPID'][:]
-        M_fof1 = crossing_lightlike[snap_name1]['Mass_tot'][:]
+        galaxy_ids1 = f_lightlike[snap_name1]['GalaxyID'][:]
+        top_leaf_ids1 = f_lightlike[snap_name1]['TopLeafID'][:]
+        soap_ids1 = f_lightlike[snap_name1]['SOAPID'][:]
+        M_fof1 = f_lightlike[snap_name1]['Mass_tot'][:]
         snap_num1_arr = snap_num0_arr - 1
 
-        Xcminpot1 = crossing_lightlike[snap_name1]['Xcminpot'][:]
-        Ycminpot1 = crossing_lightlike[snap_name1]['Ycminpot'][:]
-        Zcminpot1 = crossing_lightlike[snap_name1]['Zcminpot'][:]
+        Xcminpot1 = f_lightlike[snap_name1]['Xcminpot'][:]
+        Ycminpot1 = f_lightlike[snap_name1]['Ycminpot'][:]
+        Zcminpot1 = f_lightlike[snap_name1]['Zcminpot'][:]
+
+
 
 
 
@@ -119,27 +131,33 @@ for observer in list(fin.keys()):
         soap_ids = np.where(use_current_snapshot, soap_ids0, soap_ids1)
         snap_num_arr = np.where(use_current_snapshot, snap_num0_arr, snap_num1_arr)
 
+
+
+
         # Interpolate lightcone quantities: coordiantes, redshift, mass_fof
-        to_save['redshift'] = redshift_lc
-        to_save['GalaxyID'] = np.where(use_current_snapshot, galaxy_ids0, galaxy_ids1)
-        to_save['TopLeafID'] = np.where(use_current_snapshot, top_leaf_ids0, top_leaf_ids1)
-        to_save['SOAPID'] = soap_ids
-        to_save['snap_num'] = snap_num_arr
-        to_save['M_fof_lc'] = np.where(use_current_snapshot, M_fof0, M_fof1)
-        to_save['x_lc'] = Xcminpot
-        to_save['y_lc'] = Ycminpot
-        to_save['z_lc'] = Zcminpot
-        to_save['phi_on_lc'] = phi_lc
+        to_save['redshift']    = redshift_lc
+        to_save['GalaxyID']    = np.where(use_current_snapshot, galaxy_ids0, galaxy_ids1)
+        to_save['TopLeafID']   = np.where(use_current_snapshot, top_leaf_ids0, top_leaf_ids1)
+        to_save['SOAPID']      = soap_ids
+        to_save['snap_num']    = snap_num_arr
+        to_save['M_fof_lc']    = np.where(use_current_snapshot, M_fof0, M_fof1)
+        to_save['x_lc']        = Xcminpot
+        to_save['y_lc']        = Ycminpot
+        to_save['z_lc']        = Zcminpot
+        to_save['phi_on_lc']   = phi_lc
         to_save['theta_on_lc'] = theta_lc
  
 
         # Interpolate SOAP properties. For now we just use the properties from the nearest snapshot.
-        for key in to_save_tmp.keys():
-            to_save[key] = np.where(use_current_snapshot, to_save[key], to_save_tmp[key])
+        for key in f_spacelike[snap_name0].keys():
+            if key not in ['GalaxyID', 'SOAPID', 'TopLeafID', 'Mass_tot', 'Xcminpot', 'Ycminpot', 'Zcminpot', 'redshift']:
+                to_save[key] = np.where(use_current_snapshot, f_spacelike[snap_name0][key][:], f_lightlike[snap_name1][key][:])
 
-        # Save the data
-        df = pd.DataFrame(to_save)
-        df.to_hdf(halo_cat_group, key=snap_name0, mode='a')
+
+        # Save the data under temp group name like 'Snapshot0077Snapshot0076'
+        fout_lightcone.create_group(snap_name0+snap_name1)
+        for key, value in to_save.items():
+            fout_lightcone[snap_name0+snap_name1].create_dataset(name=key, data=value)
 
         redshift += 0.05
 
