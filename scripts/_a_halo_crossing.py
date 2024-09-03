@@ -16,7 +16,7 @@ import numpy as np
 
 # on hypernova
 MERGER_TREE_FILE = '/data2/FLAMINGO/L1000N1800/HYDRO_FIDUCIAL/merger_trees/vr_trees.hdf5'
-OUTPUT = '/data1/yujiehe/data/halo_crossing.hdf5'
+OUTPUT = '/data1/yujiehe/data/mock_lightcone/halo_lightcone_catalogue/halo_crossing.hdf5'
 MAX_REDSHIFT = 0.25 # max redshift considered
 
 L = 1000   # simulation box size in comoving Mpc (cMpc)

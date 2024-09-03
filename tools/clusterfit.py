@@ -5,6 +5,10 @@ import pandas as pd
 import sys
 sys.path.append('../tools')
 from constants import *
+import h5py
+
+
+
 
 @njit(fastmath=True)
 def E(z, Omega_m=0.306, Omega_L=0.694):
@@ -1056,6 +1060,34 @@ def find_dipole_in_dipole_map(map, lons, lats):
 
     return maxvalue, minvalue, maxlon, maxlat, maxloc 
 
+
+
+def load_lightcone(filename, lightcone_num):
+    """
+    Return the observers x, y, z coord in cMpc, and a dataset containing
+    the list of halo properties.
+
+    Note
+    --
+    The coordinates here ranges from 0 to L instead of -L/2 to L/2, different to 
+    """
+    dict = {}
+    with h5py.File(filename, 'r') as f:
+        lc = f'lightcone{lightcone_num:04d}'
+        for qty_key, qty_dataset in f[lc].items():
+            if qty_key in dict.keys():
+                dict[qty_key] = np.concatenate((dict[qty_key], qty_dataset[:]))
+            else:
+                dict[qty_key] = qty_dataset[:]
+
+        Xobs = f[lc].attrs['Xobs']
+        Yobs = f[lc].attrs['Yobs']
+        Zobs = f[lc].attrs['Zobs']
+
+    # for output
+    XYZobs = np.array([Xobs, Yobs, Zobs])
+    catalogue = pd.DataFrame(dict)
+    return XYZobs, catalogue
 
 
 

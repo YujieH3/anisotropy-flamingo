@@ -4,23 +4,26 @@ Join the output of _c_interpolate_lightcone.py into a halo_lightcone file linked
 """
 import h5py
 import pandas as pd
-INPUT = '/data1/yujiehe/data/halo_properties_in_lightcones.hdf5'
+import numpy as np
+INPUT = '/data1/yujiehe/data/mock_lightcone/halo_lightcone_catalogue/halo_properties_in_lightcones.hdf5'
 
 
+dict = {}
+with h5py.File(INPUT, 'a') as f:
+    for obs_name, obs_group in f.items():
+        print(obs_name, obs_group)
+        for snap_name, snap_group in obs_group.items():
+            print(snap_name, snap_group)
+            for qty_key, qty_dataset in snap_group.items():
+                if qty_key in dict.keys():
+                    dict[qty_key] = np.concatenate((dict[qty_key], qty_dataset[:]))
+                else:
+                    dict[qty_key] = qty_dataset[:]
+            
+            del f[f'{obs_name}/{snap_name}'] # del snap_group won't work
 
-with h5py.File(INPUT, 'a') as fout:
-    for observer in list(fout.keys()):
+        for save_key, save_data in dict.items():
+            obs_group.create_dataset(name=save_key, data=save_data)
+        
+print('Lightcone combined.') 
 
-        # combine all snapshots to one catalogue
-        for i, snapshot_name in enumerate(fout[observer].keys()):
-            if i == 0:
-                df = pd.read_hdf(INPUT, f'{observer}/{snapshot_name}')
-            else:
-                df = pd.concat([df, pd.read_hdf(INPUT, f'{observer}/{snapshot_name}')])
-        df.to_hdf(INPUT, key=f'{observer}', mode='a')
-
-        # remove groups for individual snapshots; deletion on disc will be registered at fout.close()
-        for snapshot_name in list(fout[observer].keys()):
-            del fout[f'{observer}/{snapshot_name}']
-
-fout.close()

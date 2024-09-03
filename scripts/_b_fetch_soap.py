@@ -7,7 +7,7 @@ import os
 from tqdm import tqdm
 
 SOAP_DIR = '/data2/FLAMINGO/L1000N1800/HYDRO_FIDUCIAL/SOAP/'
-INPUT = '/data1/yujiehe/data/halo_crossing.hdf5'
+INPUT = '/data1/yujiehe/data/mock_lightcone/halo_lightcone_catalogue/halo_crossing.hdf5'
 
 # monkey patch a method to overwrite dataset if already exists and create new if doesn't
 def write_dataset(self, name, data):

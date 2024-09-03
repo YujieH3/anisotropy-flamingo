@@ -25,10 +25,12 @@
 
 import pandas as pd
 import sys
-sys.path.append('/home/yujiehe/anisotropy-flamingo')
+sys.path.append('/data1/yujiehe/anisotropy-flamingo')
 from tools.xray_correct import *
+from tools.clusterfit import load_lightcone
 import numpy as np
 import argparse
+import h5py
 
 # ---------------COMMAND LINE ARGUMENTS-----------------------------------------
 import argparse
@@ -39,6 +41,7 @@ parser = argparse.ArgumentParser(description="Make flux and latitude cut and mak
 # Add arguments
 parser.add_argument('-i', '--input', type=str, help='Input file path')
 parser.add_argument('-o', '--output', type=str, help='Output file path', default=None)
+parser.add_argument('-n', '--observer_num', type=int, help='Observer index', default=-1)
 
 # Parse the arguments
 args = parser.parse_args()
@@ -46,18 +49,13 @@ args = parser.parse_args()
 # Now you can use the arguments
 input = args.input
 output = args.output
+obs_num = args.observer_num
 
 if output is None:
     output = input.replace('.hdf5', '.csv')
     output = output.replace('halo_properties_in_', 'samples_in_')
 
 # ----------------CONFIGURATION-------------------------------------------------
-
-# # Input file is the conbination of lightcone and the SOAP catalog
-# input = '/data1/yujiehe/data/halo_properties_in_PLANCK_lightcone0.hdf5'
-
-# # Output
-# output = '/data1/yujiehe/data/samples-PLANCK-lightcone0.csv'
 
 # Save only larger than this flux
 flux_cut = 5e-12
@@ -78,18 +76,39 @@ class Columns:
 
 print(f'Input data: {input}')
 
+
+# determine if the data is mock lightcone or real halo lightcone
+# the data structure is different.
+mode = 'real' # real or mock
+with h5py.File(input, 'r') as f:
+    if list(f.keys())[0] != 'lightcone':
+        mode = 'mock'
+if mode == 'mock' and obs_num == -1:
+    raise ValueError('Wrong input file or no observer index provided.')
+elif mode == 'real' and obs_num != -1:
+    raise ValueError('No observer index should be provided if working on halo lightcone catalogue.')
+
+
 # Load data
-data = pd.read_hdf(input, 'lightcone')
+if mode == 'real':
+    data = pd.read_hdf(input, 'lightcone')
+elif mode == 'mock':
+    obs_coord, data = load_lightcone(input, lightcone_num=obs_num)
+    print(f'Lightcone: {obs_num}')
+    print(f'Observer located at: {obs_coord} cMpc')
+
 Noriginal = len(data)
 
 # Drop duplicates, keep the lowest redshift one
 data.sort_values(by='redshift', inplace=True)
 data = data.drop_duplicates(subset=['SOAPID', 'snap_num'], keep='first') 
 # Update Mar 13 2024, SOAP IDs are not unique, now we only drop duplicates if it's from the same snapshot.
-# This way we removed the absolutely same clusters, but did not remove the same cluster at different redshifts.
+# This way we removed the absolutely same clusters, but does not remove the same cluster at different redshifts.
+# the latter is done by a separate script
 
 # Unit conversion
-data[Columns.GasT]      /= 11604525 # temperature unit Kelvin to keV
+if Columns.GasT in list(data.keys()):
+    data[Columns.GasT]      /= 11604525 # temperature unit Kelvin to keV
 data[Columns.SpecT]     /= 11604525 # temperature unit Kelvin to keV
 data[Columns.YSZ]       /= (3.08567758e+21)**2 # Ysz unit cm^2 to kpc^2
 
@@ -129,8 +148,8 @@ z_obs = (data['redshift'] + 1) * (z_pec + 1) - 1
 # ------------------CALCULATE FLUX----------------------------------------------
 # distance used lightcone 'lightconeXcminpot'. I think it's comoving?
 Dco = (data['x_lc']**2 + data['y_lc']**2 + data['z_lc']**2)**0.5 
-DL = Dco * (z_obs + 1)      # luminosity distance from comoving distan
-DL *= 3.08567758e24        # from Mpc to cm, we use the exact definition of parsec and AU: 648000/np.pi*149_597_870_700*1e8
+DL = Dco * (z_obs + 1)      # luminosity distance from comoving distance
+DL *= 3.08567758e24         # from Mpc to cm, we use the exact definition of parsec and AU: 648000/np.pi*149_597_870_700*1e8
 
 flux = data[Columns.LX]\
         / (4 * np.pi * DL**2)\
@@ -152,24 +171,24 @@ print(f'Final sample: {len(cut_data)}')
 fraction = (cut_data[Columns.LX] - cut_data[Columns.LXCoreExcision]) / cut_data[Columns.LX]
 
 
-# Add other useful quantities to our samples
+# add other useful quantities to our samples
 cut_data['3DLcore/Ltot']     = fraction
 cut_data['ObservedRedshift'] = cut_z_obs
 cut_data['Flux']             = cut_flux
 
-# Use Joey's 2D Lcore/Ltot values
-if 'lightcone0' in input: # for now we only have lightcone0 data
+# use Joey's 2D Lcore/Ltot values
+if 'lightcone0' in input: # we only have lightcone0 2D fractions
     frac = pd.read_csv('/data1/yujiehe/data/jay_id_core_fraction_lightcone0.csv')
     frac['snap_num'] = frac['snap_num'].astype(int)
     frac['SOAPID'] = frac['SOAPID'].astype(int)
     cut_data = cut_data.merge(frac, on=['SOAPID', 'snap_num']) # this should match both SOAPID and snap_num. 
 
-    # Sort descending w.r.t. Lcore/Ltot
+    # sort descending w.r.t. Lcore/Ltot
     cut_data.sort_values('2DLcore/Ltot', ascending=False, inplace=True)
 else:
     cut_data.sort_values('3DLcore/Ltot', ascending=False, inplace=True)
 
-# Save
+# save without indices
 cut_data.to_csv(output, index=False)
 
 print(f'Sample saved: {output}.')

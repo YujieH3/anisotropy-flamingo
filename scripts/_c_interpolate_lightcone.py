@@ -16,8 +16,8 @@ from astropy.cosmology import FlatLambdaCDM
 cosmo = FlatLambdaCDM(H0=68.1, Om0=0.306)
 import scipy.optimize as opt
 
-INPUT = '/data1/yujiehe/data/halo_crossing.hdf5'
-OUTPUT = '/data1/yujiehe/data/halo_properties_in_lightcones.hdf5'
+INPUT = '/data1/yujiehe/data/mock_lightcone/halo_lightcone_catalogue/halo_crossing.hdf5'
+OUTPUT = '/data1/yujiehe/data/mock_lightcone/halo_lightcone_catalogue/halo_properties_in_lightcones.hdf5'
 SOAP_DIR = '/data2/FLAMINGO/L1000N1800/HYDRO_FIDUCIAL/SOAP/'
 
 
@@ -125,7 +125,7 @@ for observer in list(fin.keys()):
         Zcminpot = np.where(use_current_snapshot, Zcminpot0, Zcminpot1)
 
         lc_coords = np.array([Xcminpot, Ycminpot, Zcminpot])
-        theta_lc, phi_lc = hp.rotator.vec2dir(lc_coords, lonlat=True)
+        phi_lc, theta_lc = hp.rotator.vec2dir(lc_coords, lonlat=True)
 
         # SOAP ID and snapshot number
         soap_ids = np.where(use_current_snapshot, soap_ids0, soap_ids1)
