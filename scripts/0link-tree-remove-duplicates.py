@@ -59,9 +59,9 @@ else:
     for i in range(len(catalog)):
         snap_num = catalog.loc[i, 'snap_num']
         soapid = catalog.loc[i, 'SOAPID']
-        galaxyid = vr_tree['SOAP/Snapshot00'+str(snap_num)][soapid]
+        treeid = vr_tree['SOAP/Snapshot00'+str(snap_num)][soapid]
         
-        catalog.loc[i, 'GalaxyID'] = galaxyid
+        catalog.loc[i, 'GalaxyID'] = treeid + 1
         catalog.loc[i, 'TopLeafID'] = vr_tree['MergerTree/TopLeafID'][galaxyid]
     catalog.to_hdf(OUTPUT_CATALOG_WITH_TREE, key='lightcone', mode='w')
 

@@ -1,5 +1,5 @@
 """
-This script match the output of a-halo-crossing.py 
+This script match the output of a-halo-crossing.py with the SOAP catalogue.
 """
 
 import h5py
@@ -8,6 +8,21 @@ from tqdm import tqdm
 
 SOAP_DIR = '/data2/FLAMINGO/L1000N1800/HYDRO_FIDUCIAL/SOAP/'
 INPUT = '/data1/yujiehe/data/mock_lightcone/halo_lightcone_catalogue/halo_crossing.hdf5'
+
+# -------------------------- command line arguments ----------------------------
+import argparse
+parser = argparse.ArgumentParser(description='Match the crossing data with SOAP catalogue.')
+parser.add_argument('-i', '--input', type=str, help='Input file path', default=INPUT)
+parser.add_argument('-s', '--soap', type=str, help='SOAP catalogue directory', default=SOAP_DIR)
+
+# parse the arguments
+args = parser.parse_args()
+INPUT = args.input
+SOAP_DIR = args.soap
+# ------------------------------------------------------------------------------
+
+
+
 
 # monkey patch a method to overwrite dataset if already exists and create new if doesn't
 def write_dataset(self, name, data):

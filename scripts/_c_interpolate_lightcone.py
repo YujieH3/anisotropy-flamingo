@@ -18,11 +18,22 @@ import scipy.optimize as opt
 
 INPUT = '/data1/yujiehe/data/mock_lightcone/halo_lightcone_catalogue/halo_crossing.hdf5'
 OUTPUT = '/data1/yujiehe/data/mock_lightcone/halo_lightcone_catalogue/halo_properties_in_lightcones.hdf5'
-SOAP_DIR = '/data2/FLAMINGO/L1000N1800/HYDRO_FIDUCIAL/SOAP/'
+
+# ------------------------------- command line arguments -----------------------
+import argparse
+parser = argparse.ArgumentParser(description='Interpolate the crossing data.')
+parser.add_argument('-i', '--input', type=str, help='Input file path', default=INPUT)
+parser.add_argument('-o', '--output', type=str, help='Output file path', default=OUTPUT)
+
+# parse the arguments
+args = parser.parse_args()
+INPUT = args.input
+OUTPUT = args.output
+# ------------------------------------------------------------------------------
+
 
 
 #-------------------------------------------------------------------------------
-
 def redshift_crossing(r):
     """
     Given a comoving distance, find the redshift at which the comoving 
@@ -30,9 +41,6 @@ def redshift_crossing(r):
     """
     z = opt.newton(lambda z: cosmo.comoving_distance(z).value - r, np.full(np.shape(r), fill_value=0.1))
     return z
-
-
-
 #-------------------------------------------------------------------------------
 
 

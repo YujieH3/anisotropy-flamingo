@@ -7,6 +7,16 @@ import pandas as pd
 import numpy as np
 INPUT = '/data1/yujiehe/data/mock_lightcone/halo_lightcone_catalogue/halo_properties_in_lightcones.hdf5'
 
+# ------------------------------- command line arguments -----------------------
+import argparse
+parser = argparse.ArgumentParser(description='Join the interpolated properties with SOAP catalogue.')
+parser.add_argument('-i', '--input', type=str, help='Input file path', default=INPUT)
+
+# parse the arguments
+args = parser.parse_args()
+INPUT = args.input
+# ------------------------------------------------------------------------------
+
 
 dict = {}
 with h5py.File(INPUT, 'a') as f:
