@@ -20,7 +20,7 @@
 #
 # Author                       : Yujie He
 # Created on (MM/DD/YYYY)      : 01/15/2024
-# Last Modified on (MM/DD/YYYY): 01/31/2024
+# Last Modified on (MM/DD/YYYY): 09/05/2024
 # ---------------------------------------------
 
 import pandas as pd
@@ -32,7 +32,7 @@ import numpy as np
 import argparse
 import h5py
 
-# ---------------COMMAND LINE ARGUMENTS-----------------------------------------
+# --------------------------- command line arguments ---------------------------
 import argparse
 
 # Create the parser

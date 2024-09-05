@@ -144,7 +144,7 @@ for scaling_relation in RELATIONS:
 
 
     # Load data and set zmax
-    for zmax in np.arange(0.06, 0.13, 0.02):
+    for zmax in np.arange(0.06, 0.18, 0.02):
         zmask    = z_obs < zmax
 
         # Select data below some redshift

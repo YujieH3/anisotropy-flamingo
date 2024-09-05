@@ -116,9 +116,6 @@ if __name__ == '__main__':
 
 
         # 1 sigma uncertainty around the best fit
-
-
-
         BestFitA    = 10**BestFitParams['logA']
         BestFitB    = BestFitParams['B']
         BestFitScat = BestFitParams['scat']

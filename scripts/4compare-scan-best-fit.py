@@ -6,7 +6,7 @@ import numpy as np
 import os
 from numba import njit, prange, set_num_threads
 
-# --------------------------------CONFIGURATION---------------------------------
+# ------------------------------- configuration --------------------------------
 input_file = '/data1/yujiehe/data/samples-lightcone0-clean.csv'
 output_dir = '/data1/yujiehe/data/fits'
 
@@ -26,7 +26,8 @@ logA_step    = 0.003
 scat_step    = 0.005
 
 FIT_RANGE = const.FIVE_MAX_RANGE
-# --------------------------COMMAND LINE ARGUMENTS------------------------------
+# -------------------------- command line arguments ------------------------------
+
 import argparse
 
 # Create the parser
