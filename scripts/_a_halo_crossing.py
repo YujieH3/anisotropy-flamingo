@@ -28,17 +28,23 @@ parser.add_argument('-i', '--input', type=str, help='Input file path', default=M
 parser.add_argument('-o', '--output', type=str, help='Output file path', default=OUTPUT)
 parser.add_argument('-z', '--redshift', type=float, help='Max redshift considered', default=MAX_REDSHIFT)
 parser.add_argument('-N', '--lightcone_number', type=int, help='Number of lightcones on one side', default=1)
+parser.add_argument('-L', '--box_size', type=int, help='Box size in comoving Mpc', default=L)
 
 # parse the arguments
 args = parser.parse_args()
 MERGER_TREE_FILE = args.input
 OUTPUT = args.output
 MAX_REDSHIFT = args.redshift
-N = args.N
+N = args.lightcone_number
+L = args.box_size
 # ------------------------------------------------------------------------------
 
 
-RUN_TYPE = 'single'
+if N==1:
+    RUN_TYPE = 'single'
+elif N>1:
+    RUN_TYPE = 'multi'
+
 if RUN_TYPE == 'single':
     # Single observer test
     Xobs = 3*L/4

@@ -74,8 +74,6 @@ def log_likelihood(theta, X, Y, z_obs, phi_lc, theta_lc, yname, xname):
 
     # Calculate the Luminosity distance
     if yname == 'LX':
-        # DL_zobs = cc.DL(z_obs, H0=68.1, Om=0.306, Ol=0.694)
-        # DL_zbf = cc.DL(z_bf, H0=68.1, Om=0.306, Ol=0.694)
         DL_zobs = cosmo.luminosity_distance(z_obs).value
         DL_zbf = cosmo.luminosity_distance(z_bf).value
         Y_bf = Y*(DL_zbf)**2/(DL_zobs)**2

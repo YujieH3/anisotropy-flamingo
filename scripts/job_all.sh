@@ -54,27 +54,28 @@ do
     output="${parent_dir}/lc${formatted_lc}"
     python 4compare-scan-best-fit.py -i $sample -o $output -t 8 -s 60
     # - use chandra temperature
-    # - 60 for Ysz-T Ysz-Mgas Lx-Ysz, 75 for others
+    # - 60 for Ysz-T (LX-Ysz); 75 for Lx-T Mgas-T (Lx-Mgas)
 
     # SEC1 H0 scan: bootstrapping
     output="${parent_dir}/lc${formatted_lc}"
     python 5compare-scan-bootstrapping.py -i $sample -o $output -t 16 -n 500 -s 60
     # - use chandra temperature
-    # - do bootstrapping only for most extreme direction
+    # - do bootstrapping only for most extreme direction **
 
     # SEC1 H0 scan: significance map
     input="${parent_dir}/lc${formatted_lc}"
     python 6calculate-significance-map.py -d $input
     # - use chandra temperature
 
-
     # SEC1 bulk flow. skip best fit, do bootstrapping only
     output="${parent_dir}/lc${formatted_lc}"
     mpiexec -n 17 python 8compare-bulk-flow-bootstrapping.py -i $sample -o $output 
     # - use chandra temperature
-    # - add Lx-Ysz, Lx-Mgas, Ysz-Mgas relations
-    # - don't do directions
-    # - set the redshift shells
+    # - don't do directions # full thing for only a few (10) lightcones
+    # - set the redshift spheres
+    ## - add Lx-Ysz, Lx-Mgas, Ysz-Mgas relations
+
+
 
 
     # SEC2 H0 variation
@@ -83,9 +84,8 @@ do
     mkdir $plotdir -p
     python 9proper-H0-model-mcmc.py -i $sample -o $output -d $plotdir
     # - use original temperature
-    # - add Lx-Ysz, Lx-Mgas, Ysz-Mgas relations
-    # - remove highest Lcore/Ltot line and use the full sample in mcmc
     # - run it in a separate shell. Parallelizing is probably too much trouble 
+    ## - add Lx-Ysz, Lx-Mgas, Ysz-Mgas relations
 
     # SEC2 bulk flow
     output="${parent_dir}/lc${formatted_lc}"
@@ -93,8 +93,9 @@ do
     mkdir $plotdir -p
     python 10proper-bulk-flow-model-mcmc.py -i $sample -o $output -d $plotdir
     # - use original temperature
-    # - remove highest Lcore/Ltot line and use the full sample in mcmc
     # - run it in a separate shell
-    # - set the redshift shells
+    # - set the redshift spheres
+    ## - add Lx-Ysz, Lx-Mgas, Ysz-Mgas relations
+
 done
 
