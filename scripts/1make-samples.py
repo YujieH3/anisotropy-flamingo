@@ -177,7 +177,7 @@ cut_data['ObservedRedshift'] = cut_z_obs
 cut_data['Flux']             = cut_flux
 
 # use Joey's 2D Lcore/Ltot values
-if 'lightcone0' in input: # we only have lightcone0 2D fractions
+if 'lightcone0.' in input: # we only have lightcone0 2D fractions
     frac = pd.read_csv('/data1/yujiehe/data/jay_id_core_fraction_lightcone0.csv')
     frac['snap_num'] = frac['snap_num'].astype(int)
     frac['SOAPID'] = frac['SOAPID'].astype(int)

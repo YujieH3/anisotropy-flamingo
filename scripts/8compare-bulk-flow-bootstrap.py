@@ -19,8 +19,6 @@ import sys
 sys.path.append('/data1/yujiehe/anisotropy-flamingo')
 import tools.constants as const
 import tools.clusterfit as cf
-import tools.xray_correct as xc
-import tools.cosmocalc as cc
 
 from numba import njit
 
