@@ -119,8 +119,13 @@ data = data[data['M500'] > 5e12]      # Mass cut 5e12 Msun
 print(f'{Noriginal} clusters to begin with, after dropping duplicate, T > 0.5keV and M500 > 5e12 cut. {len(data)} clusters left.')
 
 # Correct for X-ray bug in SOAP catalogue
-data[Columns.LX]             /= (data['redshift'] + 1)**3
-data[Columns.LXCoreExcision] /= (data['redshift'] + 1)**3
+z_snap = (77 - data['snap_num']) * 0.05
+Lx_corr = 1 / (1 + z_snap)**3
+for key in data.keys():
+    if 'LX' in key:
+        data[key]
+# data[Columns.LX]             /= (z_snap + 1)**3
+# data[Columns.LXCoreExcision] /= (z_snap + 1)**3
 
 
 # ---------CALCULATE PECULIAR REDSHIFT------------------------------------------
@@ -155,8 +160,6 @@ flux = data[Columns.LX]\
         / (4 * np.pi * DL**2)\
         * band_conv(T=data[Columns.SpecT])\
         * k_corr(T=data[Columns.SpecT], z=z_obs)     # flux in erg/s/cm^2 # Since in observation all temperature are spectroscopic and we are in fact using the observational conversions, we use spectroscopic-like temperatures here also.
-
-# TODO add band conversion?
 
 
 # ---------------MAKE FLUX AND LATITUDE CUT-------------------------------------

@@ -32,6 +32,7 @@ def band_conv(T):
     f = interpolate.interp1d(temperature, conversion_ratio, fill_value="extrapolate")
     return f(T)
 
+
 def k_corr(T, z):
     """
         Convert flux from rest frame to observer frame to account for
@@ -44,20 +45,33 @@ def k_corr(T, z):
     z = np.array(z)
 
     TRange = np.array([1, 2, 3, 5, 7, 8, 11])
-    zRange = np.array([0.01, 0.05, 0.1, 0.15, 0.2, 0.3, 0.35, 0.4])
+    zRange = np.array([0.01, 0.05, 0.1, 0.15, 0.2, 0.3, 0.35, 0.4, 0.45, 0.7])
     TSpace, zSpace = np.meshgrid(TRange, zRange)
     TzSpace = np.stack((TSpace, zSpace), axis=2)
     TzSpace = np.reshape(TzSpace, (-1, 2))
+    # correction = np.array([
+    #     [0.999, 1, 1.002, 1.004, 1.005, 1.005, 1.006],
+    #     [0.99867, 1.0109131, 1.0174743, 1.024137, 1.02733288502, 1.02939756, 1.03132507],
+    #     [1.0029477, 1.02601734938, 1.03524173, 1.0474193664, 1.05426951359, 1.05814524913, 1.0611594898],
+    #     [1.00121082751, 1.0394055, 1.05513809, 1.0724321, 1.082270983, 1.0880963697355, 1.09232538648],
+    #     [0.997952187561, 1.04640380173, 1.06894742799, 1.0937243687772, 1.10735911443, 1.11600206664, 1.12154738],
+    #     [0.991628392, 1.058497091, 1.09395654946, 1.13424356355, 1.155561367, 1.16859396592, 1.17897757],
+    #     [np.nan, np.nan, np.nan, 1.1532518034, 1.1790929, 1.19443598, 1.20629009765],
+    #     [np.nan, np.nan, np.nan, np.nan, 1.20179262721, 1.219978874848, 1.23322758909],
+    # ])
     correction = np.array([
-        [0.999, 1, 1.002, 1.004, 1.005, 1.005, 1.006],
-        [0.99867, 1.0109131, 1.0174743, 1.024137, 1.02733288502, 1.02939756, 1.03132507],
-        [1.0029477, 1.02601734938, 1.03524173, 1.0474193664, 1.05426951359, 1.05814524913, 1.0611594898],
-        [1.00121082751, 1.0394055, 1.05513809, 1.0724321, 1.082270983, 1.0880963697355, 1.09232538648],
-        [0.997952187561, 1.04640380173, 1.06894742799, 1.0937243687772, 1.10735911443, 1.11600206664, 1.12154738],
-        [0.991628392, 1.058497091, 1.09395654946, 1.13424356355, 1.155561367, 1.16859396592, 1.17897757],
-        [np.nan, np.nan, np.nan, 1.1532518034, 1.1790929, 1.19443598, 1.20629009765],
-        [np.nan, np.nan, np.nan, np.nan, 1.20179262721, 1.219978874848, 1.23322758909],
+        [0.999,1,1.002,1.004,1.005,1.005,1.006],
+        [0.99867,1.0109131,1.0174743,1.024137,1.02733288502,1.02939756,1.03132507],
+        [1.0029477,1.02601734938,1.03524173,1.0474193664,1.05426951359,1.05814524913,1.0611594898],
+        [1.00121082751,1.0394055,1.05513809,1.0724321,1.082270983,1.0880963697355,1.09232538648],
+        [0.997952187561,1.04640380173,1.06894742799,1.0937243687772,1.10735911443,1.11600206664,1.12154738],
+        [0.991628392,1.058497091,1.09395654946,1.13424356355,1.155561367,1.16859396592,1.17897757],
+        [0.98787838396,1.064785467042,1.1063830702,1.1532518034,1.1790929,1.19443598,1.20629009765],
+        [0.98243654, 1.07001923,1.1186314313,1.172116580926,1.20179262721,1.219978874848,1.23322758909],
+        [0.97835451, 1.07482371,1.12867451,1.19011134,1.225311,1.24931143,1.26430013],
+        [0.95698201, 1.0866941108,1.17241457,1.2702239665,1.324831907,1.359577069,1.3843461],
     ])
+
     correction = np.ravel(correction)
 
     # Using the 'not nan' part to interpolate / extrapolate
@@ -69,7 +83,7 @@ def k_corr(T, z):
     # https://stackoverflow.com/questions/41544829/use-fill-value-outside-boundaries-with-scipy-interpolate-griddata-and-method-nea/41550512#41550512
 
     # specifically for the table I used, there are no data here
-    mask_out = ((z > 0.3) & (T < 5)) | ((z > 0.35) & (T < 7)) | (z < zRange[0]) | (z > zRange[-1]) | (T < TRange[0]) | (T > TRange[-1])
+    mask_out = (z < zRange[0]) | (z > zRange[-1]) | (T < TRange[0]) | (T > TRange[-1])
     corr = np.zeros(np.shape(T))
     if len(corr[mask_out]) != 0:
         # If outside of our data range, use the nearest value.
@@ -80,9 +94,10 @@ def k_corr(T, z):
         # if inside, use linear interpolation.
         Ti = T[mask_out == False]
         zi = z[mask_out == False]
-        corr[mask_out == False] = interpolate.griddata(TzSpace, correction, xi=(Ti, zi), method='linear') 
+        corr[mask_out == False] = interpolate.griddata(TzSpace, correction, xi=(Ti, zi), method='cubic') 
     else:
-        corr = interpolate.griddata(TzSpace, correction, xi=(T, z), method='linear') 
+        # if all inside, use linear interpolation.
+        corr = interpolate.griddata(TzSpace, correction, xi=(T, z), method='cubic') 
     
     return corr
     
