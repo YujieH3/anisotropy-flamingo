@@ -17,10 +17,12 @@
 # decending order of Lcore/Ltot fraction, so that 
 # you can make the most concentrated N clusters 
 # sample by getting the first N lines.
+#   - add Chandra temperature for direct comparison
+# with M20.
 #
 # Author                       : Yujie He
 # Created on (MM/DD/YYYY)      : 01/15/2024
-# Last Modified on (MM/DD/YYYY): 09/05/2024
+# Last Modified on (MM/DD/YYYY): 09/19/2024
 # ---------------------------------------------
 
 import pandas as pd
@@ -191,6 +193,13 @@ if 'lightcone0.' in input: # we only have lightcone0 2D fractions
 else:
     cut_data.sort_values('3DLcore/Ltot', ascending=False, inplace=True)
 
+
+
+# -----------------CHANDRA TEMPERATURE------------------------------------------
+
+cut_data['ChandraT'] = cut_data[Columns.SpecT]**(1/0.89)
+
+# -----------------SAVE SAMPLE-------------------------------------------------
 # save without indices
 cut_data.to_csv(output, index=False)
 

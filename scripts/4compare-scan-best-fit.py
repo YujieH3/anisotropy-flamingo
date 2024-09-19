@@ -1,3 +1,13 @@
+# ---------------------------------------------
+# This script scans the full sky and fits the 
+# scaling relations for each direction. No 
+# bootstrapping only best fit
+# 
+# Author                       : Yujie He
+# Created on (MM/DD/YYYY)      : 01/15/2024
+# Last Modified on (MM/DD/YYYY): 09/19/2024
+# ---------------------------------------------
+
 import sys
 sys.path.append('/home/yujiehe/anisotropy-flamingo')
 import tools.clusterfit as cf

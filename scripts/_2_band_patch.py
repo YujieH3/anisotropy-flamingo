@@ -1,10 +1,18 @@
-""" This snippet is to correct a small issue (not actually a bug).
-When saving the SOAP catalogue all three bands were saved for Lx, but
-future codes support working with only one column of data.
-
-This snippet split LX0... to LX0..., LX1..., LX2..., keeping data of other
-bands while allowing reuse of old code.
-"""
+# ---------------------------------------------
+# This script is to correct a small issue 
+# (not actually a bug). When saving the SOAP
+# catalogue all three bands were saved for Lx,
+# but future codes support working with only one
+# column of data.
+#
+# This script split LX0... to LX0..., LX1..., LX2...,
+# keeping data of other bands while allowing reuse
+# of old codes.
+#
+# Author                       : Yujie He
+# Created on (MM/DD/YYYY)      : 01/15/2024
+# Last Modified on (MM/DD/YYYY): 09/19/2024
+# ---------------------------------------------
 
 import h5py
 import pandas as pd

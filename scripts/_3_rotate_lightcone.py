@@ -1,3 +1,15 @@
+# ---------------------------------------------
+# This script rotates the lightcone catalog in 
+# 3D space to avoid aligned structures in between
+# different lightcones. It also saves the rotation
+# angles for reproducibility.
+#
+# Author                       : Yujie He
+# Created on (MM/DD/YYYY)      : 01/15/2024
+# Last Modified on (MM/DD/YYYY): 09/19/2024
+# ---------------------------------------------
+
+
 import h5py
 import pandas as pd
 import numpy as np
@@ -53,7 +65,7 @@ flist.sort()        #loop in order
 for file in flist:
     print(file)
     index = file.find('.hdf5')
-    seed = int(file[index-4:index])    #lightcone number, used as random seed so that the same lightcone is comparable
+    seed = int(file[index-4:index])    #lightcone number, used as random seed for reproducibility
     with h5py.File(file, 'a') as f:
         if 'x_lc_norot' in list(f.keys()):
             print('Already rotated. Skipping.')

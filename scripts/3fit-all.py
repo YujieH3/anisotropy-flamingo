@@ -1,3 +1,14 @@
+# ---------------------------------------------
+# This script fits all scaling relations and
+# calculates the uncertainties using bootstrapping.
+# Output stuff to a csv file.
+# 
+# Author                       : Yujie He
+# Created on (MM/DD/YYYY)      : 01/15/2024
+# Last Modified on (MM/DD/YYYY): 09/19/2024
+# ---------------------------------------------
+
+
 import sys
 sys.path.append('/home/yujiehe/anisotropy-flamingo')
 import tools.clusterfit as cf

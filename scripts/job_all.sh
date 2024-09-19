@@ -14,6 +14,12 @@ N=10
 
 # first job: (main job) 2.8Gpc
 
+
+# prep all data
+python _1_combine_lightcone.py -i $parent_dir
+python _2_band_patch.py -i $parent_dir
+python _3_rotate_lightcone.py -i $parent_dir
+
 # create lightcones
 for lc in $(seq 0 $((N3-1)))
 do

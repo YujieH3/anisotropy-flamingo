@@ -1,3 +1,13 @@
+# ---------------------------------------------
+# This script scans the full sky and fits the 
+# scaling relations for each direction. No 
+# bootstrapping only best fit
+# 
+# Author                       : Yujie He
+# Created on (MM/DD/YYYY)      : 01/15/2024
+# Last Modified on (MM/DD/YYYY): 09/19/2024
+# ---------------------------------------------
+
 import sys
 sys.path.append('/home/yujiehe/anisotropy-flamingo')
 import os
@@ -12,7 +22,7 @@ output_dir = '/data1/yujiehe/data/fits'
 n_threads = 24
 
 overwrite = False
-relations = ['LX-T', 'YSZ-T', 'M-T', 'LX-YSZ', 'LX-M', 'YSZ-M'] # pick from 'LX-T', 'M-T', 'LX-YSZ', 'LX-M', 'YSZ-M', 'YSZ-T'
+relations = ['LX-T', 'YSZ-T', 'M-T'] # pick from 'LX-T', 'M-T', 'LX-YSZ', 'LX-M', 'YSZ-M', 'YSZ-T'
 n_bootstrap = 500 # number of bootstrapping for each direction
 
 cone_size    = 60 # all angles in this scipt are in degrees unless with a _rad suffix

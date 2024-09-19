@@ -1,7 +1,13 @@
-"""
-This script link the the samples with the merger tree ids and then remove
-the duplicates.
-"""
+# ---------------------------------------------
+# This script links the lightcone catalog with 
+# the merger tree ids and removes duplicates 
+# based on TopLeafID.
+# 
+# Author                       : Yujie He
+# Created on (MM/DD/YYYY)      : 01/15/2024
+# Last Modified on (MM/DD/YYYY): 09/19/2024
+# ---------------------------------------------
+
 
 import h5py
 import pandas as pd
@@ -13,6 +19,7 @@ import os
 
 CATALOG_FILE = '../data/halo_properties_in_lightcone0.hdf5' # the lightcone linked catalog
 VR_TREE_FILE = '/data2/FLAMINGO/L1000N1800/HYDRO_FIDUCIAL/merger_trees/vr_trees.hdf5' # the merger tree file
+L = 2800
 
 OUTPUTDIR = '../data/'
 # OUTPUT_MATCH_LIST = True
@@ -27,12 +34,14 @@ parser = argparse.ArgumentParser(description="Link the lightcone catalog with th
 parser.add_argument('-i', '--input', type=str, help="Input file path. The lightcone linked catalog output by Roi's script.")
 parser.add_argument('-t', '--tree', type=str, help='Input file path. The merger tree file.', default=VR_TREE_FILE)
 parser.add_argument('-o', '--output', type=str, help='Output directory.', default=OUTPUTDIR)
+parser.add_argument('-L', '--boxsize', type=int, help='Boxsize of the simulation.', default=L)
 parser.add_argument('--overwrite', action='store_true', help='Overwrite the catalog with tree file.', default=False)
 
 # Parse the arguments
 args = parser.parse_args()
 CATALOG_FILE = args.input
 VR_TREE_FILE = args.tree
+L = args.boxsize
 OUTPUTDIR = args.output
 OVERWRITE = args.overwrite
 
@@ -62,14 +71,15 @@ else:
         treeid = vr_tree['SOAP/Snapshot00'+str(snap_num)][soapid]
         
         catalog.loc[i, 'GalaxyID'] = treeid + 1
-        catalog.loc[i, 'TopLeafID'] = vr_tree['MergerTree/TopLeafID'][galaxyid]
+        catalog.loc[i, 'TopLeafID'] = vr_tree['MergerTree/TopLeafID'][treeid]
     catalog.to_hdf(OUTPUT_CATALOG_WITH_TREE, key='lightcone', mode='w')
 
 # Sort by redshift
 catalog = catalog.sort_values(by=['redshift'], ascending=True)
 catalog.reset_index(drop=True, inplace=True)
 
-dup_mask = (np.abs(catalog['x_lc']) > 500) | (np.abs(catalog['y_lc']) > 500) | (np.abs(catalog['z_lc']) > 500)
+# essentially all clusters with distance larger than L/2 are duplicates
+dup_mask = (np.abs(catalog['x_lc']) > L/2) | (np.abs(catalog['y_lc']) > L/2) | (np.abs(catalog['z_lc']) > L/2)
 catalog_dup = catalog[dup_mask]
 catalog_near = catalog[~dup_mask]
 
@@ -100,7 +110,7 @@ catalog_near = catalog[~dup_mask]
 duplicate_excision = catalog.drop_duplicates(subset=['TopLeafID'], keep='first') # keep the lowest counterparts
 duplicate_excision.to_hdf(OUTPUT_CATALOG_WITH_TREE_DUP_EXCISION, key='lightcone', mode='w')
 
-# Sanity check
-# matching and remove by topleafid should give the same number of clusters
+# # Sanity check
+# # matching and remove by topleafid should give the same number of clusters
 # assert len(duplicate_excision) == len(catalog_near) + len(unmatched_dup)
 print('Done!')
