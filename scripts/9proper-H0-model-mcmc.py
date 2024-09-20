@@ -98,11 +98,11 @@ def log_likelihood(theta, X, Y, z_obs, phi_lc, theta_lc, yname, xname):
 # set prior
 def log_prior(theta):
     # A large flat prior for now
-    ubf, vlon, vlat, logA, B, sigma = theta # 6 parameters
+    delta, vlon, vlat, logA, B, sigma = theta # 6 parameters
 
     # If in range, p(theta)=1, else p(theta)=0
     if -1<logA<1 and 0.5<B<3.5 and 0.05<sigma<1 \
-        and 0<ubf<1000 and -180<vlon<180 and -90<vlat<90:
+        and 0<delta<1000 and -180<vlon<180 and -90<vlat<90:
         return 0.0
     else:
         return -np.inf
@@ -178,44 +178,17 @@ for scaling_relation in RELATIONS:
     flat_samples = sampler.get_chain(discard=1000, thin=80, flat=True)
     print(flat_samples.shape)
 
-
-    # Plot and save
-    import corner
-    import matplotlib.pyplot as plt
-
-    fig = corner.corner(
-        flat_samples, 
-        labels=['delta', 'vlon', 'vlat', 'logA', 'B', 'sigma'],
-        quantiles=[0.16, 0.5, 0.84],
-        show_titles=True, 
-        title_fmt='.3f',
-        title_kwargs={"fontsize": 15},
-        label_kwargs={"fontsize": 17},
-        smooth=1,
-        levels=[0.39],
-    )
-
-    # Title
-    fig.suptitle(f'{yname}-{xname}', fontsize=20)
-
-    # Save plots
-    if not os.path.exists(PLOT_DIR):
-        os.makedirs(PLOT_DIR)
-    fig.savefig(os.path.join(PLOT_DIR, f'{yname}-{xname}.png'))
-
-
-
-    # For ubf we use the 16, 50, 84 quantiles
-    ubf_distr = flat_samples[:, 0]
-    lower_ubf  = np.percentile(ubf_distr, 16)
-    median_ubf = np.percentile(ubf_distr, 50)
-    upper_ubf  = np.percentile(ubf_distr, 84)
+    # For delta we use the 16, 50, 84 quantiles
+    delta_distr = flat_samples[:, 0]
+    lower_delta  = np.percentile(delta_distr, 16)
+    median_delta = np.percentile(delta_distr, 50)
+    upper_delta  = np.percentile(delta_distr, 84)
         
     # For saving
-    ubf = median_ubf
-    ubf_err_lower = median_ubf - lower_ubf
-    ubf_err_upper = upper_ubf - median_ubf
-    print(f'ubf: {lower_ubf} ~ {upper_ubf} \nor {ubf} -{ubf_err_lower} +{ubf_err_upper}')
+    delta = median_delta
+    delta_err_lower = median_delta - lower_delta
+    delta_err_upper = upper_delta - median_delta
+    print(f'delta: {lower_delta} ~ {upper_delta} \nor {delta} -{delta_err_lower} +{delta_err_upper}')
 
 
 
@@ -246,11 +219,9 @@ for scaling_relation in RELATIONS:
         
     # Write line by line
     with open(OUTPUT_FILE, mode) as f:
-
         # Write the header on first entry
         if first_entry:
-            f.write('scaling_relation,ubf,ubf_err_lower,ubf_err_upper,vlon,vlon_err_lower,vlon_err_upper,vlat,vlat_err_lower,vlat_err_upper,convergence_time\n')
+            f.write('scaling_relation,delta,delta_err_lower,delta_err_upper,vlon,vlon_err_lower,vlon_err_upper,vlat,vlat_err_lower,vlat_err_upper,convergence_time\n')
             first_entry = False
-
         # Write the data
-        f.write(f'{scaling_relation},{ubf},{ubf_err_lower},{ubf_err_upper},{vlon},{vlon_err_lower},{vlon_err_upper},{vlat},{vlat_err_lower},{vlat_err_upper},{np.mean(tau)}\n')
+        f.write(f'{scaling_relation},{delta},{delta_err_lower},{delta_err_upper},{vlon},{vlon_err_lower},{vlon_err_upper},{vlat},{vlat_err_lower},{vlat_err_upper},{np.mean(tau)}\n')

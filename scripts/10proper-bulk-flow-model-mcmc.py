@@ -204,32 +204,6 @@ for scaling_relation in RELATIONS:
         print(flat_samples.shape)
 
 
-        # Plot and save
-        import corner
-        import matplotlib.pyplot as plt
-
-        fig = corner.corner(
-            flat_samples, 
-            labels=['ubf', 'vlon', 'vlat', 'logA', 'B', 'sigma'],
-            quantiles=[0.16, 0.5, 0.84],
-            show_titles=True, 
-            title_fmt='.3f',
-            title_kwargs={"fontsize": 15},
-            label_kwargs={"fontsize": 17},
-            smooth=1,
-            levels=[0.39],
-        )
-
-        # Title
-        fig.suptitle(f'{yname}-{xname} with z<{zmax}', fontsize=20)
-
-        # Save plots
-        if not os.path.exists(PLOT_DIR):
-            os.makedirs(PLOT_DIR)
-        fig.savefig(os.path.join(PLOT_DIR, f'{yname}-{xname}-zmax{zmax}.png'))
-
-
-
         # For ubf we use the 16, 50, 84 quantiles
         ubf_distr = flat_samples[:, 0]
         lower_ubf  = np.percentile(ubf_distr, 16)
@@ -243,7 +217,6 @@ for scaling_relation in RELATIONS:
         print(f'ubf: {lower_ubf} ~ {upper_ubf} \nor {ubf} -{ubf_err_lower} +{ubf_err_upper}')
 
 
-
         # Same with latitude, note that latitude is not periodic!
         vlat_distr = flat_samples[:, 2]
         lower_vlat = np.percentile(vlat_distr, 16)
@@ -255,30 +228,6 @@ for scaling_relation in RELATIONS:
         vlat_err_lower = median_vlat - lower_vlat
         vlat_err_upper = upper_vlat - median_vlat
         print(f'vlat: {lower_vlat} ~ {upper_vlat} \nor {vlat} -{vlat_err_lower} +{vlat_err_upper}')
-
-
-        # # For longitude we use the 34th percentile around the peak value
-        # # Longitude is periodic so we are free to shift the peak value for convenience
-        # vlon_distr = flat_samples[:, 1]
-        # hist, edges = np.histogram(vlon_distr, bins=20, density=True)
-        # peak_vlon = edges[np.argmax(hist)]
-
-        # # Shift to peak=0 to avoid breaking near the edge
-        # vlon_distr = (vlon_distr - peak_vlon - 180) % 360 - 180 # Despite the shift, keep the range in 180 to 180
-
-        # # 34th percentile around the peak value
-        # peak_percentile = np.sum(vlon_distr < 0) / len(vlon_distr) * 100
-        # l = np.percentile(vlon_distr, peak_percentile - 34)
-        # u = np.percentile(vlon_distr, peak_percentile + 34)
-
-        # # Convert back to the original coordinates
-        # lower_vlon = (l + peak_vlon + 180) % 360 - 180
-        # upper_vlon = (u + peak_vlon + 180) % 360 - 180
-
-        # # For saving
-        # vlon = peak_vlon
-        # vlon_err_lower = -l
-        # vlon_err_upper = u
 
         # Find the range w.r.t. the peak.
         vlon, vlon_err_lower, vlon_err_upper, lower_vlon, upper_vlon = cf.periodic_error_range(flat_samples[:,1], full_range=360) 
@@ -294,11 +243,9 @@ for scaling_relation in RELATIONS:
         
         # Write line by line
         with open(OUTPUT_FILE, mode) as f:
-
             # Write the header on first entry
             if first_entry:
                 f.write('scaling_relation,zmax,ubf,ubf_err_lower,ubf_err_upper,vlon,vlon_err_lower,vlon_err_upper,vlat,vlat_err_lower,vlat_err_upper,convergence_time\n')
                 first_entry = False
-
             # Write the data
             f.write(f'{scaling_relation},{zmax},{ubf},{ubf_err_lower},{ubf_err_upper},{vlon},{vlon_err_lower},{vlon_err_upper},{vlat},{vlat_err_lower},{vlat_err_upper},{np.mean(tau)}\n')

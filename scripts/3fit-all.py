@@ -149,7 +149,7 @@ if __name__ == '__main__':
 
 
         #save the best fit and uncertainties to a csv
-        BestFitOutputFile = os.path.join(OutputFileDir, 'best_fit.csv')
+        BestFitOutputFile = os.path.join(OutputFileDir, 'fit-all.csv')
 
         df = pd.DataFrame(
             {
