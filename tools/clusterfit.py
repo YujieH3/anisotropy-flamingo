@@ -1062,32 +1062,82 @@ def find_dipole_in_dipole_map(map, lons, lats):
 
 
 
-def load_lightcone(filename, lightcone_num):
-    """
-    Return the observers x, y, z coord in cMpc, and a dataset containing
+def load_lightcone(filename):
+    """ Return the observers x, y, z coord in cMpc, and a dataset containing
     the list of halo properties.
 
     Note
     --
     The coordinates here ranges from 0 to L instead of -L/2 to L/2, different to 
     """
-    dict = {}
-    with h5py.File(filename, 'r') as f:
-        lc = f'lightcone{lightcone_num:04d}'
-        for qty_key, qty_dataset in f[lc].items():
-            if qty_key in dict.keys():
-                dict[qty_key] = np.concatenate((dict[qty_key], qty_dataset[:]))
-            else:
-                dict[qty_key] = qty_dataset[:]
+    pd_flag = False    #is pandas dataframe
+    if filename.endswith('.csv'):
+        catalogue = pd.read_csv(filename)
+    elif filename.endswith('.hdf5'):
+        with h5py.File(filename, 'r') as f:
+            if 'lightcone' in list(f.keys()):
+                pd_flag = True
+        if pd_flag:
+            return pd.read_hdf(filename, 'lightcone')
+        else:
+            dict = {}
+            with h5py.File(filename, 'r') as f:
+                for qty_key, qty_dataset in f.items():
+                    if qty_key in dict.keys():
+                        dict[qty_key] = np.concatenate((dict[qty_key], qty_dataset[:]))
+                    else:
+                        dict[qty_key] = qty_dataset[:]
 
-        Xobs = f[lc].attrs['Xobs']
-        Yobs = f[lc].attrs['Yobs']
-        Zobs = f[lc].attrs['Zobs']
+            # for output
+            catalogue = pd.DataFrame(dict)
+    else:
+        raise ValueError(f'File format of {filename} not recognized.')
 
-    # for output
-    XYZobs = np.array([Xobs, Yobs, Zobs])
-    catalogue = pd.DataFrame(dict)
-    return XYZobs, catalogue
+    return catalogue
 
 
+def lightcone_position(filename):
+    """ Return the observers x, y, z coord in cMpc.
+    """
+    if filename.endswith('.hdf5'):
+        with h5py.File(filename, 'r') as f:
+            Xobs = f.attrs['Xobs']
+            Yobs = f.attrs['Yobs']
+            Zobs = f.attrs['Zobs']
+    else:
+        raise ValueError(f'File format of {filename} not recognized.')
 
+    return Xobs, Yobs, Zobs
+
+
+def get_range(filename, n_sigma=3):
+    """ Return the parameter range given the all sky fitting results. 
+    output matches the format of constants.py
+    """
+    df = pd.read_csv(filename)
+    
+    relations = df['Relation']
+    ranges = {}
+    for relation in relations:
+        mask = df['Relation'] == relation
+        logA = np.log10(df['BestFitA'].loc[mask].values[0])
+        B = df['BestFitB'].loc[mask].values[0]
+        scat = df['BestFitScat'].loc[mask].values[0]
+
+        logA_1sigma_p = np.log10(df['1SigmaUpperA'].loc[mask].values[0])
+        logA_1sigma_m = np.log10(df['1SigmaLowerA'].loc[mask].values[0])
+        B_1sigma_p = df['1SigmaUpperB'].loc[mask].values[0]
+        B_1sigma_m = df['1SigmaLowerB'].loc[mask].values[0]
+        scat_1sigma_p = df['1SigmaUpperScat'].loc[mask].values[0]
+        scat_1sigma_m = df['1SigmaLowerScat'].loc[mask].values[0]
+
+        ranges[relation] = {
+            'logA_min': logA - n_sigma * (logA - logA_1sigma_m),
+            'logA_max': logA + n_sigma * (logA_1sigma_p - logA),
+            'B_min': B - n_sigma * (B - B_1sigma_m),
+            'B_max': B + n_sigma * (B_1sigma_p - B),
+            'scat_min': scat - n_sigma * (scat - scat_1sigma_m),
+            'scat_max': scat + n_sigma * (scat_1sigma_p - scat),
+        }
+
+    return ranges

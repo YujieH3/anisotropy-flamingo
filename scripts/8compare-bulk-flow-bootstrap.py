@@ -1,13 +1,12 @@
 # mpiexec -n 17 python 8bulk-flow-bootstrap.py
-
-"""
-For every bulk flow direction and amplitude, calculate the full sample and fit a
-power law. The one with the least scatter is the best fit bulk flow.
-
-quantities affected by bulk flow:
-- observed redshift -> LX, YSZ, Mgas by bulk flow.
-but there's no need to start from scratch! Just scale the quantities accodingly
-"""
+# ---------------------------------------------
+# This script calculates the bulk flow with 
+# bootstrap resampling for each scaling relation.
+#
+# Author                       : Yujie He
+# Created on (MM/YYYY)         : 03/2024
+# Last Modified on (MM/YYYY)   : 09/2024
+# ---------------------------------------------
 
 # -----------------------IMPORTS------------------------------------------------
 import numpy as np

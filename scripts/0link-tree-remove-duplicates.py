@@ -14,6 +14,8 @@ import pandas as pd
 import numpy as np
 import sys
 import os
+sys.path.append('../tools')
+import clusterfit as cf
 
 # --------------------------------configurations--------------------------------
 
@@ -55,13 +57,13 @@ if OVERWRITE==False and os.path.isfile(OUTPUT_CATALOG_WITH_TREE_DUP_EXCISION):
     sys.exit()
 # -------------------------------------main-------------------------------------
 
-catalog = pd.read_hdf(CATALOG_FILE)
+catalog = cf.load_lightcone(CATALOG_FILE)
 vr_tree = h5py.File(VR_TREE_FILE, 'r')
 
 # Matching the full lightcone soap catalogue with merger tree ids!
 # Might take a few minutes
 if os.path.isfile(OUTPUT_CATALOG_WITH_TREE):
-    catalog = pd.read_hdf(OUTPUT_CATALOG_WITH_TREE)
+    catalog = cf.load_lightcone(OUTPUT_CATALOG_WITH_TREE)
 else:
     catalog['GalaxyID'] = -1
     catalog['TopLeafID'] = -1

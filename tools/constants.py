@@ -2,12 +2,20 @@ import numpy as np
 from numba import njit
 
 # Make a namespace for our descriptive yet horribly long column names
-COLUMNS ={
+COLUMNS_RAW ={
     'LX'             : 'LX0InRestframeWithoutRecentAGNHeating',
     'LXCoreExcision' : 'LX0InRestframeWithoutRecentAGNHeatingCoreExcision',
     'T'              : 'SpectroscopicLikeTemperatureWithoutRecentAGNHeatingCoreExcision',
     'YSZ'            : 'Y5R500WithoutRecentAGNHeating',
     'M'              : 'GasMass',
+}
+
+COLUMNS = {
+    'LX'             : 'LX0InRestframeWithoutRecentAGNHeating',
+    'LXCoreExcision' : 'LX0InRestframeWithoutRecentAGNHeatingCoreExcision',
+    'T'              : 'ChandraT',
+    'YSZ'            : 'Y5R500WithoutRecentAGNHeating',
+    'M'              : 'GasMass', 
 }
 
 # Parameters as in M21 (doi.org/10.1051/0004-6361/202140296) table 2

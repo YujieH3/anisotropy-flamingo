@@ -21,8 +21,8 @@
 # with M20.
 #
 # Author                       : Yujie He
-# Created on (MM/DD/YYYY)      : 01/15/2024
-# Last Modified on (MM/DD/YYYY): 09/19/2024
+# Created on (MM/YYYY)      : 01/2024
+# Last Modified on (MM/YYYY): 09/2024
 # ---------------------------------------------
 
 import pandas as pd
@@ -78,30 +78,12 @@ class Columns:
 
 print(f'Input data: {input}')
 
-
-# determine if the data is mock lightcone or real halo lightcone
-# the data structure is different.
-mode = 'real' # real or mock
-with h5py.File(input, 'r') as f:
-    if list(f.keys())[0] != 'lightcone':
-        mode = 'mock'
-if mode == 'mock' and obs_num == -1:
-    raise ValueError('Wrong input file or no observer index provided.')
-elif mode == 'real' and obs_num != -1:
-    raise ValueError('No observer index should be provided if working on halo lightcone catalogue.')
-
-
-# Load data
-if mode == 'real':
-    data = pd.read_hdf(input, 'lightcone')
-elif mode == 'mock':
-    obs_coord, data = load_lightcone(input, lightcone_num=obs_num)
-    print(f'Lightcone: {obs_num}')
-    print(f'Observer located at: {obs_coord} cMpc')
+# load data
+data = load_lightcone(input)
 
 Noriginal = len(data)
 
-# Drop duplicates, keep the lowest redshift one
+# drop duplicates, keep the lowest redshift one
 data.sort_values(by='redshift', inplace=True)
 data = data.drop_duplicates(subset=['SOAPID', 'snap_num'], keep='first') 
 # Update Mar 13 2024, SOAP IDs are not unique, now we only drop duplicates if it's from the same snapshot.
@@ -125,7 +107,7 @@ z_snap = (77 - data['snap_num']) * 0.05
 Lx_corr = 1 / (1 + z_snap)**3
 for key in data.keys():
     if 'LX' in key:
-        data[key]
+        data[key] *= Lx_corr
 # data[Columns.LX]             /= (z_snap + 1)**3
 # data[Columns.LXCoreExcision] /= (z_snap + 1)**3
 

@@ -1,3 +1,13 @@
+# ---------------------------------------------
+# This script calculates the bulk flow using MCMC.
+#
+# Author                       : Yujie He
+# Created on (MM/YYYY)         : 06/2024
+# Last Modified on (MM/YYYY)   : 09/2024
+# ---------------------------------------------
+
+
+
 import emcee
 import numpy as np
 import os
@@ -74,8 +84,6 @@ def log_likelihood(theta, X, Y, z_obs, phi_lc, theta_lc, yname, xname):
 
     # Calculate the Luminosity distance
     if yname == 'LX':
-        # DL_zobs = cc.DL(z_obs, H0=68.1, Om=0.306, Ol=0.694)
-        # DL_zbf = cc.DL(z_bf, H0=68.1, Om=0.306, Ol=0.694)
         DL_zobs = cosmo.luminosity_distance(z_obs).value
         DL_zbf = cosmo.luminosity_distance(z_bf).value
         Y_bf = Y*(DL_zbf)**2/(DL_zobs)**2
@@ -134,8 +142,8 @@ for scaling_relation in RELATIONS:
     _ = scaling_relation.find('-')
     yname = scaling_relation[:_]
     xname = scaling_relation[_+1:]
-    Y = np.array(data[cf.COLUMNS[yname]][:n_clusters])
-    X = np.array(data[cf.COLUMNS[xname]][:n_clusters])
+    Y = np.array(data[cf.COLUMNS_RAW[yname]][:n_clusters])
+    X = np.array(data[cf.COLUMNS_RAW[xname]][:n_clusters])
     # Also load the position data
     phi_lc   = np.array(data['phi_on_lc'][:n_clusters])
     theta_lc = np.array(data['theta_on_lc'][:n_clusters])

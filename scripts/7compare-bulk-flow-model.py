@@ -1,13 +1,13 @@
 # mpiexec -n 17 python 7bulk-flow-model.py
-
-"""
-For every bulk flow direction and amplitude, calculate the full sample and fit a
-power law. The one with the least scatter is the best fit bulk flow.
-
-quantities affected by bulk flow:
-- observed redshift -> LX, YSZ, Mgas by bulk flow.
-but there's no need to start from scratch! Just scale the quantities accodingly
-"""
+# ---------------------------------------------
+# This script calculates the best fit bulk flow 
+# direction and amplitude for each scaling relation
+# and saves the results to a csv file.
+#
+# Author                       : Yujie He
+# Created on (MM/YYYY)         : 03/2024
+# Last Modified on (MM/YYYY)   : 09/2024
+# ---------------------------------------------
 
 # -----------------------IMPORTS------------------------------------------------
 import numpy as np

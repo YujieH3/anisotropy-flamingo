@@ -4,8 +4,8 @@
 # bootstrapping only best fit
 # 
 # Author                       : Yujie He
-# Created on (MM/DD/YYYY)      : 01/15/2024
-# Last Modified on (MM/DD/YYYY): 09/19/2024
+# Created on (MM/YYYY)         : 03/2024
+# Last Modified on (MM/YYYY)   : 09/2024
 # ---------------------------------------------
 
 import sys
@@ -21,8 +21,6 @@ input_file = '/data1/yujiehe/data/samples-lightcone0-clean.csv'
 output_dir = '/data1/yujiehe/data/fits'
 
 n_threads = 2
-
-overwrite = True
 
 one_relation = False # give the name of the relation to fit if you want to fit only one. Set to False if you want to fit all relations.
 cone_size    = 60 # all angles in this scipt are in degrees unless with a _rad suffix
@@ -146,7 +144,7 @@ if __name__ == '__main__':
                 continue
 
         # Skip if the file already exists
-        output_file = f'{output_dir}/scan_best_fit_{scaling_relation}_θ{cone_size}.csv'
+        output_file = f'{output_dir}/scan_best_fit_{scaling_relation}_theta{cone_size}.csv'
         if os.path.exists(output_file) and not overwrite:
             print(f'File exists: {output_file}')
             continue

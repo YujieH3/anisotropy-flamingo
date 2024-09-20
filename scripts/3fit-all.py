@@ -4,8 +4,8 @@
 # Output stuff to a csv file.
 # 
 # Author                       : Yujie He
-# Created on (MM/DD/YYYY)      : 01/15/2024
-# Last Modified on (MM/DD/YYYY): 09/19/2024
+# Created on (MM/YYYY)         : 03/2024
+# Last Modified on (MM/YYYY)   : 09/2024
 # ---------------------------------------------
 
 
@@ -20,15 +20,12 @@ import os
 from numba import set_num_threads
 
 # --------------------------------CONFIGURATION---------------------------------
-# NOTE outliers should be removed from the dataset before running the script.
 InputFile = '/data1/yujiehe/data/samples_in_lightcone0_with_trees_duplicate_excision_outlier_excision.csv'
-OutputFilePrefix = '/data1/yujiehe/data/fits/bootstrap'
+OutputFileDir = '/data1/yujiehe/data/fits/'
 
 Nthreads = 4
 
-Overwrite = False # if True, overwrite existing files
-
-Relations = ['LX-T', 'YSZ-T', 'M-T', 'LX-YSZ', 'LX-M', 'YSZ-M'] # give the name of the relation to fit if you want to fit only one. Set to False if you want to fit all relations.
+Relations = ['LX-T', 'YSZ-T', 'M-T',] #'LX-YSZ', 'LX-M', 'YSZ-M'] # give the name of the relation to fit if you want to fit only one. Set to False if you want to fit all relations.
 BootstrapSteps = 500 # number of bootstrap steps to calculate uncertainties
 ScatterStepSize = 0.002
 BStepSize       = 0.002
@@ -47,7 +44,7 @@ parser = argparse.ArgumentParser(description="Fit scaling relations with bootstr
 
 # Add arguments
 parser.add_argument('-i', '--input', type=str, help='Input file path')
-parser.add_argument('-o', '--output', type=str, help='Output file prefix', default=OutputFilePrefix)
+parser.add_argument('-o', '--output', type=str, help='Output file directory', default=OutputFileDir)
 parser.add_argument('-t', '--threads', type=int, help='Number of threads', default=Nthreads)
 parser.add_argument('-n', '--bootstrap', type=int, help='Number of bootstrap steps', default=BootstrapSteps)
 parser.add_argument('--overwrite', action='store_true', help='Overwrite existing files')
@@ -55,9 +52,10 @@ parser.add_argument('--overwrite', action='store_true', help='Overwrite existing
 # Parse the arguments
 args = parser.parse_args()
 InputFile = args.input
-OutputFilePrefix = args.output
+OutputFileDir = args.output
 Nthreads = args.threads
 BootstrapSteps = args.bootstrap
+OutputFilePrefix = os.path.join(OutputFileDir, 'bootstrap')
 Overwrite = args.overwrite
 
 # ------------------------------------MAIN--------------------------------------
@@ -94,7 +92,7 @@ if __name__ == '__main__':
         
         print('Best fit parameters:', BestFitParams)
 
-        # Bootstrapping
+        # Bootstrapping              #TODO save best fit and uncertainties to another file
         OutputFile = f'{OutputFilePrefix}_{ScalingRelation}.csv'
 
         if os.path.exists(OutputFile) and not Overwrite:
@@ -125,7 +123,6 @@ if __name__ == '__main__':
             t = datetime.datetime.now()
             print(f'[{t}] Bootstrapping fit finishied: {OutputFile}')
 
-
         # 1 sigma uncertainty around the best fit
         BestFitA    = 10**BestFitParams['logA']
         BestFitB    = BestFitParams['B']
@@ -148,3 +145,30 @@ if __name__ == '__main__':
         print(f'A: {BestFitA:.3f} + {UpperBoundA-BestFitA:.3f} - {BestFitA-LowerBoundA:.3f}')
         print(f'B: {BestFitB:.3f} + {UpperBoundB-BestFitB:.3f} - {BestFitB-LowerBoundB:.3f}')
         print(f'TotalScatter: {BestFitScat:.3f} + {UpperBoundScat-BestFitScat:.3f} - {BestFitScat-LowerBoundScat:.3f}')
+
+
+
+        #save the best fit and uncertainties to a csv
+        BestFitOutputFile = os.path.join(OutputFileDir, 'best_fit.csv')
+
+        df = pd.DataFrame(
+            {
+                'Relation': [ScalingRelation],
+                'BestFitA': [BestFitA],
+                'BestFitB': [BestFitB],
+                'BestFitScat': [BestFitScat],
+                '1SigmaUpperA': [UpperBoundA],
+                '1SigmaLowerA': [LowerBoundA],
+                '1SigmaUpperB': [UpperBoundB],
+                '1SigmaLowerB': [LowerBoundB],
+                '1SigmaUpperScat': [UpperBoundScat],
+                '1SigmaLowerScat': [LowerBoundScat],
+            })
+
+        # Check if file exists
+        if os.path.isfile(BestFitOutputFile):
+            # Append to existing file
+            df.to_csv(BestFitOutputFile, mode='a', header=False, index=False)
+        else:
+            # Write new file with header
+            df.to_csv(BestFitOutputFile, index=False)

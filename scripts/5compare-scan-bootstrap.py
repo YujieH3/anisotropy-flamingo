@@ -1,11 +1,11 @@
 # ---------------------------------------------
 # This script scans the full sky and fits the 
 # scaling relations for each direction. No 
-# bootstrapping only best fit
+# bootstrapping only best fit.
 # 
 # Author                       : Yujie He
-# Created on (MM/DD/YYYY)      : 01/15/2024
-# Last Modified on (MM/DD/YYYY): 09/19/2024
+# Created on (MM/YYYY)         : 03/2024
+# Last Modified on (MM/YYYY)   : 09/2024
 # ---------------------------------------------
 
 import sys
@@ -21,7 +21,6 @@ output_dir = '/data1/yujiehe/data/fits'
 
 n_threads = 24
 
-overwrite = False
 relations = ['LX-T', 'YSZ-T', 'M-T'] # pick from 'LX-T', 'M-T', 'LX-YSZ', 'LX-M', 'YSZ-M', 'YSZ-T'
 n_bootstrap = 500 # number of bootstrapping for each direction
 
@@ -105,7 +104,7 @@ def scan_bootstrapping(Nbootstrap, A_arr, B_arr, scat_arr, lon_c_arr,
 
             a = np.pi / 2 - lat_c_rad # center of cone to zenith
             b = np.pi / 2 - lat_rad   # cluster to zenith
-            costheta = np.cos(a)*np.cos(b) + np.sin(a)*np.sin(b)*np.cos(lon_rad - lon_c_rad) # cosθ=cosa*cosb+sina*sinb*cosA
+            costheta = np.cos(a)*np.cos(b) + np.sin(a)*np.sin(b)*np.cos(lon_rad - lon_c_rad) # costheta=cosa*cosb+sina*sinb*cosA
             mask = costheta > np.cos(theta_rad)
 
             n_clusters = np.sum(mask) # number of clusters for bootstrapping
@@ -172,7 +171,7 @@ if __name__ == '__main__':
             continue
 
         # Skip if the output file already exists
-        output_file = f'{output_dir}/scan_bootstrap_{scaling_relation}_θ{cone_size}.csv'
+        output_file = f'{output_dir}/scan_bootstrap_{scaling_relation}_theta{cone_size}.csv'
         if os.path.exists(output_file) and not overwrite:
             print(f'File exists: {output_file}')
             continue

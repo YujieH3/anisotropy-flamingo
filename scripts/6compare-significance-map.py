@@ -1,7 +1,13 @@
-"""
-Calculate significance map given the best fit and bootstrapping scans.
-TODO: Use H0 to report the significance instead of A.
-"""
+# ---------------------------------------------
+# This script calculates the significance map 
+# given the best fit and bootstrapping scans.
+# It modifies the best fit file on the spot 
+# to include significance map.
+#
+# Author                       : Yujie He
+# Created on (MM/YYYY)         : 03/2024
+# Last Modified on (MM/YYYY)   : 09/2024
+# ---------------------------------------------
 
 
 import pandas as pd
@@ -15,8 +21,6 @@ import os
 data_dir = '/data1/yujiehe/data/fits/testrun/lightcone1/'
 best_fit_scan_names = 'scan_best_fit'
 bootstrap_scan_names = 'scan_bootstrap'
-
-# overwrite = False
 
 # -----------------------------COMMAND LINE ARGUMENTS---------------------------
 
