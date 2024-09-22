@@ -17,19 +17,20 @@
 # decending order of Lcore/Ltot fraction, so that 
 # you can make the most concentrated N clusters 
 # sample by getting the first N lines.
-#   - add Chandra temperature for direct comparison
-# with M20.
+#   - add Chandra temperature=T**(1/0.89) for 
+# direct comparison with M20. Chandra temperature 
+# is called ChandraT.
 #
-# Author                       : Yujie He
+# Author                    : Yujie He
 # Created on (MM/YYYY)      : 01/2024
 # Last Modified on (MM/YYYY): 09/2024
 # ---------------------------------------------
 
 import pandas as pd
 import sys
-sys.path.append('/data1/yujiehe/anisotropy-flamingo')
-from tools.xray_correct import *
-from tools.clusterfit import load_lightcone
+sys.path.append('../tools')
+from xray_correct import *
+from clusterfit import load_lightcone
 import numpy as np
 import argparse
 import h5py

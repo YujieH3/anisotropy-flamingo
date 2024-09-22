@@ -4,6 +4,10 @@
 # direction and amplitude for each scaling relation
 # and saves the results to a csv file.
 #
+# The best fit bulk flow is highly unstable so
+# it is recommended to skip this and run bootstrapping
+# directly.
+#
 # Author                       : Yujie He
 # Created on (MM/YYYY)         : 03/2024
 # Last Modified on (MM/YYYY)   : 09/2024
@@ -60,7 +64,7 @@ SCAT_STEP = 0.0003
 # LOGA_STEP = 0.004
 
 C = 299792.458                  # the speed of light in km/s
-FIT_RANGE = const.ONE_MAX_RANGE_TIGHT_SCAT
+# FIT_RANGE = const.ONE_MAX_RANGE_TIGHT_SCAT
 
 
 # -----------------------------COMMAND LINE ARGUMENTS---------------------------
@@ -73,6 +77,7 @@ parser = argparse.ArgumentParser(description="Calculate significance map for bes
 # Add arguments
 parser.add_argument('-i', '--input', type=str, help='Input file', default=INPUT_FILE)
 parser.add_argument('-o', '--output', type=str, help='Output file', default=OUTPUT_FILE)
+parser.add_argument('-r', '--range_file', type=str, help='File path of 3fit-all.py output, for setting range of fitting parameters.', default=None)
 parser.add_argument('--overwrite', action='store_true', help='Overwrite existing.', default=OVERWRITE)
 
 # Parse the arguments
@@ -80,6 +85,9 @@ args = parser.parse_args()
 INPUT_FILE  = args.input
 OUTPUT_FILE = args.output
 overwrite   = args.overwrite
+range_file  = args.range_file
+
+FIT_RANGE = cf.get_range(range_file, n_sigma=1.5)      #1.5 sigma range ~ max range
 # -----------------------END CONFIGURATION--------------------------------------
 
 

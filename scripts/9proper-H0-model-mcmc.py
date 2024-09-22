@@ -1,6 +1,9 @@
 # ---------------------------------------------
 # This script calculates the H0 variation using
 # MCMC. The script is not yet parallelized.
+#    - use COLUMNS_RAW instead of COLUMNS to use
+# raw SOAP spectroscopic-like core-excised 
+# temperature instead of Chandra temperature.
 #
 # Author                       : Yujie He
 # Created on (MM/YYYY)         : 06/2024
@@ -74,7 +77,7 @@ def log_likelihood(theta, X, Y, z_obs, phi_lc, theta_lc, yname, xname):
     # Calculate the redshift
     angle = cf.angular_separation(phi_lc, theta_lc, vlon, vlat) * np.pi/180
    
-    H0_ratio = 1+delta*np.cos(angle)
+    H0_ratio = 1 + delta*np.cos(angle)
 
     # Calculate the Luminosity distance
     if yname == 'LX':

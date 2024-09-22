@@ -60,7 +60,7 @@ SCAT_STEP = 0.0005
 N_BOOTSTRAP = 100
 
 C = 299792.458                  # the speed of light in km/s
-FIT_RANGE = const.ONE_MAX_RANGE_TIGHT_SCAT
+# FIT_RANGE = const.ONE_MAX_RANGE_TIGHT_SCAT
 
 # -----------------------------COMMAND LINE ARGUMENTS---------------------------
 
@@ -72,6 +72,7 @@ parser = argparse.ArgumentParser(description="Calculate significance map for bes
 # Add arguments
 parser.add_argument('-i', '--input', type=str, help='Input file', default=INPUT_FILE)
 parser.add_argument('-o', '--output', type=str, help='Output file', default=OUTPUT_FILE)
+parser.add_argument('-r', '--range_file', type=str, help='File path of 3fit-all.py output, for setting range of fitting parameters.', default=None)
 parser.add_argument('--overwrite', action='store_true', help='Overwrite existing.', default=OVERWRITE)
 
 # Parse the arguments
@@ -79,7 +80,9 @@ args = parser.parse_args()
 INPUT_FILE  = args.input
 OUTPUT_FILE = args.output
 OVERWRITE   = args.overwrite
+range_file  = args.range_file
 
+FIT_RANGE = cf.get_range(range_file, n_sigma=1.5)      #1.5 sigma range ~ max range
 
 
 
@@ -88,7 +91,7 @@ OVERWRITE   = args.overwrite
 # @njit(fastmath=True)
 def fit_bulk_flow(Y, X, z_obs, phi_lc, theta_lc, yname, xname,
                   B_min, B_max, scat_min, scat_max, logA_min, logA_max,
-                  rank, n_rank, comm):
+                  rank, n_rank):
     scaling_relation = f'{yname}-{xname}'
     # min_scat = 1000 # initialize a large number
 
@@ -119,15 +122,9 @@ def fit_bulk_flow(Y, X, z_obs, phi_lc, theta_lc, yname, xname,
 
                 # From: z_bf = z_obs + ubf * (1 + z_bf) * np.cos(angle) / C # Maybe plot a bit the difference between the two
                 z_bf = (z_obs + ubf * np.cos(angle) / C) / (1 - ubf * np.cos(angle) / C) # the ubf convention as the paper
-
-                # # The relativistic correction
-                # u_c_correct = ((1+z_obs)**2-1)/((1+z_obs)**2+1) + (1+z_obs)*ubf*np.cos(angle)/C
-                # z_bf = np.sqrt((1+u_c_correct)/(1-u_c_correct))-1
-
+                
                 # Calculate the Luminosity distance
                 if yname == 'LX':
-                    # DL_zobs = cc.DL(z_obs, H0=68.1, Om=0.306, Ol=0.694)
-                    # DL_zbf = cc.DL(z_bf, H0=68.1, Om=0.306, Ol=0.694)
                     DL_zobs = cosmo.luminosity_distance(z_obs).value
                     DL_zbf = cosmo.luminosity_distance(z_bf).value
                     Y_bf = Y*(DL_zbf)**2/(DL_zobs)**2
@@ -143,16 +140,6 @@ def fit_bulk_flow(Y, X, z_obs, phi_lc, theta_lc, yname, xname,
                 # To our fit parameters
                 logY_ = cf.logY_(Y_bf, z=z_bf, relation=scaling_relation)
                 logX_ = cf.logX_(X, relation=scaling_relation)
-
-                # params = run_fit_log_scat(logY_, logX_, log_scat_step=LOG_SCAT_STEP,
-                #                     B_step=B_STEP, logA_step=LOGA_STEP,
-                #                     B_min=B_min,
-                #                     B_max=B_max,
-                #                     scat_min=scat_min,
-                #                     scat_max=scat_max,
-                #                     logA_min=logA_min,
-                #                     logA_max=logA_max,
-                #                     )
 
                 params = cf.run_fit(logY_, logX_, scat_step=SCAT_STEP,
                                 B_step=B_STEP, logA_step=LOGA_STEP,

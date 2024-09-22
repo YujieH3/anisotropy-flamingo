@@ -24,8 +24,7 @@ VR_TREE_FILE = '/data2/FLAMINGO/L1000N1800/HYDRO_FIDUCIAL/merger_trees/vr_trees.
 L = 2800
 
 OUTPUTDIR = '../data/'
-# OUTPUT_MATCH_LIST = True
-OVERWRITE = True # if toggled true, will overwrite the 'catalog with tree' file. Otherwise will use existing file
+OVERWRITE = True       #if toggled true, will overwrite the 'catalog with tree' file. Otherwise will use existing file
 
 # -------------------------------command line arguments-------------------------
 import argparse
@@ -33,7 +32,7 @@ import argparse
 parser = argparse.ArgumentParser(description="Link the lightcone catalog with the merger tree ids and remove duplicates based on TopLeafID.")
 
 # Add arguments
-parser.add_argument('-i', '--input', type=str, help="Input file path. The lightcone linked catalog output by Roi's script.")
+parser.add_argument('-i', '--input', type=str, help="Input file path. The lightcone catalog.", default=CATALOG_FILE)
 parser.add_argument('-t', '--tree', type=str, help='Input file path. The merger tree file.', default=VR_TREE_FILE)
 parser.add_argument('-o', '--output', type=str, help='Output directory.', default=OUTPUTDIR)
 parser.add_argument('-L', '--boxsize', type=int, help='Boxsize of the simulation.', default=L)

@@ -3,6 +3,9 @@
 # removes them. The outliers are found by fitting
 # the scaling relations and removing the points
 # that are too far (4 sigma away) from the best fit.
+#     - updated to fit and clean (remove outlier) 
+# for all clusters instead of first N highest 
+# Lcore/Ltot ones.
 #
 # Author                       : Yujie He
 # Created on (MM/YYYY)         : 03/2024
@@ -10,8 +13,8 @@
 # ---------------------------------------------
 
 import sys
-sys.path.append('/home/yujiehe/anisotropy-flamingo')
-import tools.clusterfit as cf
+sys.path.append('../tools')
+import clusterfit as cf
 import numpy as np
 import pandas as pd
 
@@ -87,7 +90,7 @@ AllOutlierIDs = np.array([])
 
 for ScalingRelation in cf.CONST.keys():
 
-    Nclusters = cf.CONST[ScalingRelation]['N'] # number of clusters we'd want
+    #Nclusters = cf.CONST[ScalingRelation]['N'] # number of clusters we'd want
 
     _ = ScalingRelation.find('-')
     Y = ClusterData[cf.COLUMNS[ScalingRelation[:_  ]]]
@@ -95,6 +98,8 @@ for ScalingRelation in cf.CONST.keys():
     z = ClusterData['ObservedRedshift']
     logY_ = cf.logY_(Y, z=z, relation=ScalingRelation)
     logX_ = cf.logX_(X, relation=ScalingRelation)
+
+    Nclusters = len(logY_)
 
     BestFitParams, OutlierIDs = cf.fit(
         logY_, logX_, N=Nclusters, **FIT_RANGE[ScalingRelation],

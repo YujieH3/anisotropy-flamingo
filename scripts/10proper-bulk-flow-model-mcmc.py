@@ -1,5 +1,8 @@
 # ---------------------------------------------
 # This script calculates the bulk flow using MCMC.
+#     - use COLUMNS_RAW instead of COLUMNS to use
+# raw SOAP spectroscopic-like core-excised 
+# temperature instead of Chandra temperature.
 #
 # Author                       : Yujie He
 # Created on (MM/YYYY)         : 06/2024

@@ -16,7 +16,7 @@ import os
 
 # on cosma8
 SOAP_DIR = '/cosma8/data/dp004/flamingo/Runs/L2800N5040/HYDRO_FIDUCIAL/SOAP'
-OUTPUT_DIR = '/cosma/home/do012/dc-he4/dc-he4/mock_lightcones'
+OUTPUT_DIR = '/cosma8/data/do012/dc-he4/mock_lightcones'
 
 # on hypernova
 # OUTPUT = '/data1/yujiehe/data/mock_lightcone/halo_lightcone_catalogue/halo_crossing.hdf5'
@@ -361,6 +361,10 @@ for Xobs, Yobs, Zobs in zip(Xobsarr, Yobsarr, Zobsarr):
         z_snap += dz
 
     obsnum += 1
+
+comm.Barrier()
+if rank == 0:
+    print('All done.')
 
 
 

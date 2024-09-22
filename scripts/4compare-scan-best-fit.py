@@ -33,7 +33,8 @@ B_step       = 0.003
 logA_step    = 0.003
 scat_step    = 0.005
 
-FIT_RANGE = const.FIVE_MAX_RANGE
+# # Set the parameter space
+# FIT_RANGE = cf.FIVE_MAX_RANGE
 # -------------------------- command line arguments ------------------------------
 
 import argparse
@@ -44,6 +45,7 @@ parser = argparse.ArgumentParser(description="Scan the full sky and get the best
 # Add arguments
 parser.add_argument('-i', '--input', type=str, help='Input file path.', default=input_file)
 parser.add_argument('-o', '--output', type=str, help='Output directory.', default=output_dir)
+parser.add_argument('-r', '--range_file', type=str, help='File path of 3fit-all.py output, for setting range of fitting parameters.', default=None)
 parser.add_argument('-t', '--threads', type=int, help='Number of threads.', default=n_threads)
 parser.add_argument('-s', '--cone_size', type=int, help='Cone size in degrees.', default=cone_size)
 parser.add_argument('--overwrite', action='store_true', help='Overwrite existing files')
@@ -55,7 +57,9 @@ output_dir = args.output
 n_threads = args.threads
 cone_size = args.cone_size
 overwrite = args.overwrite
+range_file = args.range_file
 
+FIT_RANGE = cf.get_range(range_file, n_sigma=4)      #4 sigma range
 # ------------------------------------------------------------------------------
 
 

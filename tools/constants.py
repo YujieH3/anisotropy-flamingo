@@ -1,3 +1,18 @@
+# ---------------------------------------------
+# This module contains constants used in the 
+# project, along with some column names for
+# easy I/O.
+#     - Updated default temperature COLUMNS name
+# to ChandraT.
+#     - Default temperature pivot point is
+# now CX'=CX^(1/0.89), the same conversion as 
+# XMM to Chandra temperature.
+#
+# Author                       : Yujie He
+# Created on (MM/YYYY)         : 03/2024
+# Last Modified on (MM/YYYY)   : 09/2024
+# ---------------------------------------------
+
 import numpy as np
 from numba import njit
 
@@ -21,6 +36,46 @@ COLUMNS = {
 # Parameters as in M21 (doi.org/10.1051/0004-6361/202140296) table 2
 # changed pivot value CX to minimum A-B correlation at 2024-02-20
 CONST = { 
+    'LX-T': {
+        'CY'   : 1e44, #1e44, # erg/s         # median 1.260e44
+        'CX'   : 3.8**(1/0.89),    #4,    # keV           # median 3.321
+        'gamma': -1,
+        'N'    : 313,
+    },
+    'YSZ-T': {
+        'CY'   : 20, #35, # kpc^2            # median 21.906
+        'CX'   : 3.2**(1/0.89),  #5,  # keV              # median 3.247
+        'gamma': 1,
+        'N'    : 260
+    },
+    'M-T': {
+        'CY'   : 3e13, #2e13, # Msun           # median 2.874e13
+        'CX'   : 3.6**(1/0.89),  #3,    # keV            # median 3.335
+        'gamma': 1,
+        'N'    : 300, # temporary
+    },
+    'LX-YSZ': {
+        'CY'   : 3e43, #1e44, # erg/s          # median 3.056e43
+        'CX'   : 20,   #60,   # kpc^2          # median 21.244
+        'gamma': -8/5,
+        'N'    : 460,
+    },
+    'LX-M': {
+        'CY'   : 1e44, #1e44, # erg/s          # median 1.244e44
+        'CX'   : 3e13, #2e13, # Msun           # median 2.747e13
+        'gamma': -2,
+        'N'    : 300, # temporary
+    },
+    'YSZ-M': {
+        'CY'   : 7,    #20,   # kpc^2         # median 6.753
+        'CX'   : 3e13, #2e13, # Msun          # median 2.747e13
+        'gamma': -2/3,
+        'N'    : 300, # temporary
+    },
+    }
+
+
+CONST_RAW = { 
     'LX-T': {
         'CY'   : 1e44, #1e44, # erg/s         # median 1.260e44
         'CX'   : 3.8,    #4,    # keV           # median 3.321
