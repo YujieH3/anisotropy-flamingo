@@ -44,7 +44,6 @@ parser = argparse.ArgumentParser(description="Make flux and latitude cut and mak
 # Add arguments
 parser.add_argument('-i', '--input', type=str, help='Input file path')
 parser.add_argument('-o', '--output', type=str, help='Output file path', default=None)
-parser.add_argument('-n', '--observer_num', type=int, help='Observer index', default=-1)
 
 # Parse the arguments
 args = parser.parse_args()
@@ -52,7 +51,6 @@ args = parser.parse_args()
 # Now you can use the arguments
 input = args.input
 output = args.output
-obs_num = args.observer_num
 
 if output is None:
     output = input.replace('.hdf5', '.csv')
