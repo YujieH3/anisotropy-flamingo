@@ -1,7 +1,7 @@
 
 """
 Create 12 lightcones on each side:
-time mpiexec -n 9 python _fast_make_lightcone_mpi.py -N 12
+time mpiexec -n 9 python __fast_make_lightcone_mpi.py -N 12
 """
 
 import healpy as hp
@@ -9,20 +9,21 @@ import scipy.optimize as opt
 import h5py
 import numpy as np
 from mpi4py import MPI
-import numba
-import sys
-import time
+import warnings
+#import numba
+#import sys
+#import time
 import os
 
 # on cosma8
-SOAP_DIR = '/cosma8/data/dp004/flamingo/Runs/L2800N5040/HYDRO_FIDUCIAL/SOAP'
-OUTPUT_DIR = '/cosma8/data/do012/dc-he4/mock_lightcones'
+SOAP_DIR = '/cosma8/data/dp004/flamingo/Runs/L1000N1800/HYDRO_FIDUCIAL/SOAP'
+OUTPUT_DIR = '/cosma8/data/do012/dc-he4/mock_lightcones_test'
 
 # on hypernova
 # OUTPUT = '/data1/yujiehe/data/mock_lightcone/halo_lightcone_catalogue/halo_crossing.hdf5'
 MAX_REDSHIFT = 0.35 # max redshift considered
 
-L = 2800   # simulation box size in comoving Mpc (cMpc)
+L = 1000   # simulation box size in comoving Mpc (cMpc)
 
 # ---------------------------- command line arguments --------------------------
 import argparse
@@ -205,7 +206,8 @@ for Xobs, Yobs, Zobs in zip(Xobsarr, Yobsarr, Zobsarr):
         elif rank == 2:
             print('loading coordinates...')
             with h5py.File(soap_file, 'r') as f:
-                coords = f['SO/500_crit/CentreOfMass'][:] * (1 + z_snap) #physical to comoving
+                coords = f['SO/500_crit/CentreOfMass'][:]
+                coords = coords * (1 + z_snap)  # physical to comoving
                 # coords = f['VR/CentreOfPotential'][:]
             print(f'Coordinates loaded: {coords.shape}')
 
@@ -237,7 +239,7 @@ for Xobs, Yobs, Zobs in zip(Xobsarr, Yobsarr, Zobsarr):
             coords = np.empty((datasize, 3), dtype=np.float64)
             comm.Recv([coords, MPI.DOUBLE], source=2, tag=15)
 
-            # mask coords
+            # mask coords with existing mass mask
             coords = coords[mask, :]
             
         if rank == 0:
@@ -259,7 +261,7 @@ for Xobs, Yobs, Zobs in zip(Xobsarr, Yobsarr, Zobsarr):
             print(f'Halo crossed: {soapids.shape}')
 
             if len(soapids) == 0:
-                raise Exception('No halo crossed lightcone.')
+                print('No halo crossed lightcone, skipping snapshot...')
 
         # broadcast datasize for saving
         if rank == 0:
@@ -267,6 +269,11 @@ for Xobs, Yobs, Zobs in zip(Xobsarr, Yobsarr, Zobsarr):
         else:
             datasize = None
         datasize = comm.bcast(datasize, root=0)
+
+        if datasize == 0:
+            comm.Barrier()
+            z_snap += dz
+            continue
         # print(datasize)               # so this works fine
 
         # broadcast final list of soapids
