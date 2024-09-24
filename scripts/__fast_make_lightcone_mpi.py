@@ -45,10 +45,12 @@ L = args.box_size
 # set the step size to match data structure of specific box size
 if L == 2800:
     dz = 0.10
-    di = 2
+    snap_list=[f'Snapshot{x:04d}' for x in np.arange(78, 0, -2)]
 elif L == 1000:
     dz = 0.05
-    di = 1
+    snap_list=[f'Snapshot{x:04d}' for x in np.arange(77, 0, -1)]
+else:
+    raise ValueError(f'Box size not supported. Only 2800 and 1000 are supported, {L} given.')
 
 # single or multi observer run
 if N == 1:
@@ -165,16 +167,15 @@ for Xobs, Yobs, Zobs in zip(Xobsarr, Yobsarr, Zobsarr):
             f.attrs['Yobs'] = Yobs
             f.attrs['Zobs'] = Zobs
 
-    # read the merger tree for list of snapshots. TO BE REPLACED
-    MERGER_TREE_FILE = '/cosma8/data/dp004/jch/FLAMINGO/MergerTrees/ScienceRuns/L2800N5040/HYDRO_FIDUCIAL/trees_f0.1_min10_max100/vr_trees.hdf5'
-    with h5py.File(MERGER_TREE_FILE, 'r') as f:
-        # set snapshot names
-        snap_list = list(f['SOAP'].keys())
-        snap_list = snap_list[::-1]
-
+    # # read the merger tree for list of snapshots. TO BE REPLACED
+    # MERGER_TREE_FILE = '/cosma8/data/dp004/jch/FLAMINGO/MergerTrees/ScienceRuns/L2800N5040/HYDRO_FIDUCIAL/trees_f0.1_min10_max100/vr_trees.hdf5'
+    # with h5py.File(MERGER_TREE_FILE, 'r') as f:
+    #     # set snapshot names
+    #     snap_list = list(f['SOAP'].keys())
+    #     snap_list = snap_list[::-1]
 
     z_snap = 0.0
-    for i, snap in enumerate(snap_list[::di]): # 2.8Gpc soap has only 0078, 0076, 0074, 0072, 0070.. in cadence of 2
+    for i, snap in enumerate(snap_list): # 2.8Gpc soap has only 0078, 0076, 0074, 0072, 0070.. in cadence of 2
         # redshift
         if z_snap > MAX_REDSHIFT:
             break

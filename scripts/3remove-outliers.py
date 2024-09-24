@@ -74,6 +74,8 @@ FIT_RANGE = { # matching the variable names in fit function.
     },
 }
 
+RELATIONS = ['LX-T', 'YSZ-T', 'M-T']
+
 # --------------END CONFIGURATION-----------------------------------------------
 
 print(f'Finding outlier in: {InputFile}')
@@ -81,18 +83,18 @@ print(f'Finding outlier in: {InputFile}')
 ClusterData = pd.read_csv(InputFile)
 AllOutlierIDs = np.array([])
 
-for ScalingRelation in cf.CONST.keys():
+for ScalingRelation in RELATIONS:
 
     #Nclusters = cf.CONST[ScalingRelation]['N'] # number of clusters we'd want
 
     _ = ScalingRelation.find('-')
-    Y = ClusterData[cf.COLUMNS[ScalingRelation[:_  ]]]
-    X = ClusterData[cf.COLUMNS[ScalingRelation[_+1:]]]
-    z = ClusterData['ObservedRedshift']
+    Y = ClusterData[cf.COLUMNS[ScalingRelation[:_  ]]].values
+    X = ClusterData[cf.COLUMNS[ScalingRelation[_+1:]]].values
+    z = ClusterData['ObservedRedshift'].values
     logY_ = cf.logY_(Y, z=z, relation=ScalingRelation)
     logX_ = cf.logX_(X, relation=ScalingRelation)
 
-    Nclusters = len(logY_)
+    Nclusters = len(logY_)  # fit all instead of first N highest Lcore/Ltot
 
     BestFitParams, OutlierIDs = cf.fit(
         logY_, logX_, N=Nclusters, **FIT_RANGE[ScalingRelation],
@@ -104,4 +106,5 @@ for ScalingRelation in cf.CONST.keys():
 # Remove outliers and save to file
 CleanClusterData = ClusterData[~ClusterData['TopLeafID'].isin(AllOutlierIDs)]
 CleanClusterData.to_csv(OutputFile, index=False)
-print(f'Cleaned data saved: {OutputFile}')
+print(f'Outliers removed in total: {len(AllOutlierIDs)}')
+print(f'Cleaned data: {len(CleanClusterData)}')

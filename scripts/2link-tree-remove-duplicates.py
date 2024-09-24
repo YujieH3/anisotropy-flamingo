@@ -49,6 +49,8 @@ if OVERWRITE==False and os.path.isfile(OUTPUT):
     raise ValueError('Output file already exists. Please set OVERWRITE=True or change the output filename.')
 # -------------------------------------main-------------------------------------
 
+print(f'Removing duplicates in {CATALOG_FILE}...')
+
 catalog = pd.read_csv(CATALOG_FILE)
 vr_tree = h5py.File(VR_TREE_FILE, 'r')
 
@@ -102,4 +104,4 @@ catalog.to_csv(OUTPUT, index=False)
 # # Sanity check
 # # matching and remove by topleafid should give the same number of clusters
 # assert len(duplicate_excision) == len(catalog_near) + len(unmatched_dup)
-print('Done!')
+print('Duplicates removed:', len(catalog))

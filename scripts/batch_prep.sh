@@ -6,9 +6,9 @@
 #SBATCH -e /cosma8/data/do012/dc-he4/log/standard_error_file.%J.err
 #SBATCH -p cosma-analyse #or some other partition, e.g. cosma, cosma8, etc.
 #SBATCH -A do012 #e.g. dp004
-#SBATCH -t 72:00:00  #hh:mm:ss
+#SBATCH -t 24:00:00  #D-HH:MM:SS
 ##SBATCH --exclusive
-#SBATCH --mail-type=END # notifications for job done & fail
+#SBATCH --mail-type=BEGIN,END,FAIL,TIME_LIMIT_80,TIME_LIMIT_90,TIME_LIMIT
 #SBATCH --mail-user=yujiehe@strw.leidenuniv.nl #PLEASE PUT YOUR EMAIL ADDRESS HERE (without the <>)
 
 module purge
@@ -21,7 +21,7 @@ conda activate halo-cosma
 
 
 # config
-N1=12         #number of lightcones in each dimension
+#N1=12         #number of lightcones in each dimension
 N3=1728      #total number of lightcones
 data_dir="/cosma8/data/do012/dc-he4/mock_lightcones_copy"  #directory of halo_properties_in_ligthcone0000.hdf5 (or 0001, 0002, etc.)
 analyse_dir="/cosma8/data/do012/dc-he4/analysis"           #directory of analysis results
@@ -31,9 +31,9 @@ soap_dir="/cosma8/data/dp004/flamingo/Runs/L2800N5040/HYDRO_FIDUCIAL/SOAP"
 mkdir $analyse_dir -p
 
 # prep all data
-python _1_combine_lightcone.py -i $data_dir
-python _2_band_patch.py -i $data_dir
-python _3_rotate_lightcone.py -i $data_dir
+#python _1_combine_lightcone.py -i $data_dir
+#python _2_band_patch.py -i $data_dir
+#python _3_rotate_lightcone.py -i $data_dir
 
 # run analysis
 for i in $(seq 0 $((N3-1)))
@@ -70,7 +70,7 @@ do
     else
         python 3remove-outliers.py -i $sample -o $output
     fi
-
+done
 
     
     
