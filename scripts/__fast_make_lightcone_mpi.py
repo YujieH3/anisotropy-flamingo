@@ -117,7 +117,7 @@ rank = comm.Get_rank()
 size = comm.Get_size()
 
 if size != 9:
-    raise Exception(f'The scripts is configured with 10 cores only. {size} cores detected.')
+    raise Exception(f'The scripts is configured with 9 cores only. {size} cores detected.')
 
 if not os.path.exists(OUTPUT_DIR):
     raise Exception(f'Output path {OUTPUT_DIR} does not exist')
@@ -205,7 +205,7 @@ for Xobs, Yobs, Zobs in zip(Xobsarr, Yobsarr, Zobsarr):
         elif rank == 2:
             print('loading coordinates...')
             with h5py.File(soap_file, 'r') as f:
-                coords = f['SO/500_crit/CentreOfMass'][:]
+                coords = f['SO/500_crit/CentreOfMass'][:] * (1 + z_snap) #physical to comoving
                 # coords = f['VR/CentreOfPotential'][:]
             print(f'Coordinates loaded: {coords.shape}')
 
@@ -353,8 +353,8 @@ for Xobs, Yobs, Zobs in zip(Xobsarr, Yobsarr, Zobsarr):
 
         
         
-        # synchronize before move on
-        comm.Barrier() 
+        ## synchronize before move on
+        #comm.Barrier() 
             
                     
 
