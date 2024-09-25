@@ -15,7 +15,7 @@ The universe might look more like a 🌰 than a 🎱.
 - [x] Make scripts/_1_combine_lightcone.py, scripts/_2_band_patch.py, scripts/_3_rotate_lightcone.py take individual files as input instead of a directory, easier to run in parallel with lightcone creation script (scripts/__fast_make_lightcone_mpi.py).
 - [ ] lightcone0000 - 0004 are corrupted, remember to redo the sample creation on them.
 - [ ] Write a batch script to run the H0 analysis on the cluster.
-- [ ] Wrtie a small script to examine to completeness of halo_lightcones. 
+- [ ] Wrtie a small script to examine the completeness of halo_lightcones: 19 columns of quantities in four snapshots
 
 ## Warning
 

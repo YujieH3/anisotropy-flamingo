@@ -1,15 +1,15 @@
 #!/bin/bash -l
 
-#SBATCH --ntasks 1 # The number of cores you need...
-#SBATCH -J H0-analysis #Give it something meaningful.
+#SBATCH --ntasks 32           # The number of cores you need...
+#SBATCH -J h0-anisotropy     #Give it something meaningful.
 #SBATCH -o /cosma8/data/do012/dc-he4/log/standard_output_file.%J.out  # J is the job ID, %J is unique for each job.
 #SBATCH -e /cosma8/data/do012/dc-he4/log/standard_error_file.%J.err
 #SBATCH -p cosma-analyse #or some other partition, e.g. cosma, cosma8, etc.
 #SBATCH -A do012 #e.g. dp004
 #SBATCH -t 24:00:00  #D-HH:MM:SS
-##SBATCH --exclusive
 #SBATCH --mail-type=BEGIN,END,FAIL,TIME_LIMIT_80,TIME_LIMIT_90,TIME_LIMIT
 #SBATCH --mail-user=yujiehe@strw.leidenuniv.nl #PLEASE PUT YOUR EMAIL ADDRESS HERE (without the <>)
+##SBATCH --exclusive #no don't need exclusive
 
 module purge
 
@@ -21,7 +21,7 @@ conda activate halo-cosma
 
 
 # config
-#N1=12         #number of lightcones in each dimension
+n=32         #number of cores
 N3=1728      #total number of lightcones
 data_dir="/cosma8/data/do012/dc-he4/mock_lightcones_copy"  #directory of halo_properties_in_ligthcone0000.hdf5 (or 0001, 0002, etc.)
 analyse_dir="/cosma8/data/do012/dc-he4/analysis"           #directory of analysis results
@@ -38,9 +38,9 @@ do
     echo "Analysing lightcone${lc}"
 
     # the halo lightcone input file
-    input="${data_dir}/halo_properties_in_lightcone${lc}.hdf5"
-        
-    # check if mock lightcone exists
+    input="${analyse_dir}/lc${lc}/samples_in_lightcone${lc}_duplicate_excision_outlier_excision.csv"
+
+    # check if the sample file exists
     if [ -f $input ]; then
         echo "File $input found."
     else
@@ -48,17 +48,17 @@ do
         continue
     fi
 
-    # skip the last file so we don't accidentally operate on the file being written, except when all lightcones are created
-    last_file=$(ls -1 $data_dir | tail -n 1)
-    last_file="${data_dir}/${last_file}"
-    if [ $i != $((N3-1)) ] && [ $last_file == $input ] #in case the file doesn't exist or last file is incomplete
+    output="${analyse_dir}/lc${lc}"
+    if ! [ -f "${output}/fit-all.done"] #use a file flag
     then
-        echo "File ${input} possibly incomplete, skipping..."
-        continue
+        python 4fit-all.py -i $input -o $output -t $n -n 500
+        echo > "${output}/fit-all.done"
+    else
+        echo "fit-all already done, skipping..."
     fi
 
-    # make directories
-    mkdir "${analyse_dir}/lc${lc}" -p
+    output="${analyse_dir}/lc${lc}"
+    
 
     
 done

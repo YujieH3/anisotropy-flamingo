@@ -55,7 +55,7 @@ InputFile = args.input
 OutputFileDir = args.output
 Nthreads = args.threads
 BootstrapSteps = args.bootstrap
-OutputFilePrefix = os.path.join(OutputFileDir, 'bootstrap')
+OutputFilePrefix = os.path.join(OutputFileDir, 'bootstrap_all')
 Overwrite = args.overwrite
 
 # ------------------------------------MAIN--------------------------------------
