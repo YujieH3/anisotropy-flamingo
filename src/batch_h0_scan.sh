@@ -51,16 +51,11 @@ do
     output="${analyse_dir}/lc${lc}"
     if ! [ -f "${output}/fit-all.done"] #use a file flag
     then
-        python 4fit-all.py -i $input -o $output -t $n -n 500
+        python h0_anisotropy_direct_compare/fit-all.py -i $input -o $output -t $n -n 500
         echo > "${output}/fit-all.done"
     else
         echo "fit-all already done, skipping..."
     fi
-
-    output="${analyse_dir}/lc${lc}"
-    
-
-    
 done
 
     
