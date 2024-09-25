@@ -4,27 +4,26 @@
 # different lightcones. It also saves the rotation
 # angles for reproducibility.
 #
-# Author                       : Yujie He
-# Created on (MM/DD/YYYY)      : 01/15/2024
-# Last Modified on (MM/DD/YYYY): 09/19/2024
+# Author                    : Yujie He
+# Created on (MM/YYYY)      : 01/2024
+# Last Modified on (MM/YYYY): 09/2024
 # ---------------------------------------------
 
 
 import h5py
-import pandas as pd
 import numpy as np
 from glob import glob
 import healpy
-INPUT_DIR = '/data/yujiehe/data/mock_lightcones/halo_lightcones'
+INPUT = '/data/yujiehe/data/mock_lightcones/halo_lightcones'
 
 # ------------------------------- command line arguments -----------------------
 import argparse
 parser = argparse.ArgumentParser(description='Join the interpolated properties with SOAP catalogue.')
-parser.add_argument('-i', '--input_dir', type=str, help='Input file directory', default=INPUT_DIR)
+parser.add_argument('-i', '--input', type=str, help='Input INPUT directory', default=INPUT)
 
 # parse the arguments
 args = parser.parse_args()
-INPUT_DIR = args.input_dir
+INPUT = args.input
 # ------------------------------------------------------------------------------
 
 def Rx(theta : float) -> np.matrix:
@@ -60,17 +59,13 @@ def Rz(theta : float) -> np.matrix:
         [0,          0,         1],
     ])
 
-flist = glob(f'{INPUT_DIR}/*.hdf5')
-flist.sort()        #loop in order
-for file in flist:
-    print(file)
-    index = file.find('.hdf5')
-    seed = int(file[index-4:index])    #lightcone number, used as random seed for reproducibility
-    with h5py.File(file, 'a') as f:
-        if 'x_lc_norot' in list(f.keys()):
-            print('Already rotated. Skipping.')
-            continue
 
+index = INPUT.find('.hdf5')
+seed = int(INPUT[index-4:index])    #use lightcone number as random seed for reproducibility
+with h5py.File(INPUT, 'a') as f:
+    if 'x_lc_norot' in list(f.keys()):
+        print('Already rotated. Skipping.')
+    else:
         X = f['x_lc'][:]
         Y = f['y_lc'][:]
         Z = f['z_lc'][:]

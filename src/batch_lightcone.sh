@@ -22,4 +22,4 @@ conda activate halo-cosma
 soap_dir="/cosma8/data/dp004/flamingo/Runs/L2800N5040/HYDRO_FIDUCIAL/SOAP"
 output_dir="/cosma8/data/do012/dc-he4/mock_lightcones"
 
-time mpiexec -n 9 python /cosma/home/do012/dc-he4/anisotropy-flamingo/scripts/__fast_make_lightcone_mpi.py -i $soap_dir -o $output_dir -z 0.35 -N 12 -L 2800
+time mpiexec -n 9 python /cosma/home/do012/dc-he4/anisotropy-flamingo/src/__fast_make_lightcone_mpi.py -i $soap_dir -o $output_dir -z 0.35 -N 12 -L 2800

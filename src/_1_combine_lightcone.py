@@ -11,30 +11,24 @@
 Join the output of _c_interpolate_lightcone.py into a halo_lightcone file linked with soap catalogue  
 """
 import h5py
-import pandas as pd
 import numpy as np
-from glob import glob
-INPUT_DIR = '/data/yujiehe/data/mock_lightcones/halo_lightcones'
 
 # ------------------------------- command line arguments -----------------------
 import argparse
 parser = argparse.ArgumentParser(description='Join the interpolated properties with SOAP catalogue.')
-parser.add_argument('-i', '--input_dir', type=str, help='Input file directory', default=INPUT_DIR)
+parser.add_argument('-i', '--input', type=str, help='Input file directory')
 
 # parse the arguments
 args = parser.parse_args()
-INPUT_DIR = args.input_dir
+INPUT = args.input
 # ------------------------------------------------------------------------------
 
-flist = glob(f'{INPUT_DIR}/*.hdf5')
-flist.sort()        #loop in order
-for file in flist:
-    print(file)
-    to_save = {}
-    with h5py.File(file, 'a') as f:
-        if 'Snapshot' not in list(f.keys())[0]:
-            print('Already combined.')
-            continue
+
+with h5py.File(INPUT, 'a') as f:
+    if 'Snapshot' not in list(f.keys())[0]:
+        print('Already combined.')
+    else:
+        to_save = {}
         for snap_name, snap_group in f.items():
             print(snap_name, snap_group)
             for qty_key, qty_dataset in snap_group.items():
@@ -45,10 +39,10 @@ for file in flist:
             
             del f[f'{snap_name}']        # del snap_group won't work, for unknown reason
 
-        for save_key, save_data in to_save.items():
-            f.create_dataset(name=save_key, data=save_data)
-        
-    print('Lightcone combined.') 
+    for save_key, save_data in to_save.items():
+        f.create_dataset(name=save_key, data=save_data)
+    
+print('Lightcone combined.') 
 
-print('\nDone.\n')
+
 
