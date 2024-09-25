@@ -1,6 +1,8 @@
 # Anisotropy FLAMINGO Project
 ![Work in Progress](https://img.shields.io/badge/status-in%20progress-yellow)
 
+> **Warning:** This project is in active development. Some features may change, and full documentation will be available soon.
+
 The project study the anisotropy of the universe with galaxy scaling relations. We use the FLAMINGO simulation to create thousands of mock lightcones and see what level of cosmic anisotropy we can expect in a LCDM universe. 
 
 The work is a continuation of observational studies from:
@@ -8,8 +10,6 @@ The work is a continuation of observational studies from:
 - [Migkas et al. 2021](https://ui.adsabs.harvard.edu/abs/2021A%26A...649A.151M/abstract)
 
 The universe might look more like a 🌰 than a 🎱.
-
-> **Warning:** This project is in active development. Some features may change, and full documentation will be available soon.
 
 This repository is a **working directory** for my ongoing research on the anisotropy of the universe using the FLAMINGO simulation. It is **not intended as a fully-developed package** or tool for general use. The code here is primarily for personal experimentation and may not be well-documented, optimized, or suitable for reuse by others.
 
