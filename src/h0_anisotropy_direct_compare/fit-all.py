@@ -10,7 +10,7 @@
 
 
 import sys
-sys.path.append('/home/yujiehe/anisotropy-flamingo')
+sys.path.append('/cosma/home/do012/dc-he4/anisotropy-flamingo')
 import tools.clusterfit as cf
 import numpy as np
 import pandas as pd
@@ -27,7 +27,7 @@ Nthreads = 4
 
 Relations = ['LX-T', 'YSZ-T', 'M-T',] #'LX-YSZ', 'LX-M', 'YSZ-M'] # give the name of the relation to fit if you want to fit only one. Set to False if you want to fit all relations.
 BootstrapSteps = 500 # number of bootstrap steps to calculate uncertainties
-ScatterStepSize = 0.002
+ScatterStepSize = 0.006
 BStepSize       = 0.002
 logAStepSize    = 0.002
 
@@ -76,9 +76,9 @@ if __name__ == '__main__':
         Nclusters = cf.CONST[ScalingRelation]['N'] # number of clusters we'd want
 
         _ = ScalingRelation.find('-')
-        Y = ClusterData[cf.COLUMNS[ScalingRelation[:_  ]]][:Nclusters]
-        X = ClusterData[cf.COLUMNS[ScalingRelation[_+1:]]][:Nclusters]
-        z = ClusterData['ObservedRedshift'][:Nclusters]
+        Y = ClusterData[cf.COLUMNS[ScalingRelation[:_  ]]][:Nclusters].values
+        X = ClusterData[cf.COLUMNS[ScalingRelation[_+1:]]][:Nclusters].values
+        z = ClusterData['ObservedRedshift'][:Nclusters].values
         logY_ = cf.logY_(Y, z=z, relation=ScalingRelation)
         logX_ = cf.logX_(X, relation=ScalingRelation)
 
@@ -149,7 +149,7 @@ if __name__ == '__main__':
 
 
         #save the best fit and uncertainties to a csv
-        BestFitOutputFile = os.path.join(OutputFileDir, 'fit-all.csv')
+        BestFitOutputFile = os.path.join(OutputFileDir, 'fit_all.csv')
 
         df = pd.DataFrame(
             {

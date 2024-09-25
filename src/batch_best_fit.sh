@@ -1,7 +1,7 @@
 #!/bin/bash -l
 
 #SBATCH --ntasks 32           # The number of cores you need...
-#SBATCH -J h0-anisotropy     #Give it something meaningful.
+#SBATCH -J h0_anisotropy_sbf     #Give it something meaningful.
 #SBATCH -o /cosma8/data/do012/dc-he4/log/standard_output_file.%J.out  # J is the job ID, %J is unique for each job.
 #SBATCH -e /cosma8/data/do012/dc-he4/log/standard_error_file.%J.err
 #SBATCH -p cosma-analyse #or some other partition, e.g. cosma, cosma8, etc.
@@ -13,9 +13,9 @@
 
 module purge
 
-module load intel_comp
-module load compiler-rt tbb compiler mpi
-module load openmpi
+# module load intel_comp
+# module load compiler-rt tbb compiler mpi
+# module load openmpi
 
 conda activate halo-cosma
 
@@ -35,7 +35,7 @@ mkdir $analyse_dir -p
 for i in $(seq 0 $((N3-1)))
 do
     lc=$(printf "%04d" $i)
-    echo "Analysing lightcone${lc}"
+    # echo "Analysing lightcone${lc}"
 
     # the halo lightcone input file
     input="${analyse_dir}/lc${lc}/samples_in_lightcone${lc}_duplicate_excision_outlier_excision.csv"
@@ -44,17 +44,15 @@ do
     if [ -f $input ]; then
         echo "File $input found."
     else
-        echo "File $input does not exist, skipping..."
         continue
     fi
 
     output="${analyse_dir}/lc${lc}"
-    if ! [ -f "${output}/fit-all.done"] #use a file flag
+    if ! [ -f "${output}/scan-best-fit.done" ] && [ -f "${output}/fit_all.csv" ] #use a file flag
     then
-        python h0_anisotropy_direct_compare/fit-all.py -i $input -o $output -t $n -n 500
-        echo > "${output}/fit-all.done"
+        python h0_anisotropy_direct_compare/scan-best-fit.py -i $input -r "${output}/fit_all.csv" -o $output -t $n && echo > "${output}/scan-best-fit.done"
     else
-        echo "fit-all already done, skipping..."
+        echo "scan-best-fit already done or fit_all output not found, skipping..."
     fi
 done
 

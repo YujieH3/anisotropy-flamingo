@@ -1,7 +1,9 @@
 # ---------------------------------------------
 # This script scans the full sky and fits the 
 # scaling relations for each direction. No 
-# bootstrapping only best fit
+# bootstrapping only best fit.
+#     - Cone size set to 60 if YSZ is in the 
+# scaling relation
 # 
 # Author                       : Yujie He
 # Created on (MM/YYYY)         : 03/2024
@@ -9,7 +11,7 @@
 # ---------------------------------------------
 
 import sys
-sys.path.append('/home/yujiehe/anisotropy-flamingo')
+sys.path.append('/cosma/home/do012/dc-he4/anisotropy-flamingo')
 import tools.clusterfit as cf
 import tools.constants as const
 import numpy as np
@@ -33,6 +35,7 @@ B_step       = 0.003
 logA_step    = 0.003
 scat_step    = 0.005
 
+RELATIONS = ['LX-T', 'YSZ-T', 'M-T'] # pick from 'LX-T', 'M-T', 'LX-YSZ', 'LX-M', 'YSZ-M', 'YSZ-T'
 # # Set the parameter space
 # FIT_RANGE = cf.FIVE_MAX_RANGE
 # -------------------------- command line arguments ------------------------------
@@ -47,7 +50,7 @@ parser.add_argument('-i', '--input', type=str, help='Input file path.', default=
 parser.add_argument('-o', '--output', type=str, help='Output directory.', default=output_dir)
 parser.add_argument('-r', '--range_file', type=str, help='File path of 3fit-all.py output, for setting range of fitting parameters.', default=None)
 parser.add_argument('-t', '--threads', type=int, help='Number of threads.', default=n_threads)
-parser.add_argument('-s', '--cone_size', type=int, help='Cone size in degrees.', default=cone_size)
+# parser.add_argument('-s', '--cone_size', type=int, help='Cone size in degrees.', default=cone_size)
 parser.add_argument('--overwrite', action='store_true', help='Overwrite existing files')
 
 # Parse the arguments
@@ -55,7 +58,7 @@ args = parser.parse_args()
 input_file = args.input
 output_dir = args.output
 n_threads = args.threads
-cone_size = args.cone_size
+# cone_size = args.cone_size
 overwrite = args.overwrite
 range_file = args.range_file
 
@@ -141,11 +144,17 @@ if __name__ == '__main__':
 
     cluster_data = pd.read_csv(input_file)
 
-    for scaling_relation in cf.CONST.keys():
+    for scaling_relation in RELATIONS:
 
         if one_relation is not False:
             if scaling_relation != one_relation:
                 continue
+
+        # Cone size set to 60 if YSZ is in the scaling relation
+        if 'YSZ' in scaling_relation:
+            cone_size = 60
+        else:
+            cone_size = 75
 
         # Skip if the file already exists
         output_file = f'{output_dir}/scan_best_fit_{scaling_relation}_theta{cone_size}.csv'

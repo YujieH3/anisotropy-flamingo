@@ -9,8 +9,8 @@
 # ---------------------------------------------
 
 import sys
-sys.path.append('/home/yujiehe/anisotropy-flamingo')
 import os
+sys.path.append('/cosma/home/do012/dc-he4/anisotropy-flamingo')
 import tools.clusterfit as cf
 import numpy as np
 from numba import njit, prange, set_num_threads

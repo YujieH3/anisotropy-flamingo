@@ -12,7 +12,7 @@
 
 import pandas as pd
 import sys
-sys.path.append('/home/yujiehe/anisotropy-flamingo')
+sys.path.append('/cosma/home/do012/dc-he4/anisotropy-flamingo')
 import tools.clusterfit as cf
 import os
 
@@ -21,6 +21,7 @@ import os
 data_dir = '/data1/yujiehe/data/fits/testrun/lightcone1/'
 best_fit_scan_names = 'scan_best_fit'
 bootstrap_scan_names = 'scan_bootstrap'
+RELATIONS = ['LX-T', 'YSZ-T', 'M-T'] # pick from 'LX-T', 'M-T', 'LX-YSZ', 'LX-M', 'YSZ-M', 'YSZ-T'
 
 # -----------------------------COMMAND LINE ARGUMENTS---------------------------
 
@@ -41,7 +42,7 @@ overwrite = args.overwrite
 # --------------------------------------MAIN------------------------------------
 
 if __name__ == '__main__':
-    for relation in cf.CONST.keys():
+    for relation in RELATIONS:
 
         flag1 = False
         flag2 = False

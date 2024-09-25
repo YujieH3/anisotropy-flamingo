@@ -13,15 +13,14 @@
 
 module purge
 
-module load intel_comp
-module load compiler-rt tbb compiler mpi
-module load openmpi
+# module load intel_comp
+# module load compiler-rt tbb compiler mpi
+# module load openmpi
 
 conda activate halo-cosma
 
 
 # config
-#N1=12         #number of lightcones in each dimension
 N3=1728      #total number of lightcones
 data_dir="/cosma8/data/do012/dc-he4/mock_lightcones_copy"  #directory of halo_properties_in_ligthcone0000.hdf5 (or 0001, 0002, etc.)
 analyse_dir="/cosma8/data/do012/dc-he4/analysis"           #directory of analysis results
@@ -31,11 +30,12 @@ soap_dir="/cosma8/data/dp004/flamingo/Runs/L2800N5040/HYDRO_FIDUCIAL/SOAP"
 # make output directory if doesn't exist
 mkdir $analyse_dir -p
 
-# run analysis
+# run analysis, in src directory
+cd /cosma/home/dp004/dc-he4/anisotropy-flamingo/src
 for i in $(seq 0 $((N3-1)))
 do
     lc=$(printf "%04d" $i)
-    echo "Analysing lightcone${lc}"
+    #echo "Analysing lightcone${lc}"
 
     # the halo lightcone input file
     input="${data_dir}/halo_properties_in_lightcone${lc}.hdf5"
@@ -44,8 +44,7 @@ do
     if [ -f $input ]; then
         echo "File $input found."
     else
-        echo "File $input does not exist, skipping..."
-        continue
+        continue  #don't echo anything here, else it will cramp up the log file
     fi
 
     # skip the last file so we don't accidentally operate on the file being written, except when all lightcones are created
