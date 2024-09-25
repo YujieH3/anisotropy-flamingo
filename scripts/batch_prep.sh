@@ -31,9 +31,9 @@ soap_dir="/cosma8/data/dp004/flamingo/Runs/L2800N5040/HYDRO_FIDUCIAL/SOAP"
 mkdir $analyse_dir -p
 
 # prep all data
-#python _1_combine_lightcone.py -i $data_dir
-#python _2_band_patch.py -i $data_dir
-#python _3_rotate_lightcone.py -i $data_dir
+python _1_combine_lightcone.py -i $data_dir
+python _2_band_patch.py -i $data_dir
+python _3_rotate_lightcone.py -i $data_dir
 
 # run analysis
 for i in $(seq 0 $((N3-1)))
@@ -41,11 +41,30 @@ do
     lc=$(printf "%04d" $i)
     echo "Analysing lightcone${lc}"
 
+    # create samples
+    input="${data_dir}/halo_properties_in_lightcone${lc}.hdf5"
+        
+    # check if mock lightcone exists
+    if [ -f $input ]; then
+        echo "File $input found."
+    else
+        echo "File $input does not exist, skipping..."
+        continue
+    fi
+
+    # skip the last file, except when all lightcones are created
+    last_file=$(ls -1 $data_dir | tail -n 1)
+    last_file="${data_dir}/${last_file}"
+    if ! [ $last_file == $input ] && [ $i != $((N3-1)) ] #in case the file doesn't exist or last file is incomplete
+    then
+        echo "File ${input} possibly incomplete, skipping..."
+        continue
+    fi
+
     # make directories
     mkdir "${analyse_dir}/lc${lc}" -p
 
-    # create samples
-    input="${data_dir}/halo_properties_in_lightcone${lc}.hdf5"
+    # make samples
     output="${analyse_dir}/lc${lc}/samples_in_lightcone${lc}.csv"
     if [ -f $output ]; then
         echo "File $output exists, skipping..."

@@ -168,13 +168,6 @@ for Xobs, Yobs, Zobs in zip(Xobsarr, Yobsarr, Zobsarr):
             f.attrs['Yobs'] = Yobs
             f.attrs['Zobs'] = Zobs
 
-    # # read the merger tree for list of snapshots. TO BE REPLACED
-    # MERGER_TREE_FILE = '/cosma8/data/dp004/jch/FLAMINGO/MergerTrees/ScienceRuns/L2800N5040/HYDRO_FIDUCIAL/trees_f0.1_min10_max100/vr_trees.hdf5'
-    # with h5py.File(MERGER_TREE_FILE, 'r') as f:
-    #     # set snapshot names
-    #     snap_list = list(f['SOAP'].keys())
-    #     snap_list = snap_list[::-1]
-
     z_snap = 0.0
     for i, snap in enumerate(snap_list): # 2.8Gpc soap has only 0078, 0076, 0074, 0072, 0070.. in cadence of 2
         # redshift
@@ -207,7 +200,6 @@ for Xobs, Yobs, Zobs in zip(Xobsarr, Yobsarr, Zobsarr):
             print('loading coordinates...')
             with h5py.File(soap_file, 'r') as f:
                 coords = f['SO/500_crit/CentreOfMass'][:]
-                coords = coords * (1 + z_snap)  # physical to comoving
                 # coords = f['VR/CentreOfPotential'][:]
             print(f'Coordinates loaded: {coords.shape}')
 
@@ -241,6 +233,9 @@ for Xobs, Yobs, Zobs in zip(Xobsarr, Yobsarr, Zobsarr):
 
             # mask coords with existing mass mask
             coords = coords[mask, :]
+
+            # physical to comoving
+            coords *= (1 + z_snap)
             
         if rank == 0:
             z_shell_low = z_snap - dz/2 if z_snap > 0 else 0
@@ -353,15 +348,16 @@ for Xobs, Yobs, Zobs in zip(Xobsarr, Yobsarr, Zobsarr):
         # save velocities with last thread
         if rank == size - 1:
             with h5py.File(output_file, 'a') as f:
-                f[snap].create_dataset('Vx', data=V[:,0])
-                f[snap].create_dataset('Vy', data=V[:,1])
-                f[snap].create_dataset('Vz', data=V[:,2])
+                f_snap = f.require_group(snap)
+                f_snap.create_dataset('Vx', data=V[:,0])
+                f_snap.create_dataset('Vy', data=V[:,1])
+                f_snap.create_dataset('Vz', data=V[:,2])
             print(f'velocity saved by process {rank}.')
 
         
         
-        ## synchronize before move on
-        #comm.Barrier() 
+        # synchronize before move on
+        comm.Barrier() 
             
                     
 
