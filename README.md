@@ -9,20 +9,15 @@ The work is a continuation of observational studies from:
 
 The universe might look more like a 🌰 than a 🎱.
 
+> **Warning:** This project is in active development. Some features may change, and full documentation will be available soon.
+
+This repository is a **working directory** for my ongoing research on the anisotropy of the universe using the FLAMINGO simulation. It is **not intended as a fully-developed package** or tool for general use. The code here is primarily for personal experimentation and may not be well-documented, optimized, or suitable for reuse by others.
+
+If you’re looking for a polished and reusable solution, this repository may not meet your expectations. However, you are welcome to explore the content and reach out with any questions, suggestions, or collaborations!
+
 ## To-Do List
 - [x] Lightcone debugged and running on the cluster.
 - [x] Set up a cron job to copy to backup for further operations every hour.
 - [ ] Make scripts/_1_combine_lightcone.py, scripts/_2_band_patch.py, scripts/_3_rotate_lightcone.py take individual files as input instead of a directory, easier to run in parallel with lightcone creation script (scripts/__fast_make_lightcone_mpi.py).
 - [ ] Write a batch script to run the H0 analysis on the cluster.
-
-## ⚠️ Warning: Work in Progress ⚠️
-
-This repository is a **working directory** for my ongoing research on the anisotropy of the universe using the FLAMINGO simulation. It is **not intended as a fully-developed package** or tool for general use. The code here is primarily for personal experimentation and may not be well-documented, optimized, or suitable for reuse by others.
-
-Please note that:
-- The repository is subject to frequent changes.
-- Scripts may contain errors or unfinished implementations.
-- The structure and content are tailored to the specific needs of this research project.
-
-If you’re looking for a polished and reusable solution, this repository may not meet your expectations. However, you are welcome to explore the content and reach out with any questions, suggestions, or collaborations!
 
