@@ -24,7 +24,6 @@ n_threads = 24
 relations = ['LX-T', 'YSZ-T', 'M-T'] # pick from 'LX-T', 'M-T', 'LX-YSZ', 'LX-M', 'YSZ-M', 'YSZ-T'
 n_bootstrap = 500 # number of bootstrapping for each direction
 
-cone_size    = 60 # all angles in this scipt are in degrees unless with a _rad suffix
 lon_step     = 4  # longitude step. Longitude from -180 to 180 deg
 lat_step     = 2  # latitude step. Latitude from -90 to 90 deg
 # Note that in our catalogue, phi_on_lc is longitude, theta_on_lc is latitude...
@@ -167,11 +166,7 @@ if __name__ == '__main__':
     print(f'[{t00}] Begin scanning: {relations} in {cone_size}°.')
     print(f'Threads: {n_threads}')
 
-    for scaling_relation in cf.CONST.keys():
-
-        # Skip if the scaling relation is not in the list
-        if scaling_relation not in relations:
-            continue
+    for scaling_relation in relations:
 
         # Skip if the output file already exists
         output_file = f'{output_dir}/scan_bootstrap_{scaling_relation}_theta{cone_size}.csv'

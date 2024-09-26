@@ -1,6 +1,6 @@
 # ---------------------------------------------
 # This script calculates the bulk flow using MCMC.
-#     - use COLUMNS_RAW instead of COLUMNS to use
+#     - use COLUMNS_MC instead of COLUMNS to use
 # raw SOAP spectroscopic-like core-excised 
 # temperature instead of Chandra temperature.
 #
@@ -145,8 +145,8 @@ for scaling_relation in RELATIONS:
     _ = scaling_relation.find('-')
     yname = scaling_relation[:_]
     xname = scaling_relation[_+1:]
-    Y = np.array(data[cf.COLUMNS_RAW[yname]][:n_clusters])
-    X = np.array(data[cf.COLUMNS_RAW[xname]][:n_clusters])
+    Y = np.array(data[cf.COLUMNS_MC[yname]][:n_clusters])
+    X = np.array(data[cf.COLUMNS_MC[xname]][:n_clusters])
     # Also load the position data
     phi_lc   = np.array(data['phi_on_lc'][:n_clusters])
     theta_lc = np.array(data['theta_on_lc'][:n_clusters])

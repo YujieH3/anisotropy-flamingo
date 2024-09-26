@@ -17,7 +17,7 @@ import numpy as np
 from numba import njit
 
 # Make a namespace for our descriptive yet horribly long column names
-COLUMNS_RAW ={
+COLUMNS_MC ={
     'LX'             : 'LX0InRestframeWithoutRecentAGNHeating',
     'LXCoreExcision' : 'LX0InRestframeWithoutRecentAGNHeatingCoreExcision',
     'T'              : 'SpectroscopicLikeTemperatureWithoutRecentAGNHeatingCoreExcision',
@@ -75,7 +75,7 @@ CONST = {
     }
 
 
-CONST_RAW = { 
+CONST_MC = { 
     'LX-T': {
         'CY'   : 1e44, #1e44, # erg/s         # median 1.260e44
         'CX'   : 3.8,    #4,    # keV           # median 3.321

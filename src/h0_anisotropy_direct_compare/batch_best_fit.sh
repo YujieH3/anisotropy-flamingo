@@ -50,7 +50,7 @@ do
     output="${analyse_dir}/lc${lc}"
     if ! [ -f "${output}/scan-best-fit.done" ] && [ -f "${output}/fit_all.csv" ] #use a file flag
     then
-        python h0_anisotropy_direct_compare/scan-best-fit.py -i $input -r "${output}/fit_all.csv" -o $output -t $n && echo > "${output}/scan-best-fit.done"
+        python scan-best-fit.py -i $input -r "${output}/fit_all.csv" -o $output -t $n && echo > "${output}/scan-best-fit.done"
     else
         echo "scan-best-fit already done or fit_all output not found, skipping..."
     fi
