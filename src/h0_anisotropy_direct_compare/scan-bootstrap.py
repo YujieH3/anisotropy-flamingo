@@ -24,9 +24,8 @@ n_threads = 24
 relations = ['LX-T', 'YSZ-T', 'M-T'] # pick from 'LX-T', 'M-T', 'LX-YSZ', 'LX-M', 'YSZ-M', 'YSZ-T'
 n_bootstrap = 500 # number of bootstrapping for each direction
 
-cone_size    = 60 # all angles in this scipt are in degrees unless with a _rad suffix
-lon_step     = 4  # longitude step. Longitude from -180 to 180 deg
-lat_step     = 2  # latitude step. Latitude from -90 to 90 deg
+lon_step     = 8  # longitude step. Longitude from -180 to 180 deg
+lat_step     = 4  # latitude step. Latitude from -90 to 90 deg
 # Note that in our catalogue, phi_on_lc is longitude, theta_on_lc is latitude...
 # might want to change this in the future...
 
@@ -57,7 +56,6 @@ parser.add_argument('-o', '--output', type=str, help='Output directory.', defaul
 parser.add_argument('-r', '--range_file', type=str, help='File path of 3fit-all.py output, for setting range of fitting parameters.', default=None)
 parser.add_argument('-t', '--threads', type=int, help='Number of threads.', default=n_threads)
 parser.add_argument('-n', '--bootstrap', type=int, help='Number of bootstrap steps.', default=n_bootstrap)
-parser.add_argument('-s', '--cone_size', type=int, help='Cone size in degrees.', default=cone_size)
 parser.add_argument('--overwrite', action='store_true', help='Overwrite existing files')
 
 # Parse the arguments
@@ -66,7 +64,6 @@ input_file = args.input
 output_dir = args.output
 n_threads = args.threads
 n_bootstrap = args.bootstrap
-cone_size = args.cone_size
 overwrite = args.overwrite
 range_file = args.range_file
 
@@ -164,7 +161,7 @@ if __name__ == '__main__':
     cluster_data = pd.read_csv(input_file)
 
     t00 = datetime.datetime.now()
-    print(f'[{t00}] Begin scanning: {relations} in {cone_size}°.')
+    print(f'[{t00}] Begin scanning: {relations}.')
     print(f'Threads: {n_threads}')
 
     for scaling_relation in cf.CONST.keys():
@@ -178,6 +175,11 @@ if __name__ == '__main__':
         if os.path.exists(output_file) and not overwrite:
             print(f'File exists: {output_file}')
             continue
+
+        if 'YSZ' in scaling_relation:
+            cone_size = 60
+        else:
+            cone_size = 75
 
         if n_B_steps is not None: # set the step size for A and B if the number of steps is given
             B_step = (FIT_RANGE[scaling_relation]['B_max'] - FIT_RANGE[scaling_relation]['B_min']) / n_B_steps

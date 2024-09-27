@@ -275,7 +275,7 @@ def bootstrap_fit(Nbootstrap,
         bootstrap_logX_ = logX_[idx]
 
         if weight is None:
-            bootstrap_weight = np.array([1.]) # Setting to int 1 will invoke numba typing error, so we do this
+            bootstrap_weight = np.ones(len(idx)) # Setting to int 1 will invoke numba typing error, so we do this
         else:
             bootstrap_weight = weight[idx]
 

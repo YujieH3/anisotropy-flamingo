@@ -16,11 +16,20 @@ The universe might look more like a 🌰 than a 🎱.
 - [x] lightcone0000 - 0004 are corrupted, remember to redo the sample creation on them.
 - [x] Write a batch script to run the H0 MCMC analysis on the cluster.
 - [x] Submit H0 MCMC analysis on the cluster.
-- [ ] Rewrite scan-bootstrap to scan-bootstrap-fix-lonlat to bootstrap only on max difference of lon and lat.
-- [ ] Write a batch script to run the H0 chi-square + bootstrapping analysis on the cluster.
-- [ ] Submit H0 chi-square + bootstrapping on the cluster.
+- [x] Rewrite scan-bootstrap to scan-bootstrap-fix-lonlat to bootstrap only on max difference of lon and lat.
+- [x] Write a batch script to run the H0 chi-square + bootstrapping analysis on the cluster.
+- [x] Submit H0 chi-square + bootstrapping on the cluster.
+- [ ] Write a batch script to run bootstrapping without fixing directions on the cluster.
+- [ ] Submit bootstrapping without fixing directions on the cluster, run 24 hours and use whatever number of lightcones we have by then.
+- [ ] Analyse the results of mcmc h0
+- [ ] Run bulk flow analysis of mcmc h0
+- [ ] Write a batch script to run bulk flow fixing directions
+- [ ] Submit bulk flow fixing directions on the cluster
+- [ ] Write a batch script to run bulk flow without fixing directions
+- [ ] Submit bulk flow without fixing directions on the cluster
 - [ ] Wrtie a small script to examine the completeness of halo_lightcones: 19 columns of quantities in four snapshots
 - [ ] Make a cron job to make samples every hour.
+
 
 ## Warning
 

@@ -1,7 +1,7 @@
 #!/bin/bash -l
 
 #SBATCH --ntasks 64           # The number of cores you need...
-#SBATCH -J h0_anisotropy_bs     #Give it something meaningful.
+#SBATCH -J h0_anisotropy_bsfll     #Give it something meaningful.
 #SBATCH -o /cosma8/data/do012/dc-he4/log/standard_output_file.%J.out  # J is the job ID, %J is unique for each job.
 #SBATCH -e /cosma8/data/do012/dc-he4/log/standard_error_file.%J.err
 #SBATCH -p cosma-analyse #or some other partition, e.g. cosma, cosma8, etc.
@@ -17,11 +17,13 @@ module purge
 # module load compiler-rt tbb compiler mpi
 # module load openmpi
 
+conda deactivate
+
 conda activate halo-cosma
 
 
 # config
-n=32         #number of cores
+n=64         #number of cores
 N3=1728      #total number of lightcones
 data_dir="/cosma8/data/do012/dc-he4/mock_lightcones_copy"  #directory of halo_properties_in_ligthcone0000.hdf5 (or 0001, 0002, etc.)
 analyse_dir="/cosma8/data/do012/dc-he4/analysis"           #directory of analysis results
@@ -31,6 +33,7 @@ soap_dir="/cosma8/data/dp004/flamingo/Runs/L2800N5040/HYDRO_FIDUCIAL/SOAP"
 # make output directory if doesn't exist
 mkdir $analyse_dir -p
 
+cd /cosma/home/do012/dc-he4/anisotropy-flamingo/src/h0_anisotropy_direct_compare
 # run analysis
 for i in $(seq 0 $((N3-1)))
 do
@@ -48,11 +51,12 @@ do
     fi
 
     output="${analyse_dir}/lc${lc}"
-    if ! [ -f "${output}/scan-best-fit.done" ] && [ -f "${output}/fit_all.csv" ] #use a file flag
+    best_fit="${output_dir}/scan_best_fit_${scaling_relation}_theta${cone_size}.csv"
+    if ! [ -f "${output}/scan-bootstrap-fix-lonlat.done" ] && [ -f "${output}/fit-all.done" ] && [ -f "${output}/scan-best-fit.done"] #use a file flag
     then
-        python h0_anisotropy_direct_compare/scan-best-fit.py -i $input -r "${output}/fit_all.csv" -o $output -t $n && echo > "${output}/scan-best-fit.done"
+        python scan-bootstrap-fix-lonlat.py -i $input -r "${output}/fit_all.csv" -o $output -b $output -t $n -n 500 && echo > "${output}/scan-bootstrap-fix-lonlat.done"
     else
-        echo "scan-best-fit already done or fit_all output not found, skipping..."
+        echo "scan-bootstrap-fix-lonlat already done or fit_all output not found or best_fit output not found, skipping..."
     fi
 done
 

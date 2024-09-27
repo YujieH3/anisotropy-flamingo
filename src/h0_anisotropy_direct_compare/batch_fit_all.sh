@@ -31,6 +31,7 @@ soap_dir="/cosma8/data/dp004/flamingo/Runs/L2800N5040/HYDRO_FIDUCIAL/SOAP"
 # make output directory if doesn't exist
 mkdir $analyse_dir -p
 
+cd /cosma/home/do012/dc-he4/anisotropy-flamingo/src/h0_anisotropy_direct_compare
 # run analysis
 for i in $(seq 0 $((N3-1)))
 do
@@ -49,7 +50,7 @@ do
     output="${analyse_dir}/lc${lc}"
     if ! [ -f "${output}/fit-all.done" ] #use a file flag
     then
-        python h0_anisotropy_direct_compare/fit-all.py -i $input -o $output -t $n -n 500 && echo > "${output}/fit-all.done" #do only if the python script run without error
+        python fit-all.py -i $input -o $output -t $n -n 500 && echo > "${output}/fit-all.done" #do only if the python script run without error
     else
         continue
     fi

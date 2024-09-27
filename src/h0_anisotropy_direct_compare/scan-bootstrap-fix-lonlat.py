@@ -13,7 +13,9 @@ import os
 sys.path.append('/cosma/home/do012/dc-he4/anisotropy-flamingo')
 import tools.clusterfit as cf
 import numpy as np
-from numba import njit, prange, set_num_threads
+from numba import njit, set_num_threads
+import pandas as pd
+import datetime
 
 # --------------------------------CONFIGURATION---------------------------------
 input_file = '/data1/yujiehe/data/samples-lightcone0-clean.csv'
@@ -54,9 +56,9 @@ parser = argparse.ArgumentParser(description="Scan the sky for scaling relations
 parser.add_argument('-i', '--input', type=str, help='Input file path.', default=input_file)
 parser.add_argument('-o', '--output', type=str, help='Output directory.', default=output_dir)
 parser.add_argument('-r', '--range_file', type=str, help='File path of 3fit-all.py output, for setting range of fitting parameters.', default=None)
+parser.add_argument('-b', '--best_fit_dir', type=str, help='File directory of scan-best-fit.py', default=None)
 parser.add_argument('-t', '--threads', type=int, help='Number of threads.', default=n_threads)
 parser.add_argument('-n', '--bootstrap', type=int, help='Number of bootstrap steps.', default=n_bootstrap)
-parser.add_argument('-s', '--cone_size', type=int, help='Cone size in degrees.', default=cone_size)
 parser.add_argument('--overwrite', action='store_true', help='Overwrite existing files')
 
 # Parse the arguments
@@ -65,88 +67,97 @@ input_file = args.input
 output_dir = args.output
 n_threads = args.threads
 n_bootstrap = args.bootstrap
-cone_size = args.cone_size
 overwrite = args.overwrite
 range_file = args.range_file
+best_fit_dir = args.best_fit_dir
 
-FIT_RANGE = cf.get_range(range_file, n_sigma=4)      #4 sigma range
+FIT_RANGE = cf.get_range(range_file, n_sigma=3)      #4 sigma range
 # ------------------------------------------------------------------------------
 
 
-@njit(fastmath=True, parallel=True)
-def scan_bootstrapping(Nbootstrap, A_arr, B_arr, scat_arr, lon_c_arr, 
-                    lat_c_arr, lon, lat, logY_, logX_, cone_size, lon_step, 
-                    lat_step, B_min, B_max, logA_min, logA_max, scat_min, 
-                    scat_max, scat_step, B_step, logA_step
+@njit(fastmath=True, parallel=False)
+def scan_bootstrapping(Nbootstrap : int, 
+                       A_arr      : np.ndarray,
+                       B_arr      : np.ndarray,
+                       scat_arr   : np.ndarray,
+                       lon_c_arr  : np.ndarray,
+                       lat_c_arr  : np.ndarray,
+                       lon_c      : np.ndarray,
+                       lat_c      : np.ndarray,
+                       lon        : np.ndarray,
+                       lat        : np.ndarray,
+                       logY_      : np.ndarray,
+                       logX_      : np.ndarray,
+                       cone_size  : float,
+                       B_min      : float,
+                       B_max      : float,
+                       logA_min   : float,
+                       logA_max   : float,
+                       scat_min   : float,
+                       scat_max   : float,
+                       scat_step  : float,
+                       B_step     : float,
+                       logA_step  : float
                     ):
     # Alias
     nb = Nbootstrap
 
-    # Nnit conversions
+    # Unit conversions
     theta = cone_size # set alias
     theta_rad = theta * np.pi / 180
     lat_rad = lat * np.pi / 180 # the memory load is not very high so we can do this
     lon_rad = lon * np.pi / 180
+    lon_c_rad = lon_c * np.pi / 180
+    lat_c_rad = lat_c * np.pi / 180
 
     n_tot = len(lon)
     if len(lat) != n_tot or len(logY_) != n_tot or len(logX_) != n_tot:
         raise ValueError("Longitude, latitude, logY_, and logX_ arrays must have the same length.")
-    
-    for lon_c in prange(-180, 180):
 
-        if lon_c % lon_step != 0: # numba parallel only supports step size of 1
-            continue
-        lon_c_rad = lon_c * np.pi / 180
+    iter_idx = 0
+    for lon_c_rad, lat_c_rad in zip(lon_c_rad, lat_c_rad):
+        a = np.pi / 2 - lat_c_rad # center of cone to zenith
+        b = np.pi / 2 - lat_rad   # cluster to zenith
+        costheta = np.cos(a)*np.cos(b) + np.sin(a)*np.sin(b)*np.cos(lon_rad - lon_c_rad) # costheta=cosa*cosb+sina*sinb*cosA
+        mask = costheta > np.cos(theta_rad)
 
-        for lat_c in range(-90, 90):
+        n_clusters = np.sum(mask) # number of clusters for bootstrapping
+        cone_logY_ = logY_[mask]
+        cone_logX_ = logX_[mask]
+        costheta = costheta[mask]
 
-            if lat_c % lat_step != 0:
-                continue
-            lat_c_rad = lat_c * np.pi / 180
 
-            a = np.pi / 2 - lat_c_rad # center of cone to zenith
-            b = np.pi / 2 - lat_rad   # cluster to zenith
-            costheta = np.cos(a)*np.cos(b) + np.sin(a)*np.sin(b)*np.cos(lon_rad - lon_c_rad) # costheta=cosa*cosb+sina*sinb*cosA
-            mask = costheta > np.cos(theta_rad)
+        # here we use the parallel version of bootstrap_fit
+        logA, B, scat = cf.bootstrap_fit(
+            Nbootstrap = Nbootstrap,
+            Nclusters = n_clusters,
+            logY_     = cone_logY_,
+            logX_     = cone_logX_,
+            weight    = 1 / costheta, # inverse because weight is applied on the denominator
+            logA_min  = logA_min,
+            logA_max  = logA_max,
+            B_min     = B_min,
+            B_max     = B_max,
+            scat_min  = scat_min,
+            scat_max  = scat_max,
+            scat_step = scat_step,
+            B_step    = B_step,
+            logA_step = logA_step,
+            )
 
-            n_clusters = np.sum(mask) # number of clusters for bootstrapping
-            cone_logY_ = logY_[mask]
-            cone_logX_ = logX_[mask]
-            costheta = costheta[mask]
+        # Calculate index without crossing reference for clean parallel
+        # idx = n_lon_directions * n_lat_steps + n_lat_step
 
-            # Fit the relation
-            # Prevent nested by making a non-parallel version of the function.
-            # We'd still want scan_bootstrapping to be parallel because this
-            # is a cleaner parallelized loop.
-            logA, B, scat = cf.bootstrap_fit_non_parallel(
-                Nbootstrap = Nbootstrap,
-                Nclusters = n_clusters,
-                logY_     = cone_logY_,
-                logX_     = cone_logX_,
-                weight    = 1 / costheta, # inverse because weight is applied on the denominator
-                logA_min  = logA_min,
-                logA_max  = logA_max,
-                B_min     = B_min,
-                B_max     = B_max,
-                scat_min  = scat_min,
-                scat_max  = scat_max,
-                scat_step = scat_step,
-                B_step    = B_step,
-                logA_step = logA_step,
-                )
+        # Save the fit parameters
+        lon_c_arr[iter_idx*nb, (iter_idx+1)*nb] = np.repeat(lon_c, nb)
+        lat_c_arr[iter_idx*nb, (iter_idx+1)*nb] = np.repeat(lat_c, nb)
+        A_arr[iter_idx*nb, (iter_idx+1)*nb]     = 10**logA
+        B_arr[iter_idx*nb, (iter_idx+1)*nb]     = B
+        scat_arr[iter_idx*nb, (iter_idx+1)*nb]  = scat
 
-            # Calculate index without crossing reference for clean parallel
-            # idx = n_lon_directions * n_lat_steps + n_lat_step
-            idx = (lon_c+180)//lon_step * 180//lat_step + (lat_c+90)//lat_step
+        iter_idx += 1
 
-            # Save the fit parameters
-            lon_c_arr[idx * nb:(idx+1) * nb] = np.repeat(lon_c, nb)
-            lat_c_arr[idx * nb:(idx+1) * nb] = np.repeat(lat_c, nb)
-            A_arr[idx * nb:(idx+1) * nb]     = 10**logA
-            B_arr[idx * nb:(idx+1) * nb]     = B
-            scat_arr[idx * nb:(idx+1) * nb]  = scat
-
-            print(idx, 'Direction: l', lon_c, 'b', lat_c, 'Clusters:',n_clusters)
+    print('Direction: l', lon_c, 'b', lat_c, 'Clusters:',n_clusters)
     return lon_c_arr, lat_c_arr, A_arr, B_arr, scat_arr
 
 
@@ -155,25 +166,45 @@ def scan_bootstrapping(Nbootstrap, A_arr, B_arr, scat_arr, lon_c_arr,
 
 # -----------------------------------MAIN---------------------------------------
 if __name__ == '__main__':
-    import pandas as pd
-    import datetime
-
     set_num_threads(n_threads)
 
     cluster_data = pd.read_csv(input_file)
 
     t00 = datetime.datetime.now()
-    print(f'[{t00}] Begin scanning: {relations} in {cone_size}°.')
+    print(f'[{t00}] Begin scanning: {relations}.')
     print(f'Threads: {n_threads}')
+
 
     for scaling_relation in relations:
 
         # Skip if the output file already exists
         output_file = f'{output_dir}/scan_bootstrap_{scaling_relation}_theta{cone_size}.csv'
         if os.path.exists(output_file) and not overwrite:
-            print(f'File exists: {output_file}')
+            print(f'File exists and overwrite is set to False: {output_file}')
             continue
+        
+        # set the cone size
+        if 'YSZ' in scaling_relation:
+            cone_size = 60
+        else:
+            cone_size = 75
+        
+        # if best_fit_dir does not exists
+        best_fit_file = f'{output_dir}/scan_best_fit_{scaling_relation}_theta{cone_size}.csv'
+        if not os.path.exists(best_fit_file):
+            raise FileNotFoundError(f'Best fit file does not exist: {best_fit_file}')
+        else:
+            best_fit = pd.read_csv(best_fit_file)
 
+        # find the maximum and minimum longitude and latitude
+        max_idx = best_fit[best_fit['Relation'] == scaling_relation]['A'].idxmax()
+        min_idx = best_fit[best_fit['Relation'] == scaling_relation]['A'].idxmin()
+        lon_max = best_fit['Glon'][max_idx]
+        lon_min = best_fit['Glon'][min_idx]
+        lat_max = best_fit['Glat'][max_idx]
+        lat_min = best_fit['Glat'][min_idx]
+
+        # set the step size for A and B if the number of steps is given
         if n_B_steps is not None: # set the step size for A and B if the number of steps is given
             B_step = (FIT_RANGE[scaling_relation]['B_max'] - FIT_RANGE[scaling_relation]['B_min']) / n_B_steps
         if n_logA_steps is not None:
@@ -184,32 +215,30 @@ if __name__ == '__main__':
         print(f'[{t0}] Scanning full sky: {scaling_relation}')
         n_clusters = cf.CONST[scaling_relation]['N']
 
+        # load the data according to the names
         _ = scaling_relation.find('-')
         Y = cluster_data[cf.COLUMNS[scaling_relation[:_  ]]][:n_clusters].values
         X = cluster_data[cf.COLUMNS[scaling_relation[_+1:]]][:n_clusters].values
         z = cluster_data['ObservedRedshift'][:n_clusters].values
 
+        # logX' and logY' to be fitted
         logY_ = cf.logY_(Y, z=z, relation=scaling_relation)
         logX_ = cf.logX_(X, relation=scaling_relation)
 
+        # longitude and latitude of clusters
         lon = cluster_data['phi_on_lc'][:n_clusters]
         lat = cluster_data['theta_on_lc'][:n_clusters]
         lon = np.array(lon)
         lat = np.array(lat)
 
         # Preallocate arrays, the memory should be able to hold
-        n_directions = 360//lon_step * 180//lat_step
-        n_tot = n_directions * n_bootstrap
-        print(f'Direction steps: {n_directions}')
-        print(f'Bootstrap steps: {n_bootstrap}')
-        print(f'Total: {n_tot}')
+        A_arr     = np.zeros(2*n_bootstrap)
+        B_arr     = np.zeros(2*n_bootstrap)
+        scat_arr  = np.zeros(2*n_bootstrap)
+        lon_c_arr = np.zeros(2*n_bootstrap)
+        lat_c_arr = np.zeros(2*n_bootstrap)
 
-        A_arr     = np.zeros(n_tot)
-        B_arr     = np.zeros(n_tot)
-        scat_arr  = np.zeros(n_tot)
-        lon_c_arr = np.zeros(n_tot)
-        lat_c_arr = np.zeros(n_tot)
-
+        # do only two directions
         lon_c_arr, lat_c_arr, A_arr, B_arr, scat_arr = scan_bootstrapping(
             Nbootstrap = n_bootstrap,
             A_arr     = A_arr,
@@ -217,6 +246,8 @@ if __name__ == '__main__':
             scat_arr  = scat_arr,
             lon_c_arr = lon_c_arr,
             lat_c_arr = lat_c_arr,
+            lon_c     = np.array([lon_max, lon_min]),
+            lat_c     = np.array([lat_max, lat_min]),
             lon       = lon,
             lat       = lat,
             logY_     = logY_,
