@@ -11,9 +11,8 @@
 # ---------------------------------------------
 
 import sys
-sys.path.append('/cosma/home/do012/dc-he4/anisotropy-flamingo')
-import tools.clusterfit as cf
-import tools.constants as const
+sys.path.append('/cosma/home/do012/dc-he4/anisotropy-flamingo/tools')
+import clusterfit as cf
 import numpy as np
 import os
 from numba import njit, prange, set_num_threads

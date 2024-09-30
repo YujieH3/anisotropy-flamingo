@@ -31,7 +31,7 @@ soap_dir="/cosma8/data/dp004/flamingo/Runs/L2800N5040/HYDRO_FIDUCIAL/SOAP"
 mkdir $analyse_dir -p
 
 # run analysis, in src directory
-cd /cosma/home/dp004/dc-he4/anisotropy-flamingo/src
+# cd /cosma/home/dp004/dc-he4/anisotropy-flamingo/src
 for i in $(seq 0 $((N3-1)))
 do
     lc=$(printf "%04d" $i)
@@ -60,16 +60,16 @@ do
     mkdir "${analyse_dir}/lc${lc}" -p
 
     # combine - band patch - rotate; scripts will skip automatically if already done
-    python _1_combine_lightcone.py -i $input
-    python _2_band_patch.py -i $input
-    python _3_rotate_lightcone.py -i $input
+    python /cosma/home/do012/dc-he4/anisotropy-flamingo/src/_1_combine_lightcone.py -i $input
+    python /cosma/home/do012/dc-he4/anisotropy-flamingo/src/_2_band_patch.py -i $input
+    python /cosma/home/do012/dc-he4/anisotropy-flamingo/src/_3_rotate_lightcone.py -i $input
 
     # make samples
     output="${analyse_dir}/lc${lc}/samples_in_lightcone${lc}.csv"
     if [ -f $output ]; then
         echo "File $output exists, skipping..."
     else
-        python 1make-samples.py -i $input -o $output
+        python /cosma/home/do012/dc-he4/anisotropy-flamingo/src/1make-samples.py -i $input -o $output
     fi
 
     # remove duplicates
@@ -78,7 +78,7 @@ do
     if [ -f $output ]; then
         echo "File $output exists, skipping..."
     else
-        python 2link-tree-remove-duplicates.py -i $sample -o $output -t $tree
+        python /cosma/home/do012/dc-he4/anisotropy-flamingo/src/2link-tree-remove-duplicates.py -i $sample -o $output -t $tree
     fi
 
     # remove outliers; sample file is small, don't worry about file size
@@ -87,7 +87,7 @@ do
     if [ -f $output ]; then
         echo "File $output exists, skipping..."
     else
-        python 3remove-outliers.py -i $sample -o $output
+        python /cosma/home/do012/dc-he4/anisotropy-flamingo/src/3remove-outliers.py -i $sample -o $output
     fi
 done
 

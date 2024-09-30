@@ -31,7 +31,6 @@ soap_dir="/cosma8/data/dp004/flamingo/Runs/L2800N5040/HYDRO_FIDUCIAL/SOAP"
 # make output directory if doesn't exist
 mkdir $analyse_dir -p
 
-cd /cosma/home/do012/dc-he4/anisotropy-flamingo/src
 # run analysis
 for i in $(seq 0 $((N3-1)))
 do
@@ -62,7 +61,7 @@ do
 
     if ! [ -f "${output}/h0mc.done" ] #use a file flag
     then
-        python h0_anisotropy_mcmc/h0mc.py -i $input -o "${output}/h0_mcmc.csv" -d $chaindir --overwrite && echo > "${output}/h0mc.done"
+        python /cosma/home/dp004/dc-he4/anisotropy-flamingo/src/h0_anisotropy_mcmc/h0mc.py -i $input -o "${output}/h0_mcmc.csv" -d $chaindir --overwrite && echo > "${output}/h0mc.done"
     else
         echo "h0mc already done, skipping..."
     fi

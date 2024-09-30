@@ -50,7 +50,7 @@ do
     output="${analyse_dir}/lc${lc}"
     if ! [ -f "${output}/fit-all.done" ] #use a file flag
     then
-        python fit-all.py -i $input -o $output -t $n -n 500 && echo > "${output}/fit-all.done" #do only if the python script run without error
+        python fit-all.py -i $input -o $output -t $n -n 500 --overwrite && echo > "${output}/fit-all.done" #do only if the python script run without error
     else
         continue
     fi

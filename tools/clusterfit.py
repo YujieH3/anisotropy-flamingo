@@ -3,7 +3,7 @@ import numpy as np
 from numba import njit, prange
 import pandas as pd
 import sys
-sys.path.append('../tools')
+sys.path.append('./')
 from constants import *
 import h5py
 

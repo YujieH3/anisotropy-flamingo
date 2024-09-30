@@ -39,8 +39,8 @@ with h5py.File(INPUT, 'a') as f:
             
             del f[f'{snap_name}']        # del snap_group won't work, for unknown reason
 
-    for save_key, save_data in to_save.items():
-        f.create_dataset(name=save_key, data=save_data)
+        for save_key, save_data in to_save.items():
+            f.create_dataset(name=save_key, data=save_data)
     
 print('Lightcone combined.') 
 

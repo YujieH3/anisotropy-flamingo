@@ -10,12 +10,13 @@
 
 
 import sys
-sys.path.append('/cosma/home/do012/dc-he4/anisotropy-flamingo')
-import tools.clusterfit as cf
+sys.path.append('/cosma/home/do012/dc-he4/anisotropy-flamingo/tools')
+import clusterfit as cf
 import numpy as np
 import pandas as pd
 import datetime
 import os
+import warnings
 
 from numba import set_num_threads
 
@@ -27,7 +28,7 @@ Nthreads = 4
 
 Relations = ['LX-T', 'YSZ-T', 'M-T',] #'LX-YSZ', 'LX-M', 'YSZ-M'] # give the name of the relation to fit if you want to fit only one. Set to False if you want to fit all relations.
 BootstrapSteps = 500 # number of bootstrap steps to calculate uncertainties
-ScatterStepSize = 0.006
+ScatterStepSize = 0.003
 BStepSize       = 0.002
 logAStepSize    = 0.002
 
@@ -137,8 +138,19 @@ if __name__ == '__main__':
         UpperBoundA    = np.percentile(A, BestFitAPer + 34)
         LowerBoundB    = np.percentile(B, BestFitBPer - 34)
         UpperBoundB    = np.percentile(B, BestFitBPer + 34)
-        LowerBoundScat = np.percentile(scat, BestFitScatPer - 34)
-        UpperBoundScat = np.percentile(scat, BestFitScatPer + 34)
+
+        # The range of scatter we don't care that much. But, do give a warning here
+        if BestFitScatPer > 34:
+            LowerBoundScat = np.percentile(scat, BestFitScatPer - 34)
+        else:
+            LowerBoundScat = np.percentile(scat, 0)
+            warnings.warn(f'LowerBoundScat out of bounds at {LowerBoundScat}. Setting to 0.')
+
+        if BestFitScatPer < 66:
+            UpperBoundScat = np.percentile(scat, BestFitScatPer + 34)
+        else:
+            UpperBoundScat = np.percentile(scat, 100)
+            warnings.warn(f'UpperBoundScat out of bounds at {UpperBoundScat}. Setting to 0.')
 
 
         print(f'1-sigma bootstrapping uncertainty of {ScalingRelation} fit:')
