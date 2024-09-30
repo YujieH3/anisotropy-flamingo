@@ -16,8 +16,8 @@ import emcee
 import numpy as np
 import os
 import sys
-sys.path.append('/cosma/home/do012/dc-he4/anisotropy-flamingo')
-import tools.clusterfit as cf
+sys.path.append('/cosma/home/do012/dc-he4/anisotropy-flamingo/tools')
+import clusterfit as cf
 from astropy.cosmology import FlatLambdaCDM
 cosmo = FlatLambdaCDM(H0=68.1, Om0=0.306, Ob0=0.0486)
 

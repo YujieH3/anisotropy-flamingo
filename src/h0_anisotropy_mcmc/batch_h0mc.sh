@@ -61,7 +61,7 @@ do
 
     if ! [ -f "${output}/h0mc.done" ] #use a file flag
     then
-        python /cosma/home/dp004/dc-he4/anisotropy-flamingo/src/h0_anisotropy_mcmc/h0mc.py -i $input -o "${output}/h0_mcmc.csv" -d $chaindir --overwrite && echo > "${output}/h0mc.done"
+        python /cosma/home/do012/dc-he4/anisotropy-flamingo/src/h0_anisotropy_mcmc/h0mc.py -i $input -o "${output}/h0_mcmc.csv" -d $chaindir --overwrite && echo > "${output}/h0mc.done"
     else
         echo "h0mc already done, skipping..."
     fi
