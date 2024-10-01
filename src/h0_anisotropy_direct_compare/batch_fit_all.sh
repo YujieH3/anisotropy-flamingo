@@ -7,7 +7,7 @@
 #SBATCH -p cosma-analyse #or some other partition, e.g. cosma, cosma8, etc.
 #SBATCH -A do012 #e.g. dp004
 #SBATCH -t 24:00:00  #D-HH:MM:SS
-#SBATCH --mail-type=BEGIN,END,FAIL,TIME_LIMIT_80,TIME_LIMIT_90,TIME_LIMIT
+#SBATCH --mail-type=BEGIN,END,FAIL,TIME_LIMIT_90,TIME_LIMIT
 #SBATCH --mail-user=yujiehe@strw.leidenuniv.nl #PLEASE PUT YOUR EMAIL ADDRESS HERE (without the <>)
 ##SBATCH --exclusive #no don't need exclusive
 
@@ -48,11 +48,11 @@ do
     fi
 
     output="${analyse_dir}/lc${lc}"
-    if ! [ -f "${output}/fit-all.done" ] #use a file flag
+    if [ -f "${output}/fit-all.done" ] #use a file flag
     then
-        python fit-all.py -i $input -o $output -t $n -n 500 --overwrite && echo > "${output}/fit-all.done" #do only if the python script run without error
-    else
         continue
+    else
+        python fit-all.py -i $input -o $output -t $n -n 500 --overwrite && echo > "${output}/fit-all.done" #do only if the python script run without error
     fi
 
 done

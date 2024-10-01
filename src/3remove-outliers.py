@@ -105,6 +105,12 @@ for ScalingRelation in RELATIONS:
 
 # Remove outliers and save to file
 CleanClusterData = ClusterData[~ClusterData['TopLeafID'].isin(AllOutlierIDs)]
+
+#remember to sort correctly
+CleanClusterData.sort_values('3DLcore/Ltot', ascending=False, inplace=True)
+
+# save to file
 CleanClusterData.to_csv(OutputFile, index=False)
+
 print(f'Outliers removed in total: {len(AllOutlierIDs)}')
 print(f'Cleaned data: {len(CleanClusterData)}')

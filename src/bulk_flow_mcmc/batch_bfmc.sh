@@ -1,7 +1,7 @@
 #!/bin/bash -l
 
-#SBATCH --ntasks 64           # The number of cores you need...
-#SBATCH -J h0_anisotropy_bsns     #Give it something meaningful.
+#SBATCH --ntasks 1           # The number of cores you need...
+#SBATCH -J bulk_flow_mc     #Give it something meaningful.
 #SBATCH -o /cosma8/data/do012/dc-he4/log/standard_output_file.%J.out  # J is the job ID, %J is unique for each job.
 #SBATCH -e /cosma8/data/do012/dc-he4/log/standard_error_file.%J.err
 #SBATCH -p cosma-analyse #or some other partition, e.g. cosma, cosma8, etc.
@@ -18,12 +18,10 @@ module purge
 # module load openmpi
 
 conda deactivate
-
 conda activate halo-cosma
 
 
 # config
-n=64         #number of cores
 N3=1728      #total number of lightcones
 data_dir="/cosma8/data/do012/dc-he4/mock_lightcones_copy"  #directory of halo_properties_in_ligthcone0000.hdf5 (or 0001, 0002, etc.)
 analyse_dir="/cosma8/data/do012/dc-he4/analysis"           #directory of analysis results
@@ -33,7 +31,6 @@ soap_dir="/cosma8/data/dp004/flamingo/Runs/L2800N5040/HYDRO_FIDUCIAL/SOAP"
 # make output directory if doesn't exist
 mkdir $analyse_dir -p
 
-cd /cosma/home/do012/dc-he4/anisotropy-flamingo/src/h0_anisotropy_direct_compare
 # run analysis
 for i in $(seq 0 $((N3-1)))
 do
@@ -50,16 +47,20 @@ do
         continue
     fi
 
-    output="${analyse_dir}/lc${lc}"
-    best_fit="${output_dir}/scan_best_fit_${scaling_relation}_theta${cone_size}.csv"
-    if ! [ -f "${output}/scan-bootstrap-near-scan.done" ] && [ -f "${output}/fit-all.done" ] && [ -f "${output}/scan-best-fit.done" ] #use a file flag
-    then
-        python scan-bootstrap-near-scan.py -i $input -r "${output}/fit_all.csv" -o $output -b $output -t $n -n 500 --overwrite && echo > "${output}/scan-bootstrap-near-scan.done"
-    else
-        echo "scan-bootstrap-near-scan already done or fit_all output not found or best_fit output not found, skipping..."
-    fi
+    # make mcmc plot directory
+    chaindir="${analyse_dir}/lc${lc}/bfmc_chains"
+    mkdir $chaindir -p
 
+    output="${analyse_dir}/lc${lc}"
+
+    if ! [ -f "${output}/bfmc.done" ] #use a file flag
+    then
+        python /cosma/home/do012/dc-he4/anisotropy-flamingo/src/bulk_flow_mcmc/bfmc.py -i $input -o "${output}/bf_mcmc.csv" -d $chaindir --overwrite && echo > "${output}/bfmc.done"
+    else
+        echo "bfmc already done, skipping..."
+    fi
 done
+
     
     
 

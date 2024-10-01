@@ -46,14 +46,14 @@ parser = argparse.ArgumentParser(description="Calculate significance map for bes
 # Add arguments
 parser.add_argument('-i', '--input', type=str, help='Input file', default=INPUT_FILE)
 parser.add_argument('-o', '--output', type=str, help='Output file', default=OUTPUT_FILE)
-parser.add_argument('-d', '--plotdir', type=str, help='Directory to save corner plots.', default=PLOT_DIR)
+parser.add_argument('-d', '--chaindir', type=str, help='Directory to save corner plots.', default=CHAIN_DIR)
 parser.add_argument('--overwrite', action='store_true', help='Overwrite existing.', default=OVERWRITE)
 
 # Parse the arguments
 args = parser.parse_args()
 INPUT_FILE  = args.input
 OUTPUT_FILE = args.output
-PLOT_DIR = args.plotdir
+CHAIN_DIR = args.chaindir
 OVERWRITE   = args.overwrite
 # -----------------------END CONFIGURATION--------------------------------------
 
@@ -155,7 +155,7 @@ for scaling_relation in RELATIONS:
 
 
     # Load data and set zmax
-    for zmax in np.arange(0.06, 0.18, 0.02):
+    for zmax in [0.07, 0.10, 0.13]:
         zmask    = z_obs < zmax
 
         # Select data below some redshift
@@ -184,12 +184,24 @@ for scaling_relation in RELATIONS:
         pos0 = soln.x + 1e-2 * np.random.randn(32, 6)
         nwalkers, ndim = pos0.shape
 
-        # Create a sampler
-        sampler = emcee.EnsembleSampler(nwalkers, ndim, log_likelihood, 
-                                        args=(X, Y, z_obs, phi_lc, theta_lc, yname, xname))
+        # create the backend for saving the chain; we choose to save it for later analysis
+        filename = os.path.join(CHAIN_DIR, f'{scaling_relation}_chain.h5')
+        if os.path.exists(filename) and not OVERWRITE:
+            print(f'File exists: {filename}')
+            raise Exception('Chain file exists and OVERWRITE==False.')
+        else:
+            backend = emcee.backends.HDFBackend(filename)
+            backend.reset(nwalkers, ndim)
 
+        # Create a sampler
+        sampler = emcee.EnsembleSampler(nwalkers, 
+                                        ndim, 
+                                        log_likelihood, 
+                                        backend = backend,
+                                        args    = (X, Y, z_obs, phi_lc, theta_lc, yname, xname))
+       
         # Run
-        sampler.run_mcmc(pos0, 15000, progress=True)
+        sampler.run_mcmc(pos0, 15000, progress=False)
 
         # Small convergence test
         try:
