@@ -89,6 +89,9 @@ do
     else
         python /cosma/home/do012/dc-he4/anisotropy-flamingo/src/3remove-outliers.py -i $sample -o $output
     fi
+
+    # sort clusters
+    python patch_sort_clusters.py -i $output -o $output # inplace sorting
 done
 
     

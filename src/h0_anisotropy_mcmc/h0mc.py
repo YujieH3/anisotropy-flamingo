@@ -18,6 +18,7 @@ import os
 import sys
 sys.path.append('/cosma/home/do012/dc-he4/anisotropy-flamingo/tools')
 import clusterfit as cf
+from multiprocessing import Pool
 from astropy.cosmology import FlatLambdaCDM
 cosmo = FlatLambdaCDM(H0=68.1, Om0=0.306, Ob0=0.0486)
 
@@ -46,6 +47,7 @@ parser = argparse.ArgumentParser(description="Calculate significance map for bes
 # Add arguments
 parser.add_argument('-i', '--input', type=str, help='Input file', default=INPUT_FILE)
 parser.add_argument('-o', '--output', type=str, help='Output file', default=OUTPUT_FILE)
+parser.add_argument('-n', '--nthreads', type=int, help='Number of cores to use.', default=1)
 parser.add_argument('-d', '--chaindir', type=str, help='Directory to save corner plots.', default=CHAIN_DIR)
 parser.add_argument('--overwrite', action='store_true', help='Overwrite existing.', default=OVERWRITE)
 
@@ -54,7 +56,10 @@ args = parser.parse_args()
 INPUT_FILE  = args.input
 OUTPUT_FILE = args.output
 CHAIN_DIR = args.chaindir
+N_THREADS = args.nthreads
 OVERWRITE   = args.overwrite
+
+os.environ["OMP_NUM_THREADS"] = f"{N_THREADS}"
 # -----------------------END CONFIGURATION--------------------------------------
 
 
@@ -164,24 +169,27 @@ for scaling_relation in RELATIONS:
     pos0 = soln.x + 1e-2 * np.random.randn(32, 6)
     nwalkers, ndim = pos0.shape
 
-    # create the backend for saving the chain; we choose to save it for later analysis
-    filename = os.path.join(CHAIN_DIR, f'{scaling_relation}_chain.h5')
-    if os.path.exists(filename) and not OVERWRITE:
-        print(f'File exists: {filename}')
-        raise Exception('Chain file exists and OVERWRITE==False.')
-    else:
-        backend = emcee.backends.HDFBackend(filename)
-        backend.reset(nwalkers, ndim)
+    # # create the backend for saving the chain; we choose to save it for later analysis
+    # filename = os.path.join(CHAIN_DIR, f'{scaling_relation}_chain.h5')
+    # if os.path.exists(filename) and not OVERWRITE:
+    #     print(f'File exists: {filename}')
+    #     raise Exception('Chain file exists and OVERWRITE==False.')
+    # else:
+    #     backend = emcee.backends.HDFBackend(filename)
+    #     backend.reset(nwalkers, ndim)
 
     # Create a sampler
-    sampler = emcee.EnsembleSampler(nwalkers, 
-                                    ndim, 
-                                    log_likelihood, 
-                                    backend = backend,
-                                    args    = (X, Y, z_obs, phi_lc, theta_lc, yname, xname))
+    with Pool() as pool:
+        sampler = emcee.EnsembleSampler(nwalkers, 
+                                        ndim, 
+                                        log_likelihood, 
+                                        # backend = backend,
+                                        args    = (X, Y, z_obs, phi_lc, theta_lc, yname, xname),
+                                        pool    = pool
+                                        )
 
-    # Run
-    sampler.run_mcmc(pos0, 15000, progress=False)  # now the chain is saved. progress spam the standard output, toggled to False
+        # Run
+        sampler.run_mcmc(pos0, 15000, progress=False)  # now the chain is saved. progress spam the standard output, toggled to False
 
     # Small convergence test
     try:
@@ -194,6 +202,9 @@ for scaling_relation in RELATIONS:
     # Get the samples
     flat_samples = sampler.get_chain(discard=1000, thin=80, flat=True)
     print(flat_samples.shape)
+
+    # Save the chain
+    np.save(os.path.join(CHAIN_DIR, f'{scaling_relation}_chain.npy'), flat_samples)
 
     # For delta we use the 16, 50, 84 quantiles
     delta_distr = flat_samples[:, 0]

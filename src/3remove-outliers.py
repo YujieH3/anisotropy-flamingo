@@ -41,38 +41,7 @@ OutputFile = args.output
 
 # define now the range of parameters within which to fit, change this anytime 
 # you want. But keep in mind that larger range means longer time to fit
-FIT_RANGE = { # matching the variable names in fit function.
-    'LX-T': {
-        'B_min'   : 1.5,  'B_max'   : 3,
-        'logA_min': -0.1, 'logA_max': 1,
-        'scat_min': 0.1,  'scat_max': 1,
-    },
-    'YSZ-T': {
-        'B_min'   : 2,    'B_max'   : 3.5,
-        'logA_min': -1,   'logA_max': 1,
-        'scat_min': 0.01, 'scat_max': 1,
-    },
-    'M-T': {
-        'B_min'   : 1,    'B_max'   : 2.5,
-        'logA_min': -1,   'logA_max': 1,
-        'scat_min': 0.01, 'scat_max': 1,
-    },
-    'LX-YSZ': {
-        'B_min'   : 0.2,  'B_max'   : 2,
-        'logA_min': -1,   'logA_max': 1,
-        'scat_min': 0.01, 'scat_max': 1,
-    },
-    'LX-M': {
-        'B_min'   : 0.5,  'B_max'   : 2,
-        'logA_min': -1,   'logA_max': 1,
-        'scat_min': 0.01, 'scat_max': 1,
-    },
-    'YSZ-M': {
-        'B_min'   : 0.5,  'B_max'   : 2.5,
-        'logA_min': -1,   'logA_max': 1,
-        'scat_min': 0.01, 'scat_max': 1,
-    },
-}
+FIT_RANGE = cf.LARGE_RANGE
 
 RELATIONS = ['LX-T', 'YSZ-T', 'M-T']
 
@@ -99,6 +68,9 @@ for ScalingRelation in RELATIONS:
     BestFitParams, OutlierIDs = cf.fit(
         logY_, logX_, N=Nclusters, **FIT_RANGE[ScalingRelation],
         remove_outlier=True, id=ClusterData['TopLeafID'],
+        scat_step=0.007,
+        B_step=0.003,
+        logA_step=0.003,
         )
     
     AllOutlierIDs = np.union1d(AllOutlierIDs, OutlierIDs)

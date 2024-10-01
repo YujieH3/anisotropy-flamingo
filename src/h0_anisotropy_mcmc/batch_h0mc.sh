@@ -1,7 +1,7 @@
 #!/bin/bash -l
 
 #SBATCH --ntasks 1           # The number of cores you need...
-#SBATCH -J h0_anisotropy_mc     #Give it something meaningful.
+#SBATCH -J h0_anisotropy_mc0     #Give it something meaningful.
 #SBATCH -o /cosma8/data/do012/dc-he4/log/standard_output_file.%J.out  # J is the job ID, %J is unique for each job.
 #SBATCH -e /cosma8/data/do012/dc-he4/log/standard_error_file.%J.err
 #SBATCH -p cosma-analyse #or some other partition, e.g. cosma, cosma8, etc.
@@ -22,7 +22,8 @@ conda activate halo-cosma
 
 
 # config
-N3=1728      #total number of lightcones
+n=1          #multithreading doesn't pay off much
+N=1728      #total number of lightcones
 data_dir="/cosma8/data/do012/dc-he4/mock_lightcones_copy"  #directory of halo_properties_in_ligthcone0000.hdf5 (or 0001, 0002, etc.)
 analyse_dir="/cosma8/data/do012/dc-he4/analysis"           #directory of analysis results
 tree="/cosma8/data/dp004/jch/FLAMINGO/MergerTrees/ScienceRuns/L2800N5040/HYDRO_FIDUCIAL/trees_f0.1_min10_max100/vr_trees.hdf5"
@@ -32,7 +33,7 @@ soap_dir="/cosma8/data/dp004/flamingo/Runs/L2800N5040/HYDRO_FIDUCIAL/SOAP"
 mkdir $analyse_dir -p
 
 # run analysis
-for i in $(seq 0 $((N3-1)))
+for i in $(seq 0 $((N-1)))
 do
     lc=$(printf "%04d" $i)
     # echo "Analysing lightcone${lc}"
@@ -53,17 +54,9 @@ do
 
     output="${analyse_dir}/lc${lc}"
 
-    # # rerun everything
-    # if [ -f "${output}/h0mc.done" ]
-    # then
-    #     rm "${output}/h0mc.done"
-    #     rm "${output}/h0_mcmc.csv"
-    #     rm -r $chaindir
-    # fi
-
     if ! [ -f "${output}/h0mc.done" ] #use a file flag
     then
-        python /cosma/home/do012/dc-he4/anisotropy-flamingo/src/h0_anisotropy_mcmc/h0mc.py -i $input -o "${output}/h0_mcmc.csv" -d $chaindir --overwrite && echo > "${output}/h0mc.done"
+        python /cosma/home/do012/dc-he4/anisotropy-flamingo/src/h0_anisotropy_mcmc/h0mc.py -i $input -o "${output}/h0_mcmc.csv" -d $chaindir -n $n --overwrite && echo > "${output}/h0mc.done"
     else
         echo "h0mc already done, skipping..."
     fi

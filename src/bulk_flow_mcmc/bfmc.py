@@ -15,9 +15,8 @@ import emcee
 import numpy as np
 import os
 import sys
-sys.path.append('/data1/yujiehe/anisotropy-flamingo')
-import tools.constants as const
-import tools.clusterfit as cf
+sys.path.append('/cosma/home/do012/dc-he4/anisotropy-flamingo/tools')
+import clusterfit as cf
 from astropy.cosmology import FlatLambdaCDM
 cosmo = FlatLambdaCDM(H0=68.1, Om0=0.306, Ob0=0.0486)
 
@@ -139,7 +138,7 @@ first_entry = True
 
 
 for scaling_relation in RELATIONS: 
-    n_clusters = cf.CONST[scaling_relation]['N']
+    n_clusters = cf.CONST_MC[scaling_relation]['N']
 
     # Load the data
     _ = scaling_relation.find('-')
@@ -184,20 +183,20 @@ for scaling_relation in RELATIONS:
         pos0 = soln.x + 1e-2 * np.random.randn(32, 6)
         nwalkers, ndim = pos0.shape
 
-        # create the backend for saving the chain; we choose to save it for later analysis
-        filename = os.path.join(CHAIN_DIR, f'{scaling_relation}_chain.h5')
-        if os.path.exists(filename) and not OVERWRITE:
-            print(f'File exists: {filename}')
-            raise Exception('Chain file exists and OVERWRITE==False.')
-        else:
-            backend = emcee.backends.HDFBackend(filename)
-            backend.reset(nwalkers, ndim)
+        # # create the backend for saving the chain; we choose to save it for later analysis
+        # filename = os.path.join(CHAIN_DIR, f'{scaling_relation}_chain.h5')
+        # if os.path.exists(filename) and not OVERWRITE:
+        #     print(f'File exists: {filename}')
+        #     raise Exception('Chain file exists and OVERWRITE==False.')
+        # else:
+        #     backend = emcee.backends.HDFBackend(filename)
+        #     backend.reset(nwalkers, ndim)
 
         # Create a sampler
         sampler = emcee.EnsembleSampler(nwalkers, 
                                         ndim, 
                                         log_likelihood, 
-                                        backend = backend,
+                                        #backend = backend,
                                         args    = (X, Y, z_obs, phi_lc, theta_lc, yname, xname))
        
         # Run
@@ -218,6 +217,8 @@ for scaling_relation in RELATIONS:
         flat_samples = sampler.get_chain(discard=1000, thin=80, flat=True)
         print(flat_samples.shape)
 
+        # Save flat samples
+        np.save(os.path.join(f'{CHAIN_DIR}', f'{scaling_relation}_zmax{zmax}_chain.npy'), flat_samples)
 
         # For ubf we use the 16, 50, 84 quantiles
         ubf_distr = flat_samples[:, 0]

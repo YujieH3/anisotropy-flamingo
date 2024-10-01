@@ -10,15 +10,12 @@ The work is a continuation of observational studies from:
 The universe might look more like a 🌰 than a 🎱.
 
 ## To-Do List
-- [ ] Write a batch script to run bootstrapping without fixing directions but scan a small region.
-- [ ] Analyse the results of mcmc h0
-- [ ] Run MCMC bulk flow analysis
-- [ ] Write a batch script to run chi-square bulk flow fixing directions
-- [ ] Submit chi-square bulk flow fixing directions on the cluster
-- [ ] Write a batch script to run chi-square bulk flow without fixing directions
-- [ ] Submit chi-square bulk flow without fixing directions on the cluster
-- [ ] Wrtie a small script to examine the completeness of halo_lightcones: 19 columns of quantities in four snapshots
-- [ ] Make a cron job to make samples every hour.
+- [ ] Start writing the paper
+- [ ] Bootstrapping + chi-square bulk flow analysis
+- [ ] Joint H0 MCMC analysis of Lx-T and Ysz-T relations
+- [ ] Joint H0 MCMC analysis of Lx-T, Ysz-T, and Mgas-T relations
+- [x] Write a batch script to run bootstrapping without fixing directions but scan a small region.
+- [x] Run MCMC bulk flow analysis
 - [x] Submit batch_best_fit.sh
 - [x] Submit H0 chi-square + bootstrapping on the cluster.
 - [x] Write a batch script to run the H0 chi-square + bootstrapping analysis on the cluster.
