@@ -66,6 +66,7 @@ if __name__ == '__main__':
 
     ClusterData = pd.read_csv(InputFile)
 
+    first_entry = True
 
     for ScalingRelation in cf.CONST.keys():
 
@@ -144,13 +145,14 @@ if __name__ == '__main__':
             LowerBoundScat = np.percentile(scat, BestFitScatPer - 34)
         else:
             LowerBoundScat = np.percentile(scat, 0)
-            warnings.warn(f'LowerBoundScat out of bounds at {LowerBoundScat}. Setting to 0.')
+            warnings.warn(f'BestFitScatPer={BestFitScatPer}. LowerBoundScat out of bounds. Setting to min.')
 
         if BestFitScatPer < 66:
             UpperBoundScat = np.percentile(scat, BestFitScatPer + 34)
         else:
-            UpperBoundScat = np.percentile(scat, 100)
-            warnings.warn(f'UpperBoundScat out of bounds at {UpperBoundScat}. Setting to 0.')
+            UpperBoundScat = np.percentile(scat, 100) 
+            warnings.warn(f'BestFitScatPer={BestFitScatPer}. UpperBoundScat out of bounds. Setting to max.')
+
 
 
         print(f'1-sigma bootstrapping uncertainty of {ScalingRelation} fit:')
@@ -178,9 +180,10 @@ if __name__ == '__main__':
             })
 
         # Check if file exists
-        if os.path.isfile(BestFitOutputFile):
+        if not first_entry:
             # Append to existing file
             df.to_csv(BestFitOutputFile, mode='a', header=False, index=False)
         else:
             # Write new file with header
             df.to_csv(BestFitOutputFile, index=False)
+            first_entry = False

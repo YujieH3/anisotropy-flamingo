@@ -6,7 +6,8 @@ import sys
 sys.path.append('./')
 from constants import *
 import h5py
-
+import healpy as hp
+import warnings
 
 
 
@@ -217,7 +218,10 @@ def run_fit(logY_, logX_, B_min, B_max, logA_min, logA_max, scat_min,
         }      
 
 
-def find_outlier(logY_, logX_, best_fit_params, outlier_sigma=4):
+def find_outlier(logY_ : np.ndarray, 
+                 logX_ : np.ndarray, 
+                 best_fit_params : dict, 
+                 outlier_sigma : float = 4):
     """ Find outliers based on the best fit parameters. Return a boolean outlier.
 
     Parameters
@@ -246,12 +250,20 @@ def find_outlier(logY_, logX_, best_fit_params, outlier_sigma=4):
 
 
 @njit(fastmath=True, parallel=True)
-def bootstrap_fit(Nbootstrap, 
-                  logY_, logX_, Nclusters,
-                  B_min, B_max, 
-                  logA_min, logA_max, 
-                  scat_min, scat_max, weight = None,
-                  scat_step=0.007, B_step=0.001, logA_step=0.003):
+def bootstrap_fit(Nbootstrap : int, 
+                  logY_    : np.ndarray,
+                  logX_    : np.ndarray,
+                  Nclusters: int,
+                  B_min    : float,
+                  B_max    : float,
+                  logA_min : float,
+                  logA_max : float,
+                  scat_min : float,
+                  scat_max : float,
+                  weight   : np.ndarray = None,
+                  scat_step: float = 0.007,
+                  B_step   : float = 0.001,
+                  logA_step: float = 0.003) -> tuple:
 
     """
     Examples
@@ -1005,10 +1017,28 @@ def periodic_error_range(data, peak_value=None, full_range=360, bins=30):
     
 
 
-def make_dipole_map(map, lons, lats, central):
+def make_dipole_map(map : np.ndarray, 
+                    lons, lats, 
+                    central : float) -> np.ndarray:
     """
     Symmetrize a sky map. Works for any resolution as long as the longitudes and
     latitudes are given, in the same shape as lons and lats.
+
+    Parameters
+    --
+    map : np.array
+        The map to be symmetrized. The map should be a 1D array. Mathematically
+        it should be a scalar field as function of lons and lats.
+    lons : np.array
+        The longitudes of the map in degree. Should be a 1D array. Matching the 
+        shape of the map.
+    lats : np.array
+        The latitudes of the map in degree. Should be a 1D array. Matching the 
+        shape of the map.
+    central : float
+        The central value of the map. This is the value that the map will be
+        symmetrized around. For example, if the map is a dipole map, the central
+        value should be 0.
     """
     for j in range(len(map)):
         lon = lons[j]
@@ -1055,10 +1085,42 @@ def find_dipole_in_dipole_map(map, lons, lats):
     minlat = lats[minloc]
     minvalue = map[minloc]
     if (minlon, minlat) != opposite_direction(maxlon, maxlat):
-        print('Warning: The minimum is not the opposite direction of the maximum.')
+        warnings.warn('Warning: The minimum is not the opposite direction of the maximum. Shouldnt happen if your map is symmetrized.')
         print('max:', maxlon, maxlat, 'min', minlon, minlat)
 
-    return maxvalue, minvalue, maxlon, maxlat, maxloc 
+    return maxvalue, minvalue, maxlon, maxlat, maxloc
+
+
+def find_max_dipole(map : np.ndarray, 
+                    lons : np.ndarray, 
+                    lats : np.ndarray) -> tuple:
+    """
+    Find the maximum dipole flow in a general map.
+    """
+    dipole = np.zeros_like(map)
+
+    for i in range(len(map)):
+        dp_lon, dp_lat = opposite_direction(lons[i], lats[i])
+        dp_mask = (lons == dp_lon) & (lats == dp_lat)
+        if np.sum(dp_mask) == 0:
+            continue
+        elif np.sum(dp_mask) > 1:
+            raise ValueError('There are multiple points with the same longitude and latitude. This should not happen.')
+        else:
+            dp_value = map[dp_mask]
+            dipole[i] = (map[i] - dp_value)
+
+    max_idx = np.argmax(dipole)
+    max_dipole_value = dipole[max_idx]
+    max_lon = lons[max_idx]
+    max_lat = lats[max_idx]
+
+    return max_lon, max_lat, max_dipole_value
+        
+
+
+
+
 
 
 
@@ -1120,16 +1182,16 @@ def get_range(filename, n_sigma=3):
     ranges = {}
     for relation in relations:
         mask = df['Relation'] == relation
-        logA = np.log10(df['BestFitA'].loc[mask].values[0])
-        B = df['BestFitB'].loc[mask].values[0]
-        scat = df['BestFitScat'].loc[mask].values[0]
+        logA = np.log10(df['BestFitA'].loc[mask].values[-1])       # if there are multiple entries, use the last one as it's the newest one. Might happen after a bug fix.
+        B = df['BestFitB'].loc[mask].values[-1]
+        scat = df['BestFitScat'].loc[mask].values[-1]
 
-        logA_1sigma_p = np.log10(df['1SigmaUpperA'].loc[mask].values[0])
-        logA_1sigma_m = np.log10(df['1SigmaLowerA'].loc[mask].values[0])
-        B_1sigma_p = df['1SigmaUpperB'].loc[mask].values[0]
-        B_1sigma_m = df['1SigmaLowerB'].loc[mask].values[0]
-        scat_1sigma_p = df['1SigmaUpperScat'].loc[mask].values[0]
-        scat_1sigma_m = df['1SigmaLowerScat'].loc[mask].values[0]
+        logA_1sigma_p = np.log10(df['1SigmaUpperA'].loc[mask].values[-1])
+        logA_1sigma_m = np.log10(df['1SigmaLowerA'].loc[mask].values[-1])
+        B_1sigma_p = df['1SigmaUpperB'].loc[mask].values[-1]
+        B_1sigma_m = df['1SigmaLowerB'].loc[mask].values[-1]
+        scat_1sigma_p = df['1SigmaUpperScat'].loc[mask].values[-1]
+        scat_1sigma_m = df['1SigmaLowerScat'].loc[mask].values[-1]
 
         ranges[relation] = {
             'logA_min': logA - n_sigma * (logA - logA_1sigma_m),
@@ -1141,3 +1203,73 @@ def get_range(filename, n_sigma=3):
         }
 
     return ranges
+
+
+def Rx(theta : float) -> np.matrix:
+    sin_theta = np.sin(theta)
+    cos_theta = np.cos(theta)
+    return np.matrix([
+        [1,          0,         0],
+        [0,  cos_theta, sin_theta],
+        [0, -sin_theta, cos_theta],
+    ])
+
+def Ry(theta : float) -> np.matrix:
+    sin_theta = np.sin(theta)
+    cos_theta = np.cos(theta)
+    return np.matrix([
+        [cos_theta, 0, -sin_theta],
+        [0,         1,          0],
+        [sin_theta, 0,  cos_theta],
+    ])
+    
+def Rz(theta : float) -> np.matrix:
+    sin_theta = np.sin(theta)
+    cos_theta = np.cos(theta)
+    return np.matrix([
+        [ cos_theta, sin_theta, 0],
+        [-sin_theta, cos_theta, 0],
+        [0,          0,         1],
+    ])
+
+
+def grid_around_lonlat(center_lon : np.ndarray, 
+                    center_lat : np.ndarray,
+                    tilde_lat_space : np.ndarray,
+                    tilde_lon_space : np.ndarray,
+                    include_center : bool = True) -> np.ndarray:
+    """ A circle grid of shape (2, len(tilde_theta)*len(tilde_phi)+1)
+    around the center_lon, including the center_lon, center_lat.
+    The grid is defined by the tilde_theta, tilde_phi, which are
+    the angles in the rotated frame. Output in shape (2, N).
+
+    Example
+    --
+    To iterate the returned grid, use:
+    ```
+    lonlats = grid_around_lonlat(center_lon, center_lat, tilde_lat_space, tilde_lon_space)
+    for lon, lat in lonlats.T:
+        print(lon, lat)
+    ```
+    """
+    # the rotation matrix
+    R_tilde2g = Rz(-np.radians(center_lon) + np.pi/2) @ Rx(-np.radians(center_lat) + np.pi/2)
+
+    # the grid in the rotated frame
+    tilde_lon, tilde_lat = np.meshgrid(tilde_lon_space, tilde_lat_space, indexing='ij')
+    tilde_lon = tilde_lon.flatten()
+    tilde_lat = tilde_lat.flatten()
+    tilde_lonlat = np.stack([tilde_lon, tilde_lat], axis=0)
+    tilde_lonlat = 180/np.pi * tilde_lonlat
+
+    # the grid in the global frame
+    tilde_vec = hp.rotator.dir2vec(tilde_lonlat, lonlat=True) # shape (3, n)
+    gvec = R_tilde2g @ tilde_vec                              # shape (3, n)
+
+    # the grid in the global frame in lonlat coordinates
+    glonlat = hp.rotator.vec2dir(vec=np.array(gvec), lonlat=True)         # shape (2, n)
+
+    if include_center:
+        glonlat = np.concatenate([[[center_lon], [center_lat]], glonlat], axis=1)
+
+    return glonlat

@@ -1,7 +1,7 @@
 #!/bin/bash -l
 
 #SBATCH --ntasks 64           # The number of cores you need...
-#SBATCH -J h0_anisotropy_bsfll     #Give it something meaningful.
+#SBATCH -J h0_anisotropy_sbf     #Give it something meaningful.
 #SBATCH -o /cosma8/data/do012/dc-he4/log/standard_output_file.%J.out  # J is the job ID, %J is unique for each job.
 #SBATCH -e /cosma8/data/do012/dc-he4/log/standard_error_file.%J.err
 #SBATCH -p cosma-analyse #or some other partition, e.g. cosma, cosma8, etc.
@@ -16,8 +16,6 @@ module purge
 # module load intel_comp
 # module load compiler-rt tbb compiler mpi
 # module load openmpi
-
-conda deactivate
 
 conda activate halo-cosma
 
@@ -51,12 +49,11 @@ do
     fi
 
     output="${analyse_dir}/lc${lc}"
-    best_fit="${output_dir}/scan_best_fit_${scaling_relation}_theta${cone_size}.csv"
-    if ! [ -f "${output}/scan-bootstrap-fix-lonlat.done" ] && [ -f "${output}/fit-all.done" ] && [ -f "${output}/scan-best-fit.done"] #use a file flag
+    if ! [ -f "${output}/scan-best-fit.done" ] && [ -f "${output}/fit-all.done" ] #use a file flag
     then
-        python scan-bootstrap-fix-lonlat.py -i $input -r "${output}/fit_all.csv" -o $output -b $output -t $n -n 500 && echo > "${output}/scan-bootstrap-fix-lonlat.done"
+        python scan-best-fit.py -i $input -r "${output}/fit_all.csv" -o $output -t $n && echo > "${output}/scan-best-fit.done"
     else
-        echo "scan-bootstrap-fix-lonlat already done or fit_all output not found or best_fit output not found, skipping..."
+        echo "scan-best-fit already done or fit_all output not found, skipping..."
     fi
 done
 

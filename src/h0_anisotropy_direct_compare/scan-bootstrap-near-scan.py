@@ -10,8 +10,8 @@
 
 import sys
 import os
-sys.path.append('/cosma/home/do012/dc-he4/anisotropy-flamingo')
-import tools.clusterfit as cf
+sys.path.append('/cosma/home/do012/dc-he4/anisotropy-flamingo/tools')
+import clusterfit as cf
 import numpy as np
 from numba import njit, set_num_threads
 import pandas as pd
@@ -126,7 +126,6 @@ def scan_bootstrapping(Nbootstrap : int,
         cone_logX_ = logX_[mask]
         costheta = costheta[mask]
 
-
         # here we use the parallel version of bootstrap_fit
         logA, B, scat = cf.bootstrap_fit(
             Nbootstrap = Nbootstrap,
@@ -176,18 +175,17 @@ if __name__ == '__main__':
 
 
     for scaling_relation in relations:
+        # set the cone size
+        if 'YSZ' in scaling_relation:
+            cone_size = 60
+        else:
+            cone_size = 75
 
         # Skip if the output file already exists
         output_file = f'{output_dir}/scan_bootstrap_{scaling_relation}_theta{cone_size}.csv'
         if os.path.exists(output_file) and not overwrite:
             print(f'File exists and overwrite is set to False: {output_file}')
             continue
-        
-        # set the cone size
-        if 'YSZ' in scaling_relation:
-            cone_size = 60
-        else:
-            cone_size = 75
         
         # if best_fit_dir does not exists
         best_fit_file = f'{output_dir}/scan_best_fit_{scaling_relation}_theta{cone_size}.csv'
@@ -196,13 +194,24 @@ if __name__ == '__main__':
         else:
             best_fit = pd.read_csv(best_fit_file)
 
-        # find the maximum and minimum longitude and latitude
-        max_idx = best_fit[best_fit['Relation'] == scaling_relation]['A'].idxmax()
-        min_idx = best_fit[best_fit['Relation'] == scaling_relation]['A'].idxmin()
-        lon_max = best_fit['Glon'][max_idx]
-        lon_min = best_fit['Glon'][min_idx]
-        lat_max = best_fit['Glat'][max_idx]
-        lat_min = best_fit['Glat'][min_idx]
+        # find the longitude and latitude of the largest dipole
+        _A_ = best_fit['A'].values
+        _lons_ = best_fit['Glon'].values
+        _lats_ = best_fit['Glat'].values
+        lon_max, lat_max, _ = cf.find_max_dipole(map=_A_, lons=_lons_, lats=_lats_)
+        lon_min, lat_min = cf.opposite_direction(lon=lon_max, lat=lat_max)
+        print(f'Maximum dipole: l={lon_max}, b={lat_max}')
+
+        # set the sample points
+        lonlatgrid_p = cf.grid_around_lonlat(center_lon=lon_max,
+                                           center_lat=lat_max,
+                                           tilde_lat_space=np.pi/2 - np.arange(1, 3) * np.radians(15),
+                                           tilde_lon_space=np.linspace(-np.pi, np.pi, 8, endpoint=False))
+        lonlatgrid_m = cf.grid_around_lonlat(center_lon=lon_min,
+                                             center_lat=lat_min,
+                                             tilde_lat_space=np.pi/2 - np.arange(1, 3) * np.radians(15),
+                                             tilde_lon_space=np.linspace(-np.pi, np.pi, 8, endpoint=False))
+        lonlatgrid = np.concatenate([lonlatgrid_p, lonlatgrid_m], axis=1)
 
         # set the step size for A and B if the number of steps is given
         if n_B_steps is not None: # set the step size for A and B if the number of steps is given
@@ -226,17 +235,18 @@ if __name__ == '__main__':
         logX_ = cf.logX_(X, relation=scaling_relation)
 
         # longitude and latitude of clusters
-        lon = cluster_data['phi_on_lc'][:n_clusters]
-        lat = cluster_data['theta_on_lc'][:n_clusters]
-        lon = np.array(lon)
-        lat = np.array(lat)
+        lon = cluster_data['phi_on_lc'][:n_clusters].values
+        lat = cluster_data['theta_on_lc'][:n_clusters].values
 
         # Preallocate arrays, the memory should be able to hold
-        A_arr     = np.zeros(2*n_bootstrap)
-        B_arr     = np.zeros(2*n_bootstrap)
-        scat_arr  = np.zeros(2*n_bootstrap)
-        lon_c_arr = np.zeros(2*n_bootstrap)
-        lat_c_arr = np.zeros(2*n_bootstrap)
+        nsize = lonlatgrid.shape[1]
+        A_arr     = np.zeros(nsize*n_bootstrap)
+        B_arr     = np.zeros(nsize*n_bootstrap)
+        scat_arr  = np.zeros(nsize*n_bootstrap)
+        lon_c_arr = np.zeros(nsize*n_bootstrap)
+        lat_c_arr = np.zeros(nsize*n_bootstrap)
+
+        # sys.exit(1)                   # for testing
 
         # do only two directions
         lon_c_arr, lat_c_arr, A_arr, B_arr, scat_arr = scan_bootstrapping(
@@ -246,8 +256,8 @@ if __name__ == '__main__':
             scat_arr  = scat_arr,
             lon_c_arr = lon_c_arr,
             lat_c_arr = lat_c_arr,
-            lon_c     = np.array([lon_max, lon_min]),
-            lat_c     = np.array([lat_max, lat_min]),
+            lon_c     = lonlatgrid[0, :],
+            lat_c     = lonlatgrid[1, :],
             lon       = lon,
             lat       = lat,
             logY_     = logY_,

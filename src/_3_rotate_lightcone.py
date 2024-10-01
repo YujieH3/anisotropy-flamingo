@@ -78,7 +78,7 @@ with h5py.File(INPUT, 'a') as f:
         theta_y = np.random.rand() * 2*np.pi
         theta_z = np.random.rand() * 2*np.pi
         print('Rotation angle:', theta_x, theta_y, theta_z)
-        new_coords = coords * Rx(theta_x) * Ry(theta_y) * Rz(theta_z)
+        new_coords = coords @ Rx(theta_x) @ Ry(theta_y) @ Rz(theta_z)
         print(new_coords.shape)
         new_coords = np.array(new_coords)       #remove matrix constraints
 

@@ -166,17 +166,15 @@ if __name__ == '__main__':
         n_clusters = cf.CONST[scaling_relation]['N']
 
         _ = scaling_relation.find('-')
-        Y = cluster_data[cf.COLUMNS[scaling_relation[:_  ]]][:n_clusters]
-        X = cluster_data[cf.COLUMNS[scaling_relation[_+1:]]][:n_clusters]
-        z = cluster_data['ObservedRedshift'][:n_clusters]
+        Y = cluster_data[cf.COLUMNS[scaling_relation[:_  ]]][:n_clusters].values
+        X = cluster_data[cf.COLUMNS[scaling_relation[_+1:]]][:n_clusters].values
+        z = cluster_data['ObservedRedshift'][:n_clusters].values
 
         logY_ = cf.logY_(Y, z=z, relation=scaling_relation)
         logX_ = cf.logX_(X, relation=scaling_relation)
 
-        lon = cluster_data['phi_on_lc'][:n_clusters]
-        lat = cluster_data['theta_on_lc'][:n_clusters]
-        lon = np.array(lon)
-        lat = np.array(lat)
+        lon = cluster_data['phi_on_lc'][:n_clusters].values
+        lat = cluster_data['theta_on_lc'][:n_clusters].values
 
         # preallocate arrays
         n_steps = 360//lon_step * 180//lat_step

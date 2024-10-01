@@ -181,7 +181,7 @@ for scaling_relation in RELATIONS:
                                     args    = (X, Y, z_obs, phi_lc, theta_lc, yname, xname))
 
     # Run
-    sampler.run_mcmc(pos0, 15000, progress=True)  # now the chain is saved
+    sampler.run_mcmc(pos0, 15000, progress=False)  # now the chain is saved. progress spam the standard output, toggled to False
 
     # Small convergence test
     try:
