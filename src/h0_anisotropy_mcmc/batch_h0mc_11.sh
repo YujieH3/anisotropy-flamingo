@@ -33,7 +33,7 @@ soap_dir="/cosma8/data/dp004/flamingo/Runs/L2800N5040/HYDRO_FIDUCIAL/SOAP"
 mkdir $analyse_dir -p
 
 # run analysis
-for i in $(seq 1584 1728)
+for i in $(seq 1584 1727)
 do
     lc=$(printf "%04d" $i)
     # echo "Analysing lightcone${lc}"
