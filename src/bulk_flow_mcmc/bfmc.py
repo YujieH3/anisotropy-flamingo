@@ -45,7 +45,7 @@ parser = argparse.ArgumentParser(description="Calculate significance map for bes
 # Add arguments
 parser.add_argument('-i', '--input', type=str, help='Input file', default=INPUT_FILE)
 parser.add_argument('-o', '--output', type=str, help='Output file', default=OUTPUT_FILE)
-parser.add_argument('-d', '--chaindir', type=str, help='Directory to save corner plots.', default=CHAIN_DIR)
+parser.add_argument('-d', '--chaindir', type=str, help='Directory to save corner plots.')
 parser.add_argument('--overwrite', action='store_true', help='Overwrite existing.', default=OVERWRITE)
 
 # Parse the arguments
@@ -164,9 +164,8 @@ for scaling_relation in RELATIONS:
         phi_lc   = phi_lc[zmask]
         theta_lc = theta_lc[zmask]
 
-        print(np.sum(zmask)) # Number of clusters left
-
-
+        print('Redshift shell:', zmax)
+        print('Number of clusters:', np.sum(zmask)) # Number of clusters left
 
         # Optimize
         from scipy.optimize import minimize

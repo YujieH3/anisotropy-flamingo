@@ -17,6 +17,7 @@ module purge
 # module load compiler-rt tbb compiler mpi
 # module load openmpi
 
+source /cosma/local/anaconda3/5.2.0/etc/profile.d/conda.sh   # cron doesn't load conda by default
 conda activate halo-cosma
 
 
@@ -91,7 +92,7 @@ do
     fi
 
     # sort clusters
-    python patch_sort_clusters.py -i $output -o $output # inplace sorting
+    python /cosma/home/do012/dc-he4/anisotropy-flamingo/src/patch_sort_clusters.py -i $output -o $output # inplace sorting
 done
 
     

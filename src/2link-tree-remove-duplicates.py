@@ -14,7 +14,7 @@ import pandas as pd
 import numpy as np
 import sys
 import os
-sys.path.append('../tools')
+sys.path.append('/cosma/home/do012/dc-he4/anisotropy-flamingo/tools')
 import clusterfit as cf
 
 # --------------------------------configurations--------------------------------

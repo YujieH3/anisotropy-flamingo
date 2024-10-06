@@ -28,7 +28,7 @@
 
 import pandas as pd
 import sys
-sys.path.append('../tools')
+sys.path.append('/cosma/home/do012/dc-he4/anisotropy-flamingo/tools')
 from xray_correct import *
 from clusterfit import load_lightcone
 import numpy as np

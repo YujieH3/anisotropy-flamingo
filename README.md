@@ -10,7 +10,6 @@ The work is a continuation of observational studies from:
 The universe might look more like a 🌰 than a 🎱.
 
 ## To-Do List
-- [ ] Start writing the paper
 - [ ] Bootstrapping + chi-square bulk flow analysis
 - [ ] Joint H0 MCMC analysis of Lx-T and Ysz-T relations
 - [ ] Joint H0 MCMC analysis of Lx-T, Ysz-T, and Mgas-T relations
