@@ -135,6 +135,20 @@ if __name__ == '__main__':
         BestFitBPer = np.sum(B < BestFitB) / len(B) * 100
         BestFitScatPer = np.sum(scat < BestFitScat) / len(scat) * 100
 
+        if BestFitAPer < 34:
+            warnings.warn(f'BestFitAPer={BestFitAPer}. LowerBoundA out of bounds. Setting to min.')
+            BestFitAPer = 0
+        if BestFitAPer > 66:
+            warnings.warn(f'BestFitAPer={BestFitAPer}. UpperBoundA out of bounds. Setting to max.')
+            BestFitAPer = 100
+        
+        if BestFitBPer < 34:
+            warnings.warn(f'BestFitBPer={BestFitBPer}. LowerBoundB out of bounds. Setting to min.')
+            BestFitBPer = 0
+        if BestFitBPer > 66:
+            warnings.warn(f'BestFitBPer={BestFitBPer}. UpperBoundB out of bounds. Setting to max.')
+            BestFitBPer = 100
+
         LowerBoundA    = np.percentile(A, BestFitAPer - 34)
         UpperBoundA    = np.percentile(A, BestFitAPer + 34)
         LowerBoundB    = np.percentile(B, BestFitBPer - 34)

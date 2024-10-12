@@ -13,6 +13,7 @@ The universe might look more like a 🌰 than a 🎱.
 - [ ] Bootstrapping + chi-square bulk flow analysis
 - [ ] Joint H0 MCMC analysis of Lx-T and Ysz-T relations
 - [ ] Joint H0 MCMC analysis of Lx-T, Ysz-T, and Mgas-T relations
+- [x] All lightcones done, stop the cron job.
 - [x] Write a batch script to run bootstrapping without fixing directions but scan a small region.
 - [x] Run MCMC bulk flow analysis
 - [x] Submit batch_best_fit.sh
