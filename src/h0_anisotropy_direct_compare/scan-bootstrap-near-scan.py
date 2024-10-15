@@ -82,8 +82,8 @@ def scan_bootstrapping(Nbootstrap : int,
                        scat_arr   : np.ndarray,
                        lon_c_arr  : np.ndarray,
                        lat_c_arr  : np.ndarray,
-                       lon_c      : np.ndarray,
-                       lat_c      : np.ndarray,
+                       lons_c     : np.ndarray,
+                       lats_c     : np.ndarray,
                        lon        : np.ndarray,
                        lat        : np.ndarray,
                        logY_      : np.ndarray,
@@ -105,20 +105,20 @@ def scan_bootstrapping(Nbootstrap : int,
     # Unit conversions
     theta = cone_size # set alias
     theta_rad = theta * np.pi / 180
-    lat_rad = lat * np.pi / 180 # the memory load is not very high so we can do this
-    lon_rad = lon * np.pi / 180
-    lon_c_rad = lon_c * np.pi / 180
-    lat_c_rad = lat_c * np.pi / 180
+    lats_rad = lat * np.pi / 180 # the memory load is not very high so we can do this
+    lons_rad = lon * np.pi / 180
+    lons_c_rad = lons_c * np.pi / 180
+    lats_c_rad = lats_c * np.pi / 180
 
     n_tot = len(lon)
     if len(lat) != n_tot or len(logY_) != n_tot or len(logX_) != n_tot:
         raise ValueError("Longitude, latitude, logY_, and logX_ arrays must have the same length.")
 
     iter_idx = 0
-    for lon_c_rad, lat_c_rad in zip(lon_c_rad, lat_c_rad):
+    for lon_c_rad, lat_c_rad in zip(lons_c_rad, lats_c_rad):
         a = np.pi / 2 - lat_c_rad # center of cone to zenith
-        b = np.pi / 2 - lat_rad   # cluster to zenith
-        costheta = np.cos(a)*np.cos(b) + np.sin(a)*np.sin(b)*np.cos(lon_rad - lon_c_rad) # costheta=cosa*cosb+sina*sinb*cosA
+        b = np.pi / 2 - lats_rad   # cluster to zenith
+        costheta = np.cos(a)*np.cos(b) + np.sin(a)*np.sin(b)*np.cos(lons_rad - lon_c_rad) # costheta=cosa*cosb+sina*sinb*cosA
         mask = costheta > np.cos(theta_rad)
 
         n_clusters = np.sum(mask) # number of clusters for bootstrapping
@@ -148,15 +148,15 @@ def scan_bootstrapping(Nbootstrap : int,
         # idx = n_lon_directions * n_lat_steps + n_lat_step
 
         # Save the fit parameters
-        lon_c_arr[iter_idx*nb, (iter_idx+1)*nb] = np.repeat(lon_c, nb)
-        lat_c_arr[iter_idx*nb, (iter_idx+1)*nb] = np.repeat(lat_c, nb)
-        A_arr[iter_idx*nb, (iter_idx+1)*nb]     = 10**logA
-        B_arr[iter_idx*nb, (iter_idx+1)*nb]     = B
-        scat_arr[iter_idx*nb, (iter_idx+1)*nb]  = scat
+        lon_c_arr[iter_idx*nb:(iter_idx+1)*nb] = np.repeat(lon_c_rad * 180 / np.pi, nb)
+        lat_c_arr[iter_idx*nb:(iter_idx+1)*nb] = np.repeat(lat_c_rad * 180 / np.pi, nb)
+        A_arr[iter_idx*nb:(iter_idx+1)*nb]     = 10**logA
+        B_arr[iter_idx*nb:(iter_idx+1)*nb]     = B
+        scat_arr[iter_idx*nb:(iter_idx+1)*nb]  = scat
 
         iter_idx += 1
 
-    print('Direction: l', lon_c, 'b', lat_c, 'Clusters:',n_clusters)
+        print('Direction: l', lon_c_rad * 180 / np.pi, 'b', lat_c_rad * 180 / np.pi, 'Clusters:',n_clusters)
     return lon_c_arr, lat_c_arr, A_arr, B_arr, scat_arr
 
 
@@ -221,7 +221,7 @@ if __name__ == '__main__':
 
         # Prepare the data, convert to logX_, logY_. Requires redshift for logY_
         t0 = datetime.datetime.now()
-        print(f'[{t0}] Scanning full sky: {scaling_relation}')
+        print(f'[{t0}] Scanning for: {scaling_relation}')
         n_clusters = cf.CONST[scaling_relation]['N']
 
         # load the data according to the names
@@ -248,7 +248,6 @@ if __name__ == '__main__':
 
         # sys.exit(1)                   # for testing
 
-        # do only two directions
         lon_c_arr, lat_c_arr, A_arr, B_arr, scat_arr = scan_bootstrapping(
             Nbootstrap = n_bootstrap,
             A_arr     = A_arr,
@@ -256,15 +255,13 @@ if __name__ == '__main__':
             scat_arr  = scat_arr,
             lon_c_arr = lon_c_arr,
             lat_c_arr = lat_c_arr,
-            lon_c     = lonlatgrid[0, :],
-            lat_c     = lonlatgrid[1, :],
+            lons_c     = lonlatgrid[0, :],
+            lats_c     = lonlatgrid[1, :],
             lon       = lon,
             lat       = lat,
             logY_     = logY_,
             logX_     = logX_,
             cone_size = cone_size,
-            lon_step  = lon_step,
-            lat_step  = lat_step,
             scat_step = scat_step,
             B_step    = B_step,
             logA_step = logA_step,

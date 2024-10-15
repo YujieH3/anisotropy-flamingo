@@ -27,9 +27,9 @@ OutputFileDir = '/data1/yujiehe/data/fits/'
 Nthreads = 4
 
 Relations = ['LX-T', 'YSZ-T', 'M-T',] #'LX-YSZ', 'LX-M', 'YSZ-M'] # give the name of the relation to fit if you want to fit only one. Set to False if you want to fit all relations.
-BootstrapSteps = 500 # number of bootstrap steps to calculate uncertainties
-ScatterStepSize = 0.003
-BStepSize       = 0.002
+BootstrapSteps = 400 # number of bootstrap steps to calculate uncertainties
+ScatterStepSize = 0.006
+BStepSize       = 0.003
 logAStepSize    = 0.002
 
 # define now the range of parameters within which to fit, change this anytime 
@@ -137,17 +137,17 @@ if __name__ == '__main__':
 
         if BestFitAPer < 34:
             warnings.warn(f'BestFitAPer={BestFitAPer}. LowerBoundA out of bounds. Setting to min.')
-            BestFitAPer = 0
+            BestFitAPer = 34
         if BestFitAPer > 66:
             warnings.warn(f'BestFitAPer={BestFitAPer}. UpperBoundA out of bounds. Setting to max.')
-            BestFitAPer = 100
+            BestFitAPer = 66
         
         if BestFitBPer < 34:
             warnings.warn(f'BestFitBPer={BestFitBPer}. LowerBoundB out of bounds. Setting to min.')
-            BestFitBPer = 0
+            BestFitBPer = 34
         if BestFitBPer > 66:
             warnings.warn(f'BestFitBPer={BestFitBPer}. UpperBoundB out of bounds. Setting to max.')
-            BestFitBPer = 100
+            BestFitBPer = 66
 
         LowerBoundA    = np.percentile(A, BestFitAPer - 34)
         UpperBoundA    = np.percentile(A, BestFitAPer + 34)

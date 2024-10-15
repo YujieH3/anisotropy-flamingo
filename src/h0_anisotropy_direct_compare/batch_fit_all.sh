@@ -1,12 +1,12 @@
 #!/bin/bash -l
 
-#SBATCH --ntasks 64           # The number of cores you need...
+#SBATCH --ntasks 8           # The number of cores you need...
 #SBATCH -J h0_anisotropy_fit_all     #Give it something meaningful.
 #SBATCH -o /cosma8/data/do012/dc-he4/log/standard_output_file.%J.out  # J is the job ID, %J is unique for each job.
 #SBATCH -e /cosma8/data/do012/dc-he4/log/standard_error_file.%J.err
 #SBATCH -p cosma-analyse #or some other partition, e.g. cosma, cosma8, etc.
 #SBATCH -A do012 #e.g. dp004
-#SBATCH -t 8:00:00  #D-HH:MM:SS
+#SBATCH -t 24:00:00  #D-HH:MM:SS
 #SBATCH --mail-type=BEGIN,END,FAIL,TIME_LIMIT_90,TIME_LIMIT
 #SBATCH --mail-user=yujiehe@strw.leidenuniv.nl #PLEASE PUT YOUR EMAIL ADDRESS HERE (without the <>)
 ##SBATCH --exclusive #no don't need exclusive
@@ -21,7 +21,7 @@ conda activate halo-cosma
 
 
 # config
-n=64         #number of cores
+n=8         #number of cores
 N=1728      #total number of lightcones
 data_dir="/cosma8/data/do012/dc-he4/mock_lightcones_copy"  #directory of halo_properties_in_ligthcone0000.hdf5 (or 0001, 0002, etc.)
 analyse_dir="/cosma8/data/do012/dc-he4/analysis"           #directory of analysis results
