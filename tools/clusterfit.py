@@ -490,11 +490,11 @@ def opposite_direction(lon, lat):
     dp_lat = - lat
 
     # An ad-hoc solution, because the positive 90 deg pole is never reached (we goes from -90 to 88),
-    # there was a bug that the dipole map -90 value is not calculated. We now map
+    # np.arange does not cover endpoints that the dipole map -90 value is not calculated. We now map
     # -90 to 88 to solve this. Make sure to iterate over the negative values to 
     # use it. Or else the -90 deg will still be missed. 
-    if lat == -90: 
-        dp_lat = 88
+    # if lat == -90: 
+    #     dp_lat = 88
     # elif lat == 88:
     #     dp_lat = -90
 
@@ -947,9 +947,6 @@ def read_bulk_flow_mcmc(file, relation, radian=True):
         vlat_lowers *= np.pi/180
         vlat_uppers *= np.pi/180
 
-
-
-
     return zmaxs, ubfs, ubf_lowers, ubf_uppers, vlons, vlon_lowers, vlon_uppers, vlats, vlat_lowers, vlat_uppers
 
 
@@ -1091,11 +1088,13 @@ def find_dipole_in_dipole_map(map, lons, lats):
     return maxvalue, minvalue, maxlon, maxlat, maxloc
 
 
+
+
 def find_max_dipole(map : np.ndarray, 
                     lons : np.ndarray, 
                     lats : np.ndarray) -> tuple:
     """
-    Find the maximum dipole flow in a general map.
+    Find the maximum dipole flow in a general map(lon, lat).
     """
     dipole = np.zeros_like(map)
 
@@ -1243,6 +1242,8 @@ def grid_around_lonlat(center_lon : np.ndarray,
     The grid is defined by the tilde_theta, tilde_phi, which are
     the angles in the rotated frame. Output in shape (2, N).
 
+    Note: this function takes in radian angles, output in degrees.
+
     Example
     --
     To iterate the returned grid, use:
@@ -1273,3 +1274,10 @@ def grid_around_lonlat(center_lon : np.ndarray,
         glonlat = np.concatenate([[[center_lon], [center_lat]], glonlat], axis=1)
 
     return glonlat
+
+
+def periodic_distance(lon1, lon2):
+    delta_lon = lon2 - lon1
+    # Adjust the difference to be within the range [-180, 180]
+    periodic_delta = (delta_lon + 180) % 360 - 180
+    return np.abs(periodic_delta)

@@ -22,7 +22,7 @@ conda activate halo-cosma
 
 
 # config
-n=128         #number of cores
+n=8         #number of cores
 N=1728      #total number of lightcones
 data_dir="/cosma8/data/do012/dc-he4/mock_lightcones_copy"  #directory of halo_properties_in_ligthcone0000.hdf5 (or 0001, 0002, etc.)
 analyse_dir="/cosma8/data/do012/dc-he4/analysis"           #directory of analysis results
