@@ -1281,3 +1281,15 @@ def periodic_distance(lon1, lon2):
     # Adjust the difference to be within the range [-180, 180]
     periodic_delta = (delta_lon + 180) % 360 - 180
     return np.abs(periodic_delta)
+
+
+
+def latex_relation(relation):
+    """ A little helper function to get the latex names of the relation by their
+    short names. Like $L_\\mathrm{{X}}-T$ from 'LX-T'
+    """
+    relation = '$' + relation + '$'
+    relation = relation.replace('LX', 'L_\\mathrm{{X}}')
+    relation = relation.replace('YSZ', 'Y_\\mathrm{{SZ}}')
+    relation = relation.replace('M', 'M_\\mathrm{{gas}}')
+    return relation

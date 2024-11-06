@@ -1,3 +1,17 @@
+# ---------------------------------------------
+# This script calculates the number of sigma and
+# Delta H0 for all lightcones and all relations,
+# using all outputs from fit_all, best_fit, 
+# bootstrap_near_scan. The output is summarized in one 
+# direct compare file.
+# 
+# 
+# Author                       : Yujie He
+# Created on (MM/YYYY)         : 10/2024
+# Last Modified on (MM/YYYY)   : 11/2024
+# ---------------------------------------------
+
+
 # Note that the direction of the variation is neglected. The opposite
 # direction also has positive variation and significance.
 
@@ -12,6 +26,8 @@ import pandas as pd
 import sys
 sys.path.append('/cosma/home/do012/dc-he4/anisotropy-flamingo/tools')
 import clusterfit as cf
+
+
 def get_h0_var(scan_bootstrap_file : str, 
                scan_best_fit_file : str, 
                fit_all_file : str, 
@@ -132,6 +148,8 @@ output_file = '/cosma8/data/do012/dc-he4/analysis_all/h0_direct_compare.csv'
 
 h0_vari = np.array([])
 n_sigma = np.array([])
+max_dipole_glons = []
+max_dipole_glats = []
 lc_list = []                    # save also the lightcone number for direct comparison
 relations = []
 for relation, relation_name in zip(['LX-T', 'YSZ-T', 'M-T'], 
@@ -179,6 +197,8 @@ for relation, relation_name in zip(['LX-T', 'YSZ-T', 'M-T'],
             if n_sigmas[_argmax] > 0 and variation[_argmax] > 0:   
                 h0_variation.append(variation[_argmax])
                 significance.append(n_sigmas[_argmax])
+                max_dipole_glons.append(glons[_argmax])
+                max_dipole_glats.append(glats[_argmax])
                 lc_list.append(lc00)
             else:
                 warnings.warn(f'Impossible significance or variation: {n_sigmas[_argmax]}, {variation[_argmax]}')
@@ -199,5 +219,7 @@ lc_list = np.array(lc_list)
 df = pd.DataFrame({'Relations': relations, 
                    'Delta_H0': h0_vari, 
                    'Significance': n_sigma,
+                   'Glon': max_dipole_glons,
+                   'Glat': max_dipole_glats,
                    'Lightcone': lc_list})
 df.to_csv(output_file, index=False)
