@@ -1,3 +1,6 @@
+# This script sort the csv sample files according to Lcore/Ltot values.
+# It is internally called by batch_prep.sh
+
 import pandas as pd
 import numpy as np
 import argparse

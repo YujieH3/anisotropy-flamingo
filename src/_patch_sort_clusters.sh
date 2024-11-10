@@ -48,6 +48,6 @@ do
     fi
 
     # patch
-    python patch_sort_clusters.py -i $input -o $input # inplace sorting
+    python _patch_sort_clusters.py -i $input -o $input # inplace sorting
 
 done

@@ -78,7 +78,7 @@ for ScalingRelation in RELATIONS:
 # Remove outliers and save to file
 CleanClusterData = ClusterData[~ClusterData['TopLeafID'].isin(AllOutlierIDs)]
 
-#remember to sort correctly
+# remember to sort correctly
 CleanClusterData.sort_values('3DLcore/Ltot', ascending=False, inplace=True)
 
 # save to file
