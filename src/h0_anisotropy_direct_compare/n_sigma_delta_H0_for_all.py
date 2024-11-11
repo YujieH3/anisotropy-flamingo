@@ -46,15 +46,15 @@ def get_h0_var(scan_bootstrap_file : str,
     else:
         raise ValueError('relation not recognised')
 
-    df_fitall = pd.read_csv(fit_all_file)
+    df_fitall = pd.read_csv(fit_all_file)         # A_all
     A_all = df_fitall.loc[df_fitall['Relation']==relation, 'BestFitA'].values[0]
 
-    df_bestfit = pd.read_csv(scan_best_fit_file)
+    df_bestfit = pd.read_csv(scan_best_fit_file)  # A
     Glon_scan = df_bestfit['Glon'].values
     Glat_scan = df_bestfit['Glat'].values
     A_scan = df_bestfit['A'].values
 
-    df_btstrp = pd.read_csv(scan_bootstrap_file)
+    df_btstrp = pd.read_csv(scan_bootstrap_file)  # sigma variance
     Glon_btstrp = df_btstrp['Glon'].values
     Glat_btstrp = df_btstrp['Glat'].values
     A_btstrp = df_btstrp['A'].values
@@ -63,6 +63,7 @@ def get_h0_var(scan_bootstrap_file : str,
     unique_Glon, unique_Glat = df_btstrp[['Glon', 'Glat']].drop_duplicates().values.T
     n_sigmas = np.zeros_like(unique_Glon)
     variation = np.zeros_like(unique_Glon) # in percentage
+
     for glon, glat in zip(unique_Glon, unique_Glat):
         #print(glon, glat)
         # bootstrapping distribution of A of the direction
@@ -71,7 +72,6 @@ def get_h0_var(scan_bootstrap_file : str,
 
         # get A of the opposite direction
         dplon, dplat = cf.opposite_direction(glon, glat)
-        #print(dplon, dplat)
         dpdir_mask = (cf.periodic_distance(Glon_btstrp, dplon) < 3) & (np.abs(Glat_btstrp - dplat) < 3) 
         
         # loosen the criteria if lat or dplat is near the pole, numerical error near the poles could cause a mismatch
@@ -103,7 +103,7 @@ def get_h0_var(scan_bootstrap_file : str,
         else:
             dir_mask = dir_mask & (np.abs(Glat_scan - glat) <= 1)
 
-        A_bestfit = A_scan[dir_mask][0]
+        A_bestfit = A_scan[dir_mask][0]        # first of the match
 
         # get the best fit value of the opposite direction
         # dpdir_mask = (np.abs(Glon_scan - dplon) < 2) & (np.abs(Glat_scan - dplat) < 1)
@@ -114,8 +114,8 @@ def get_h0_var(scan_bootstrap_file : str,
             dpdir_mask = dpdir_mask & (np.abs(Glat_scan - dplat) <= 2)
         else:
             dpdir_mask = dpdir_mask & (np.abs(Glat_scan - dplat) <= 1)
-
-        A_bestfit_dp = A_scan[dpdir_mask][0]
+        
+        A_bestfit_dp = A_scan[dpdir_mask][0]   # first of the match
 
         if A_bestfit > A_bestfit_dp:
             # calculate the significance
@@ -163,10 +163,7 @@ for relation, relation_name in zip(['LX-T', 'YSZ-T', 'M-T'],
         print(lc00)
 
         # matching cone size
-        if 'YSZ' in relation:
-            cone_size = 60
-        else:
-            cone_size = 75
+        cone_size = 60 if 'YSZ' in relation else 75
 
         # flag filenames
         flag1 = f'{data_dir}/lc{lc00}/fit-all.done'
@@ -194,7 +191,7 @@ for relation, relation_name in zip(['LX-T', 'YSZ-T', 'M-T'],
                 os.remove(flag3)
                 continue
 
-            if n_sigmas[_argmax] > 0 and variation[_argmax] > 0:   
+            if n_sigmas[_argmax] > 0 and variation[_argmax] > 0:  # my guess is this happen when the max/min dipole is nan 
                 h0_variation.append(variation[_argmax])
                 significance.append(n_sigmas[_argmax])
                 max_dipole_glons.append(glons[_argmax])

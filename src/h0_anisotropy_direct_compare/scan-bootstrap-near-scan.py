@@ -5,7 +5,7 @@
 # 
 # Author                       : Yujie He
 # Created on (MM/YYYY)         : 03/2024
-# Last Modified on (MM/YYYY)   : 09/2024
+# Last Modified on (MM/YYYY)   : 11/2024
 # ---------------------------------------------
 
 import sys
@@ -25,14 +25,6 @@ n_threads = 24
 
 relations = ['LX-T', 'YSZ-T', 'M-T'] # pick from 'LX-T', 'M-T', 'LX-YSZ', 'LX-M', 'YSZ-M', 'YSZ-T'
 n_bootstrap = 500 # number of bootstrapping for each direction
-
-lon_step     = 4  # longitude step. Longitude from -180 to 180 deg
-lat_step     = 2  # latitude step. Latitude from -90 to 90 deg
-# Note that in our catalogue, phi_on_lc is longitude, theta_on_lc is latitude...
-# might want to change this in the future...
-
-# # Set the parameter space
-# FIT_RANGE = cf.FIVE_MAX_RANGE
 
 # Set the step size or number of steps for A
 B_step    = 0.003
@@ -71,11 +63,11 @@ overwrite = args.overwrite
 range_file = args.range_file
 best_fit_dir = args.best_fit_dir
 
-FIT_RANGE = cf.get_range(range_file, n_sigma=3)      #4 sigma range
+FIT_RANGE = cf.get_range(range_file, n_sigma=5)      #4 sigma range
 # ------------------------------------------------------------------------------
 
 
-@njit(fastmath=True, parallel=False)
+@njit(fastmath=True, parallel=False) # bootstrap_fit is already parallelized, avoid nested parallel
 def scan_bootstrapping(Nbootstrap : int, 
                        A_arr      : np.ndarray,
                        B_arr      : np.ndarray,
@@ -99,12 +91,16 @@ def scan_bootstrapping(Nbootstrap : int,
                        B_step     : float,
                        logA_step  : float
                     ):
+    """
+    Warning
+    ----
+    All angle parameter input should be in degree, NOT RADIANS!
+    """
     # Alias
     nb = Nbootstrap
 
     # Unit conversions
-    theta = cone_size # set alias
-    theta_rad = theta * np.pi / 180
+    cone_size_rad = cone_size * np.pi / 180
     lats_rad = lat * np.pi / 180 # the memory load is not very high so we can do this
     lons_rad = lon * np.pi / 180
     lons_c_rad = lons_c * np.pi / 180
@@ -114,13 +110,15 @@ def scan_bootstrapping(Nbootstrap : int,
     if len(lat) != n_tot or len(logY_) != n_tot or len(logX_) != n_tot:
         raise ValueError("Longitude, latitude, logY_, and logX_ arrays must have the same length.")
 
+    # Prepare iteration
     iter_idx = 0
     for lon_c_rad, lat_c_rad in zip(lons_c_rad, lats_c_rad):
-        a = np.pi / 2 - lat_c_rad # center of cone to zenith
+        a = np.pi / 2 - lat_c_rad # center of cone to zenith                # okay very bad idea to use plural form for array, don't ever do this again
         b = np.pi / 2 - lats_rad   # cluster to zenith
         costheta = np.cos(a)*np.cos(b) + np.sin(a)*np.sin(b)*np.cos(lons_rad - lon_c_rad) # costheta=cosa*cosb+sina*sinb*cosA
-        mask = costheta > np.cos(theta_rad)
 
+        # select the clusters inside the cone
+        mask = costheta > np.cos(cone_size_rad)
         n_clusters = np.sum(mask) # number of clusters for bootstrapping
         cone_logY_ = logY_[mask]
         cone_logX_ = logX_[mask]

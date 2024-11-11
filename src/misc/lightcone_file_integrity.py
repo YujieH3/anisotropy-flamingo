@@ -35,17 +35,21 @@ for lc in range(1728):
     with h5py.File(original_lightcone, 'r') as f:
         for snapname in ['Snapshot0078', 'Snapshot0076', 'Snapshot0074', 'Snapshot0072']:
             # check number of entries
-            if len(f[snapname]) != 19:
+            if snapname in f.keys():
+                if len(f[snapname]) != 19:
+                    ogflag += 1
+                    warnings.warn(f'{original_lightcone} missing data in {snapname}, {len(f[snapname])}/19 entries')
+                # check number of clusters
+                for i, (key, value) in enumerate(f[snapname].items()):
+                    if i == 0:
+                        len0 = len(value)
+                    else:
+                        if len(value) != len0:
+                            ogflag += 1
+                            warnings.warn(f'{original_lightcone} missing clusters in  entry f{key}')
+            else:
                 ogflag += 1
-                warnings.warn(f'{original_lightcone} missing data in {snapname}, {len(f[snapname])}/19 entries')
-            # check number of clusters
-            for i, (key, value) in enumerate(f[snapname].items()):
-                if i == 0:
-                    len0 = len(value)
-                else:
-                    if len(value) != len0:
-                        ogflag != 1
-                        warnings.warn(f'{original_lightcone}')
+                warnings.warn(f'{original_lightcone} missing snapshot {snapname}')
     if ogflag > 0:
         print(f'{lc:04d} flagged in original lightcones')
         old_bad_lc_list.append(lc)

@@ -92,7 +92,7 @@ do
     fi
 
     # sort clusters, sorting performed in place. 
-    # This is actually already done in 3remove-outliers.py... but just in case,
+    # this is actually already done in 3remove-outliers.py... but just in case,
     # if new changes are made in the pipeline.
     python /cosma/home/do012/dc-he4/anisotropy-flamingo/src/_patch_sort_clusters.py -i $output -o $output
     echo "Sorted, lightcone${lc} done."

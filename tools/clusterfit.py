@@ -1,4 +1,4 @@
-import scipt.stats as stats
+# import scipy.stats as stats
 import astropy.coordinates as coord
 import numpy as np
 from numba import njit, prange
