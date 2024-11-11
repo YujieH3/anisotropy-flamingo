@@ -21,4 +21,4 @@ The universe might look more like a 🌰 than a 🎱.
 
 This repository is a **working directory** for my ongoing research on the anisotropy of the universe using the FLAMINGO simulation. It is **not intended as a fully-developed package** or tool for general use. The code here is primarily for personal experimentation and may not be well-documented, optimized, or suitable for reuse by others.
 
-If you’re looking for a polished and reusable solution, this repository may not meet your expectations. However, you are welcome to explore the content and reach out with any questions, suggestions, or collaborations!
+If you're looking for a polished and reusable solution, this repository may not meet your expectations. However, you are welcome to explore the content and reach out with any questions, suggestions, or collaborations!

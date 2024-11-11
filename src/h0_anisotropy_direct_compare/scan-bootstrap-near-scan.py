@@ -63,7 +63,7 @@ overwrite = args.overwrite
 range_file = args.range_file
 best_fit_dir = args.best_fit_dir
 
-FIT_RANGE = cf.get_range(range_file, n_sigma=5)      #4 sigma range
+FIT_RANGE = cf.get_range(range_file, n_sigma=10)      #3 -> 5 sigma range
 # ------------------------------------------------------------------------------
 
 
