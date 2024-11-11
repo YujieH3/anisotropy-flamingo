@@ -9,8 +9,13 @@ The work is a continuation of observational studies from:
 
 The universe might look more like a 🌰 than a 🎱.
 
-## Notes
-- rsync every time from mock_lightcones to mock_lightcones_copy
+## TODOs
+1. make sure 1728 samples are ready
+2. rerun h0mc, bfmc
+3. submit jobs for fit-all, best-fit, and rerun near-scan
+
+- write, and run LT YT combined MCMC
+
 
 ## Warning
 
