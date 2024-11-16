@@ -27,12 +27,8 @@ relations = ['LX-T', 'YSZ-T', 'M-T'] # pick from 'LX-T', 'M-T', 'LX-YSZ', 'LX-M'
 n_bootstrap = 500 # number of bootstrapping for each direction
 
 # Set the step size or number of steps for A
-B_step    = 0.003
-n_B_steps = 150
-
-# And B
-logA_step    = 0.003
-n_logA_steps = 150
+n_B_steps = 200
+n_logA_steps = 200
 
 # Set the step size for the total scatter. The scatter is on the outer loop so 
 # number of steps is undefinable, depends on when can chi2 reduced ~1. 
@@ -63,7 +59,14 @@ overwrite = args.overwrite
 range_file = args.range_file
 best_fit_dir = args.best_fit_dir
 
-FIT_RANGE = cf.get_range(range_file, n_sigma=10)      #3 -> 5 sigma range
+FIT_RANGE = cf.get_range(range_file, n_sigma=15)      # 3 -> 5 sigma range # no wait maybe it's I shouldn't set scatter range...
+
+# # Ysz need a huge fitting range...
+# YT_logA_min = FIT_RANGE['YSZ-T']['logA_min']
+# YT_logA_max = FIT_RANGE['YSZ-T']['logA_max']
+# YT_logA_range = YT_logA_max - YT_logA_min
+# FIT_RANGE['YSZ-T']['logA_min'] = YT_logA_min - 5*YT_logA_range
+# FIT_RANGE['YSZ-T']['logA_max'] = YT_logA_min + 5*YT_logA_range
 # ------------------------------------------------------------------------------
 
 

@@ -1199,7 +1199,7 @@ def get_range(filename, n_sigma=3):
             'B_min': B - n_sigma * (B - B_1sigma_m),
             'B_max': B + n_sigma * (B_1sigma_p - B),
             'scat_min': scat - n_sigma * (scat - scat_1sigma_m),
-            'scat_max': scat + n_sigma * (scat_1sigma_p - scat),
+            'scat_max': 1, # scat + n_sigma * (scat_1sigma_p - scat),
         }
 
     return ranges
