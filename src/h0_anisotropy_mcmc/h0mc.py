@@ -35,7 +35,7 @@ CHAIN_DIR = '/data1/yujiehe/data/fits/7bulk-flow-model-mcmc-lightcone1'
 OVERWRITE = False
 
 # Relations to fit
-RELATIONS = ['LX-T', 'YSZ-T', 'M-T'] # pick from 'LX-T', 'M-T', 'LX-YSZ', 'LX-M', 'YSZ-M', 'YSZ-T'
+RELATIONS = ['LX-T', 'YSZ-T', 'M-T'] # pick from 'LX-T', 'M-T', 'YSZ-T'
 
 # -----------------------------COMMAND LINE ARGUMENTS---------------------------
 
@@ -60,11 +60,8 @@ N_THREADS = args.nthreads
 OVERWRITE   = args.overwrite
 
 os.environ["OMP_NUM_THREADS"] = f"{N_THREADS}"
+
 # -----------------------END CONFIGURATION--------------------------------------
-
-
-
-
 
 
 def log_likelihood(theta, X, Y, z_obs, phi_lc, theta_lc, yname, xname):
@@ -80,13 +77,13 @@ def log_likelihood(theta, X, Y, z_obs, phi_lc, theta_lc, yname, xname):
     # Set the scaling relation to know the pivot point
     scaling_relation = f'{yname}-{xname}'
 
-    # Calculate the redshift
+    # Anglular separation
     angle = cf.angular_separation(phi_lc, theta_lc, vlon, vlat) * np.pi/180
 
     # vary H0; since H0 enters distance to a simply *H0^(some power), we can just multiply the distance by a factor and not do the integral twice
     H0_ratio = 1 + delta*np.cos(angle)
 
-    # Calculate the Luminosity distance
+    # Modified Y
     if yname == 'LX':
         Y_mod = Y*H0_ratio**-2
     elif yname == 'YSZ':

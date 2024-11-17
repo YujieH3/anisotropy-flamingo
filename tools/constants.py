@@ -80,37 +80,37 @@ CONST_MC = {
         'CY'   : 1e44, #1e44, # erg/s         # median 1.260e44
         'CX'   : 3.8,    #4,    # keV           # median 3.321
         'gamma': -1,
-        'N'    : 313,
+        'N'    : 400,
     },
     'YSZ-T': {
         'CY'   : 20, #35, # kpc^2            # median 21.906
         'CX'   : 3.2,  #5,  # keV              # median 3.247
         'gamma': 1,
-        'N'    : 260
+        'N'    : 400
     },
     'M-T': {
         'CY'   : 3e13, #2e13, # Msun           # median 2.874e13
         'CX'   : 3.6,  #3,    # keV            # median 3.335
         'gamma': 1,
-        'N'    : 300, # temporary
+        'N'    : 400, # temporary
     },
     'LX-YSZ': {
         'CY'   : 3e43, #1e44, # erg/s          # median 3.056e43
         'CX'   : 20,   #60,   # kpc^2          # median 21.244
         'gamma': -8/5,
-        'N'    : 460,
+        'N'    : 400,
     },
     'LX-M': {
         'CY'   : 1e44, #1e44, # erg/s          # median 1.244e44
         'CX'   : 3e13, #2e13, # Msun           # median 2.747e13
         'gamma': -2,
-        'N'    : 300, # temporary
+        'N'    : 400, # temporary
     },
     'YSZ-M': {
         'CY'   : 7,    #20,   # kpc^2         # median 6.753
         'CX'   : 3e13, #2e13, # Msun          # median 2.747e13
         'gamma': -2/3,
-        'N'    : 300, # temporary
+        'N'    : 400, # temporary
     },
     }
 
