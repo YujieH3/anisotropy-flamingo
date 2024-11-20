@@ -54,7 +54,7 @@ do
 
     if ! [ -f "${output}/h0mc_joint.done" ] #use a file flag
     then
-        python /cosma/home/do012/dc-he4/anisotropy-flamingo/src/h0_anisotropy_mcmc/h0mc.py -i $input -o "${output}/h0_mcmc.csv" -d $chaindir -n $n --overwrite && echo > "${output}/h0mc_joint.done"
+        python /cosma/home/do012/dc-he4/anisotropy-flamingo/src/h0_anisotropy_mcmc/h0mc_joint.py -i $input -o "${output}/h0_mcmc_joint.csv" -d $chaindir -n $n --overwrite && echo > "${output}/h0mc_joint.done"
     else
         echo "h0mc joint already done, skipping..."
     fi
