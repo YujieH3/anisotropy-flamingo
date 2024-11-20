@@ -59,14 +59,8 @@ overwrite = args.overwrite
 range_file = args.range_file
 best_fit_dir = args.best_fit_dir
 
-FIT_RANGE = cf.get_range(range_file, n_sigma=15)      # 3 -> 5 sigma range # no wait maybe it's I shouldn't set scatter range...
+FIT_RANGE = cf.get_range(range_file, n_sigma=5, n_sigma_scat=3)      # 3 -> 5 sigma range # no wait maybe it's I shouldn't set scatter range...
 
-# # Ysz need a huge fitting range...
-# YT_logA_min = FIT_RANGE['YSZ-T']['logA_min']
-# YT_logA_max = FIT_RANGE['YSZ-T']['logA_max']
-# YT_logA_range = YT_logA_max - YT_logA_min
-# FIT_RANGE['YSZ-T']['logA_min'] = YT_logA_min - 5*YT_logA_range
-# FIT_RANGE['YSZ-T']['logA_max'] = YT_logA_min + 5*YT_logA_range
 # ------------------------------------------------------------------------------
 
 

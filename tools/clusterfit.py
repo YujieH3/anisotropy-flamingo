@@ -1172,7 +1172,7 @@ def lightcone_position(filename):
     return Xobs, Yobs, Zobs
 
 
-def get_range(filename, n_sigma=3):
+def get_range(filename, n_sigma=3, n_sigma_scat=3):
     """ Return the parameter range given the all sky fitting results. 
     output matches the format of constants.py
     """
@@ -1190,15 +1190,20 @@ def get_range(filename, n_sigma=3):
         logA_1sigma_m = np.log10(df['1SigmaLowerA'].loc[mask].values[-1])
         B_1sigma_p = df['1SigmaUpperB'].loc[mask].values[-1]
         B_1sigma_m = df['1SigmaLowerB'].loc[mask].values[-1]
-        scat_1sigma_p = df['1SigmaUpperScat'].loc[mask].values[-1]
+        # scat_1sigma_p = df['1SigmaUpperScat'].loc[mask].values[-1]
         scat_1sigma_m = df['1SigmaLowerScat'].loc[mask].values[-1]
+
+        # Check scatter specially, Ysz-T reports absurd n_sigma values. Likely due to scat_min when to negative
+        scat_min = scat - n_sigma_scat * (scat - scat_1sigma_m)
+        if scat_min < 0 or scat_min == scat: # < 0, or the best fit value is the same as the lower range (rare but possible)
+            scat_min = 0.9 * scat # just use the 90% value
 
         ranges[relation] = {
             'logA_min': logA - n_sigma * (logA - logA_1sigma_m),
             'logA_max': logA + n_sigma * (logA_1sigma_p - logA),
             'B_min': B - n_sigma * (B - B_1sigma_m),
             'B_max': B + n_sigma * (B_1sigma_p - B),
-            'scat_min': scat - n_sigma * (scat - scat_1sigma_m),
+            'scat_min': scat_min,
             'scat_max': 1, # scat + n_sigma * (scat_1sigma_p - scat),
         }
 
