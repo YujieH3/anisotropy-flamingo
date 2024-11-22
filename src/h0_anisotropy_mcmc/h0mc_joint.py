@@ -134,11 +134,11 @@ def log_likelihood(theta, X1, Y1, X2, Y2, z_obs, phi_lc, theta_lc, relation1, re
     # Same for second relation
     logY2_ = cf._logY_(Y = Y2_mod,
                        z = z_obs,
-                       CY = cf.CONST_MC[relation1]['CY'],
-                       gamma = cf.CONST_MC[relation1]['CX']
+                       CY = cf.CONST_MC[relation2]['CY'],
+                       gamma = cf.CONST_MC[relation2]['CX']
                        )
     logX2_ = cf._logX_(X = X2,
-                       CX = cf.CONST_MC[relation1]['CX']
+                       CX = cf.CONST_MC[relation2]['CX']
                        )
 
     # Likelihood, relation 1
@@ -149,7 +149,7 @@ def log_likelihood(theta, X1, Y1, X2, Y2, z_obs, phi_lc, theta_lc, relation1, re
     lnL2 = -0.5 * np.sum((logY2_ - model2) ** 2 / (sigma2**2) + np.log(sigma2**2)) # Kostas' implementation
 
     # Joint likelihood is their product (sum in logspace)
-    lnL = lnL1 + lnL2
+    lnL = lnL1 + lnL2 + lp
 
     return lnL
 
@@ -191,7 +191,7 @@ theta_lc = data['theta_on_lc'][:n_clusters].values
 z_obs = data['ObservedRedshift'][:n_clusters].values
 
 # Set starting point
-init = np.array([1, 1, 0.1, 1, 1, 0.1, 0.1, 0, 0])
+init = np.array([0.1, 0, 0, 1, 1, 0.1, 1, 1, 0.1]) # delta, vlon, vlat, logA1, B1, C1, logA2, B2, C2
 
 # set the starting point for chain
 pos0 = init + 1e-2 * np.random.randn(32, 9)
@@ -217,7 +217,7 @@ with Pool() as pool:
                                     )
 
     # Run
-    sampler.run_mcmc(pos0, 50000, progress=False)  # now the chain is saved. progress spam the standard output, toggled to False
+    sampler.run_mcmc(pos0, 50_000, progress=False)  # now the chain is saved. progress spam the standard output, toggled to False
 
 # Small convergence test
 try:

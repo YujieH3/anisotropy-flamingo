@@ -32,7 +32,7 @@ n_logA_steps = 200
 
 # Set the step size for the total scatter. The scatter is on the outer loop so 
 # number of steps is undefinable, depends on when can chi2 reduced ~1. 
-scat_step    = 0.007
+scat_step    = 0.007   # could be too large
 
 # -------------------------COMMAND LINE ARGUMENTS-------------------------------
 import argparse

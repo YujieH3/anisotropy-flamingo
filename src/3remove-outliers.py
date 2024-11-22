@@ -68,7 +68,7 @@ for ScalingRelation in RELATIONS:
     BestFitParams, OutlierIDs = cf.fit(
         logY_, logX_, N=Nclusters, **FIT_RANGE[ScalingRelation],
         remove_outlier=True, id=ClusterData['TopLeafID'],
-        scat_step=0.007,
+        scat_step=0.007,  # 0.007 reduced to 0.005
         B_step=0.003,
         logA_step=0.003,
         )
