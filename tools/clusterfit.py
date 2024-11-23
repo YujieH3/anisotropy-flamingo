@@ -1308,38 +1308,3 @@ def p_value2d(n_sigma):
     p = np.exp(-n_sigma**2*0.5)
     return p
 
-# def kde_prob_2d(x : float,
-#                 y : float,
-#                 xdata : np.ndarray, 
-#                 ydata : np.ndarray,
-#                 xlim : tuple,
-#                 ylim : tuple,
-#                 gridshape : tuple,
-#                 **kwargs
-#                 ) -> float :
-#     """ Make kde estimation based on 2d scatter data (xdata, ydata) and 
-#     integrate the probability mass below some point (x, y). The result is the
-#     probability estimation for (x, y) to be in (xdata, ydata). Extra keyword
-#     argument goes into scipy.stats.gaussian_kde(). A useuful parameter 
-#     might be kw_adjust that tune the smoothing length of the gaussian kernel.
-
-#     xlim, ylim, gridshape are self explanatory, the limit and grid shape for the
-#     numerical integration.
-#     """
-#     # kernel density estimation
-#     data = np.stack((xdata, ydata), axis=0)
-#     kde = stats.gaussian_kde(data, **kwargs)
-
-#     # initialize the parameter space
-#     x_grid = np.linspace(xlim[0], xlim[1], 500)
-#     y_grid = np.linspace(ylim[0], ylim[1], 500)
-#     X, Y = np.meshgrid(x_grid, y_grid)
-#     positions = np.vstack([X.ravel(), Y.ravel()])
-#     Z = kde(positions).reshape(X.shape)
-
-#     # find probability mass above the point of interest
-#     point = np.array([14, 2.6])
-#     prob = kde(point)*(x_grid[1]-x_grid[0])*(y_grid[1]-y_grid[0])
-#     prob_mass = Z*(x_grid[1]-x_grid[0])*(y_grid[1]-y_grid[0]) # probability mass in each bin
-#     prob_above = np.sum(prob_mass[prob_mass > prob])
-#     prob_below = np.sum(prob_mass[prob_mass < prob])
