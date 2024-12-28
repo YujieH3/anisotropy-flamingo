@@ -6,7 +6,7 @@
 #
 # Author                       : Yujie He
 # Created on (MM/YYYY)         : 06/2024
-# Last Modified on (MM/YYYY)   : 09/2024
+# Last Modified on (MM/YYYY)   : 12/2024
 # ---------------------------------------------
 
 
@@ -17,6 +17,7 @@ import os
 import sys
 sys.path.append('/cosma/home/do012/dc-he4/anisotropy-flamingo/tools')
 import clusterfit as cf
+from multiprocessing import Pool
 from astropy.cosmology import FlatLambdaCDM
 cosmo = FlatLambdaCDM(H0=68.1, Om0=0.306, Ob0=0.0486)
 
@@ -45,6 +46,7 @@ parser = argparse.ArgumentParser(description="Calculate significance map for bes
 # Add arguments
 parser.add_argument('-i', '--input', type=str, help='Input file', default=INPUT_FILE)
 parser.add_argument('-o', '--output', type=str, help='Output file', default=OUTPUT_FILE)
+parser.add_argument('-n', '--nthreads', type=int, help='Number of cores to use.', default=1)
 parser.add_argument('-d', '--chaindir', type=str, help='Directory to save corner plots.', default=None)
 parser.add_argument('--overwrite', action='store_true', help='Overwrite existing.', default=OVERWRITE)
 
@@ -54,6 +56,8 @@ INPUT_FILE  = args.input
 OUTPUT_FILE = args.output
 CHAIN_DIR = args.chaindir
 OVERWRITE   = args.overwrite
+
+os.environ["OMP_NUM_THREADS"] = f"{N_THREADS}"
 # -----------------------END CONFIGURATION--------------------------------------
 
 
@@ -187,14 +191,17 @@ for scaling_relation in RELATIONS:
         #     backend.reset(nwalkers, ndim)
 
         # Create a sampler
-        sampler = emcee.EnsembleSampler(nwalkers, 
-                                        ndim, 
-                                        log_likelihood, 
-                                        #backend = backend,
-                                        args    = (X, Y, z_obs, phi_lc, theta_lc, yname, xname))
-       
-        # Run
-        sampler.run_mcmc(pos0, 15000, progress=False)
+        with Pool() as pool:
+            sampler = emcee.EnsembleSampler(nwalkers, 
+                                            ndim, 
+                                            log_likelihood, 
+                                            # backend = backend,
+                                            args    = (X, Y, z_obs, phi_lc, theta_lc, yname, xname),
+                                            pool    = pool,
+                                            )
+        
+            # Run
+            sampler.run_mcmc(pos0, 15000, progress=False)
 
         # Small convergence test
         try:

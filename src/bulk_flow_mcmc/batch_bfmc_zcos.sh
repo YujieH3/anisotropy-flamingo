@@ -1,6 +1,6 @@
 #!/bin/bash -l
 
-#SBATCH --ntasks 1           # The number of cores you need...
+#SBATCH --ntasks 16           # The number of cores you need...
 #SBATCH -J bfmc_zcos     #Give it something meaningful.
 #SBATCH -o /cosma8/data/do012/dc-he4/log/standard_output_file.%J.out  # J is the job ID, %J is unique for each job.
 #SBATCH -e /cosma8/data/do012/dc-he4/log/standard_error_file.%J.err

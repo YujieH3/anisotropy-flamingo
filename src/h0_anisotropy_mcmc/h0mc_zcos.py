@@ -9,7 +9,7 @@
 #   `reader = emcee.backends.HDFBackend(filename)`
 # Author                       : Yujie He
 # Created on (MM/YYYY)         : 06/2024
-# Last Modified on (MM/YYYY)   : 09/2024
+# Last Modified on (MM/YYYY)   : 12/2024
 # ---------------------------------------------
 
 import emcee
