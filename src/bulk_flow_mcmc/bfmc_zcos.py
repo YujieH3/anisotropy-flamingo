@@ -55,6 +55,7 @@ args = parser.parse_args()
 INPUT_FILE  = args.input
 OUTPUT_FILE = args.output
 CHAIN_DIR = args.chaindir
+N_THREADS = args.nthreads
 OVERWRITE   = args.overwrite
 
 os.environ["OMP_NUM_THREADS"] = f"{N_THREADS}"

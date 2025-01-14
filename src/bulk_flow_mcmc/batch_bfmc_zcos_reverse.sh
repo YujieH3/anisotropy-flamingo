@@ -1,6 +1,6 @@
 #!/bin/bash -l
 
-#SBATCH --ntasks 1           # The number of cores you need...
+#SBATCH --ntasks 16           # The number of cores you need...
 #SBATCH -J bfmc_zcos     #Give it something meaningful.
 #SBATCH -o /cosma8/data/do012/dc-he4/log/standard_output_file.%J.out  # J is the job ID, %J is unique for each job.
 #SBATCH -e /cosma8/data/do012/dc-he4/log/standard_error_file.%J.err
@@ -22,6 +22,7 @@ conda activate halo-cosma
 
 
 # config
+n=16
 N3=1728      #total number of lightcones
 data_dir="/cosma8/data/do012/dc-he4/mock_lightcones_copy"  #directory of halo_properties_in_ligthcone0000.hdf5 (or 0001, 0002, etc.)
 analyse_dir="/cosma8/data/do012/dc-he4/analysis"           #directory of analysis results
@@ -53,7 +54,7 @@ do
 
     if ! [ -f "${output}/bfmc_zcos.done" ] #use a file flag
     then
-        python /cosma/home/do012/dc-he4/anisotropy-flamingo/src/bulk_flow_mcmc/bfmc_zcos.py -i $input -o "${output}/bf_mcmc_zcos.csv" --overwrite && echo > "${output}/bfmc_zcos.done"
+        python /cosma/home/do012/dc-he4/anisotropy-flamingo/src/bulk_flow_mcmc/bfmc_zcos.py -i $input -o "${output}/bf_mcmc_zcos.csv" -n $n --overwrite && echo > "${output}/bfmc_zcos.done"
     else
         echo "bfmc_zcos already done, skipping..."
     fi
