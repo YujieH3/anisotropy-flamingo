@@ -10,7 +10,12 @@ import h5py
 import healpy as hp
 import warnings
 
-
+def parse_relation_name(relation):
+    """
+    Parse 'Y-X' to Y, X.
+    """
+    _ = relation.find('-')
+    return relation[:_  ], relation[_+1:] # X, Y
 
 @njit(fastmath=True)
 def E(z, Omega_m=0.306, Omega_L=0.694):

@@ -1,13 +1,13 @@
 #!/bin/bash -l
 
 #SBATCH --ntasks 64           # The number of cores you need...
-#SBATCH -J h0_dc_fit_all     #Give it something meaningful.
+#SBATCH -J h0_mcmc_fit_all     #Give it something meaningful.
 #SBATCH -o /cosma8/data/do012/dc-he4/log/standard_output_file.%J.out  # J is the job ID, %J is unique for each job.
 #SBATCH -e /cosma8/data/do012/dc-he4/log/standard_error_file.%J.err
 #SBATCH -p cosma-analyse #or some other partition, e.g. cosma, cosma8, etc.
 #SBATCH -A do012 #e.g. dp004
 #SBATCH -t 24:00:00  #D-HH:MM:SS
-#SBATCH --mail-type=BEGIN,END,FAIL,TIME_LIMIT_90,TIME_LIMIT
+#SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mail-user=yujiehe@strw.leidenuniv.nl #PLEASE PUT YOUR EMAIL ADDRESS HERE (without the <>)
 ##SBATCH --exclusive #no don't need exclusive
 
@@ -31,7 +31,7 @@ soap_dir="/cosma8/data/dp004/flamingo/Runs/L2800N5040/HYDRO_FIDUCIAL/SOAP"
 # make output directory if doesn't exist
 mkdir $analyse_dir -p
 
-cd /cosma/home/do012/dc-he4/anisotropy-flamingo/src/h0_anisotropy_direct_compare
+cd /cosma/home/do012/dc-he4/anisotropy-flamingo/src/h0_anisotropy_mcmc
 # run analysis
 for i in $(seq 0 $((N-1)))
 do
@@ -48,21 +48,12 @@ do
     fi
 
     output="${analyse_dir}/lc${lc}"
-    if [ -f "${output}/fit-all.done" ] #use a file flag
+    if [ -f "${output}/fit-all-mc.done" ] #use a file flag
     then
-        continue
+       continue
     else
-        python fit-all.py -i $input -o $output -t $n -n 300 --overwrite && echo > "${output}/fit-all.done" #do only if the python script run without error
+        python fit-all-mc.py -i $input -o $output -t $n -n 300 --overwrite && echo > "${output}/fit-all-mc.done" #do only if the python script run without error
     fi
-
-    # One time thing to correct the mistake mc fit overwrite.
-    # output="${analyse_dir}/lc${lc}"
-    # if [ -f "${output}/fit-all-mc.done" ] #use a file flag
-    # then
-    #     python fit-all.py -i $input -o $output -t $n -n 300 --overwrite && echo > "${output}/fit-all.done" #do only if the python script run without error
-    # else
-    #     continue
-    # fi
 
 done
 

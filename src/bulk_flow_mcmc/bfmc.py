@@ -77,7 +77,7 @@ def log_likelihood(theta, X, Y, z_obs, phi_lc, theta_lc, yname, xname):
     # Calculate the redshift
     angle = cf.angular_separation(phi_lc, theta_lc, vlon, vlat) * np.pi/180
     
-    # Correct the bulk flow accordingly: z_bf = z_obs + ubf * (1 + z_bf) * np.cos(angle) / C
+    # Non-relativistic correction 
     z_bf = (z_obs + ubf * np.cos(angle) / C) / (1 - ubf * np.cos(angle) / C) # Non-relativistic correction
 
     # The relativistic correction

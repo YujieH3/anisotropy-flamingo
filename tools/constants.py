@@ -190,7 +190,7 @@ def get_const(relation, key, array_const=ARRAY_CONST):
 
 LARGE_RANGE = {
     'LX-T': {
-        'logA_min': np.log10(0.1), 'logA_max': np.log10(2.0),
+        'logA_min': np.log10(0.1), 'logA_max': np.log10(3.0),
         'B_min'   : 1,             'B_max'   : 3.5,
         'scat_min': 0.09,          'scat_max': 1,
     },
@@ -223,7 +223,7 @@ LARGE_RANGE = {
 
 MID_RANGE = { # round 5 sigma range to .5. Round up upper range and round down lower range
     'LX-T': {
-        'logA_min': np.log10(1.0), 'logA_max': np.log10(2.0),
+        'logA_min': np.log10(1.0), 'logA_max': np.log10(3.0),
         'B_min'   : 1.5,           'B_max'   : 3.5,
         'scat_min': 0.05,          'scat_max': 1,
     },
@@ -233,7 +233,7 @@ MID_RANGE = { # round 5 sigma range to .5. Round up upper range and round down l
         'scat_min': 0.05,          'scat_max': 1,
     },
     'M-T': {
-        'logA_min': np.log10(0.5), 'logA_max': np.log10(1.5),
+        'logA_min': np.log10(0.5), 'logA_max': np.log10(2.0),
         'B_min'   : 1.5,           'B_max'   : 2.5,
         'scat_min': 0.05,          'scat_max': 1,
     },
