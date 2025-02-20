@@ -83,8 +83,8 @@ if __name__ == '__main__':
         z = ClusterData['ObservedRedshift'][:Nclusters].values
 
         # Get logY', logX', remember to change the normalisation constant
-        logY_ = cf.logY_(Y, z=z, relation=ScalingRelation) + cf.CONST[ScalingRelation]['CY'] - cf.CONST_MC[ScalingRelation]['CY']
-        logX_ = cf.logX_(X, relation=ScalingRelation + cf.CONST[ScalingRelation]['CX'] - cf.CONST_MC[ScalingRelation]['CX'])
+        logY_ = cf.logY_(Y, z=z, relation=ScalingRelation) + np.log10(cf.CONST[ScalingRelation]['CY']) - np.log10(cf.CONST_MC[ScalingRelation]['CY'])
+        logX_ = cf.logX_(X, relation=ScalingRelation) + np.log10(cf.CONST[ScalingRelation]['CX']) - np.log10(cf.CONST_MC[ScalingRelation]['CX'])
 
         # Best fit
         BestFitParams = cf.run_fit(
