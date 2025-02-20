@@ -486,7 +486,7 @@ def bootstrap_fit_non_parallel(
     """
 
     logA = np.zeros(Nbootstrap)  # logA distribution
-    B = np.zeros(Nbootstrap)  # B distribution
+    B = np.zeros(Nbootstrap)     # B distribution
     scat = np.zeros(Nbootstrap)  # scatter distribution
 
     if len(logY_) != Nclusters or len(logX_) != Nclusters:
