@@ -90,18 +90,18 @@ data[COLUMNS['YSZ']] = Y
 data['e'+COLUMNS['YSZ']] = eY
 
 # Temperature, Chandra
-T = data[COLUMNS['T']].values
+T = data[cf.COLUMNS_MC['T']].values
 eT = cf.eT(size=T.shape)
 T = T + np.random.choice(a=(1, -1), size=T.shape) * eT * T
-data[COLUMNS['T']] = T
-data['e'+COLUMNS['T']] = eT
+data[cf.COLUMNS_MC['T']] = T
+data['e'+cf.COLUMNS_MC['T']] = eT
 
 # Temperature, Chandra
-T_ = data['ChandraT'].values
+T_ = data[COLUMNS['T']].values
 eT_ = cf.eT(size=T_.shape)
 T_ = T_ + np.random.choice(a=(1, -1), size=T_.shape) * eT_ * T_
-data['ChandraT'] = T_
-data['eChandraT'] = eT_
+data[COLUMNS['T']] = T_
+data['e'+COLUMNS['T']] = eT_
 
 # ----------------------------------- Save ----------------------------------- #
 

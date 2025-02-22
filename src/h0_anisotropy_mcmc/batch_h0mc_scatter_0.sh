@@ -7,7 +7,7 @@
 #SBATCH -p cosma-analyse #or some other partition, e.g. cosma, cosma8, etc.
 #SBATCH -A do012 #e.g. dp004
 #SBATCH -t 24:00:00  #D-HH:MM:SS
-#SBATCH --mail-type=BEGIN,END
+#SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mail-user=yujiehe@strw.leidenuniv.nl #PLEASE PUT YOUR EMAIL ADDRESS HERE (without the <>)
 ##SBATCH --exclusive #no don't need exclusive
 
