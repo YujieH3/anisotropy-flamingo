@@ -146,7 +146,7 @@ for scaling_relation in RELATIONS:
     n_clusters = cf.CONST_MC[scaling_relation]['N']
 
     # Load the data
-    xname, yname = cf.parse_relation_name(scaling_relation)
+    yname, xname = cf.parse_relation_name(scaling_relation)
 
     Y = data[cf.COLUMNS_MC[yname]][:n_clusters].values
     X = data[cf.COLUMNS_MC[xname]][:n_clusters].values

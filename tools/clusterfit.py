@@ -124,7 +124,7 @@ def parse_relation_name(relation):
     Parse 'Y-X' to Y, X.
     """
     _ = relation.find("-")
-    return relation[:_], relation[_ + 1 :]  # X, Y
+    return relation[:_], relation[_ + 1 :]  # Y, X
 
 
 @njit(fastmath=False)
