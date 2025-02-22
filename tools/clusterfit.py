@@ -3,7 +3,7 @@
 # ---------------------------------------------------------------------------- #
 
 
-# import scipy.stats as stats
+import scipy.stats as stats
 import astropy.coordinates as coord
 import numpy as np
 from numba import njit, prange
@@ -17,9 +17,31 @@ import healpy as hp
 import warnings
 
 
+from astropy.cosmology import FlatLambdaCDM
+
+
 # ---------------------------------------------------------------------------- #
 #                            Simple helper functions                           #
 # ---------------------------------------------------------------------------- #
+
+
+def Ysz(obs: pd.DataFrame) -> np.array:
+    """Extract the M21 Ysz parameters in kpc^2.
+    """
+    # M21 fiducial cosmology
+    cosmo = FlatLambdaCDM(H0=70, Om0=0.3)
+    
+    # Get data needed
+    Y5r500 = obs['Y(r/no_ksz_arcmin^2)'].values
+    Yerr = obs['e_Y'].values
+    z = obs['z'].values
+
+    # SNR ratio selection to keep 260 objects
+    mask = (Y5r500 > 0) & (Y5r500/Yerr > 2)             
+    DA = cosmo.angular_diameter_distance(z[mask]).to('kpc').value
+    Ysz = Y5r500[mask] * (np.pi/60/180)**2 * DA**2      # eq2 of M21
+
+    return Ysz
 
 
 def Rx(theta: float) -> np.matrix:
@@ -105,20 +127,20 @@ def parse_relation_name(relation):
     return relation[:_], relation[_ + 1 :]  # X, Y
 
 
-@njit(fastmath=True)
+@njit(fastmath=False)
 def E(z, Omega_m=0.306, Omega_L=0.694):
     Ez = (Omega_m * (1 + z) ** 3 + Omega_L) ** 0.5
     return Ez
 
 
-@njit(fastmath=True)
+@njit(fastmath=False)
 def _logX_(X, CX):
     """logX' = X / CX"""
     result = np.log10(X / CX)
     return result
 
 
-@njit(fastmath=True)
+@njit(fastmath=False)
 def _logY_(Y, z, CY, gamma, Omega_m=0.306, Omega_L=0.694):
     """logY' = Y / CY * E(z)^gamma"""
     Ez = E(z=z, Omega_m=Omega_m, Omega_L=Omega_L)
@@ -126,7 +148,7 @@ def _logY_(Y, z, CY, gamma, Omega_m=0.306, Omega_L=0.694):
     return result
 
 
-@njit(fastmath=True)
+@njit(fastmath=False)
 def logX_(X, relation):
     """Same as _logX_ but with predifined constants for specific scaling
     relations.
@@ -140,7 +162,7 @@ def logX_(X, relation):
     return _logX_(X=X, CX=get_const(relation, "CX"))
 
 
-@njit(fastmath=True)
+@njit(fastmath=False)
 def logY_(Y, z, relation, Omega_m=0.306, Omega_L=0.694):
     """Same as _logY_ but with predefined constants for specific scaling
     relations.
@@ -162,6 +184,17 @@ def logY_(Y, z, relation, Omega_m=0.306, Omega_L=0.694):
     )
 
 
+@njit(fastmath=False)
+def Y(logY_, z, relation, Omega_m=0.306, Omega_L=0.694):
+    """The reverse function of `logY_`. Returns physical value Y given logY_.
+    """
+    Ez = E(z=z, Omega_m=Omega_m, Omega_L=Omega_L)
+    CY = get_const(relation, 'CY')
+    gamma = get_const(relation, 'gamma')
+    Y = 10**(logY_) / Ez**gamma * CY
+    return Y
+
+
 # ---------------------------------------------------------------------------- #
 #                           Scaling relation fitting                           #
 # ---------------------------------------------------------------------------- #
@@ -171,17 +204,17 @@ def fit(
     logY_,
     logX_,
     N,
-    B_min,
-    B_max,
-    logA_min,
-    logA_max,
-    scat_min,
-    scat_max,
-    scat_step=0.007,
-    B_step=0.001,
-    logA_step=0.003,
-    remove_outlier=False,
-    id=None,
+    B_min          : float,
+    B_max          : float,
+    logA_min       : float,
+    logA_max       : float,
+    scat_min       : float,
+    scat_max       : float,
+    scat_step      : float      = 0.007,
+    B_step         : float      = 0.001,
+    logA_step      : float      = 0.003,
+    remove_outlier : bool       = False,
+    id             : np.ndarray = None,
 ):
     """
     Fit the scaling relation logY' = logA + B * logX' with intrinsic scatter.
@@ -223,18 +256,19 @@ def fit(
     | YSZ-T    | 1.110 | 0.045 | 2.546 | 2.546     |
 
     """
+
     params = run_fit(
-        logY_=logY_[:N],
-        logX_=logX_[:N],
-        B_min=B_min,
-        B_max=B_max,
-        logA_min=logA_min,
-        logA_max=logA_max,
-        scat_min=scat_min,
-        scat_max=scat_max,
-        scat_step=scat_step,
-        B_step=B_step,
-        logA_step=logA_step,
+        logY_     = logY_[:N],
+        logX_     = logX_[:N],
+        B_min     = B_min,
+        B_max     = B_max,
+        logA_min  = logA_min,
+        logA_max  = logA_max,
+        scat_min  = scat_min,
+        scat_max  = scat_max,
+        scat_step = scat_step,
+        B_step    = B_step,
+        logA_step = logA_step,
     )
     print("Best fit found: ", params)
 
@@ -283,17 +317,17 @@ def fit(
                 print(f"Fit: {itr_count + 1}")
                 print(f"Iteration: {itr_count}")
                 params = run_fit(
-                    logY_=logY_[:N],
-                    logX_=logX_[:N],
-                    B_min=B_min,
-                    B_max=B_max,
-                    logA_min=logA_min,
-                    logA_max=logA_max,
-                    scat_min=scat_min,
-                    scat_max=scat_max,
-                    scat_step=scat_step,
-                    B_step=B_step,
-                    logA_step=logA_step,
+                    logY_     = logY_[:N],
+                    logX_     = logX_[:N],
+                    B_min     = B_min,
+                    B_max     = B_max,
+                    logA_min  = logA_min,
+                    logA_max  = logA_max,
+                    scat_min  = scat_min,
+                    scat_max  = scat_max,
+                    scat_step = scat_step,
+                    B_step    = B_step,
+                    logA_step = logA_step,
                 )
                 print("Best fit found: ", params)
             else:
@@ -309,42 +343,73 @@ def fit(
         return params, np.array([])
 
 
-@njit(fastmath=True)
+@njit(fastmath=False)
 def run_fit(
-    logY_,
-    logX_,
-    B_min,
-    B_max,
-    logA_min,
-    logA_max,
-    scat_min,
-    scat_max,
-    scat_step,
-    B_step,
-    logA_step,
-    weight=np.array([1.0]),
+    logY_     : np.ndarray,
+    logX_     : np.ndarray,
+    B_min     : float,
+    B_max     : float,
+    logA_min  : float,
+    logA_max  : float,
+    scat_min  : float,
+    scat_max  : float,
+    scat_step : float,
+    B_step    : float,
+    logA_step : float,
+    weight    : np.ndarray=np.array([1.0]),
+    scat_obs_Y: np.ndarray=np.array([0.0]),
+    scat_obs_X: np.ndarray=np.array([0.0]),
 ):
     """Numba accelerated function to iterate through the parameter space to
     find the best fits."""
 
     Nclusters = len(logY_)
-    minx2 = 1e8
+    minx2 = 10
 
+    # Expand the weight if specified
     if (weight == np.array([1])).all():
         weight = np.ones(Nclusters)
-    for scat in np.arange(scat_min, scat_max, scat_step):
-        for B in np.arange(B_min, B_max, B_step):
-            for logA in np.arange(logA_min, logA_max, logA_step):
-                x2 = np.sum((logY_ - logA - B * logX_) ** 2 / (scat * weight) ** 2)
-                x2 /= (
-                    Nclusters - 3
-                )  # chi_res^2 = chi^2 / (N - dof), degree of freedom is the number of parameters to fit
-                if x2 < minx2:  # update best fit if new lowest chi2 found
-                    minx2 = x2
-                    params = {"logA": logA, "B": B, "scat": scat, "chi2": minx2}
 
-        if minx2 < 1.04:  # end after iterating through A and B space
-            break
+    # If observational data is not specified
+    if (scat_obs_X == np.array([0])).all() and (scat_obs_Y == np.array([0])).all():    
+        for scat in np.arange(scat_min, scat_max, scat_step):
+            for B in np.arange(B_min, B_max, B_step):
+                for logA in np.arange(logA_min, logA_max, logA_step):
+                    # Equation in M21 without observational scatter
+                    x2 = np.sum((logY_ - logA - B * logX_) ** 2 / (scat * weight) ** 2)
+
+                    x2 /= (Nclusters - 3)               # chi_res^2 = chi^2 / (N - dof), degree of freedom is the number of parameters to fit
+
+                    # Update best fit if new lowest chi2 found
+                    if x2 < minx2 and np.isnan(x2) == False:    # bugfix: numba handle nan differently!
+                        minx2 = x2
+                        params = {"logA": logA, "B": B, "scat": scat, "chi2": minx2}
+
+            if minx2 < 1.04:  # check after iterating through A and B space
+                break
+    else: # If observational error is specified
+        for scat in np.arange(scat_min, scat_max, scat_step):
+            for B in np.arange(B_min, B_max, B_step):
+                for logA in np.arange(logA_min, logA_max, logA_step):
+                    # Full equation in M21
+                    x2 = np.sum(
+                        (logY_ - logA - B * logX_) ** 2 / 
+                        (scat_obs_Y**2 + B**2 * scat_obs_X**2 + scat**2)
+                        / weight**2 
+                    )
+
+                    x2 /= (Nclusters - 3)               # chi_res^2 = chi^2 / (N - dof), degree of freedom is the number of parameters to fit
+
+                    # Update best fit if new lowest chi2 found
+                    if x2 < minx2 and np.isnan(x2) == False:    # bugfix: numba handle nan differently!
+                        minx2 = x2
+                        # print(minx2, np.isnan(minx2))
+                        params = {"logA": logA, "B": B, "scat": scat, "chi2": minx2}
+
+            if minx2 < 1.04:  # check after iterating through A and B space
+                break
+    
+    # Return fitted result
     if minx2 < 1.04:
         return params
     else:
@@ -389,22 +454,22 @@ def find_outlier(
     return outlier
 
 
-@njit(fastmath=True, parallel=True)
+@njit(fastmath=False, parallel=True)
 def bootstrap_fit(
     Nbootstrap: int,
-    logY_: np.ndarray,
-    logX_: np.ndarray,
-    Nclusters: int,
-    B_min: float,
-    B_max: float,
-    logA_min: float,
-    logA_max: float,
-    scat_min: float,
-    scat_max: float,
-    weight: np.ndarray = None,
-    scat_step: float = 0.007,
-    B_step: float = 0.001,
-    logA_step: float = 0.003,
+    logY_     : np.ndarray,
+    logX_     : np.ndarray,
+    Nclusters : int,
+    B_min     : float,
+    B_max     : float,
+    logA_min  : float,
+    logA_max  : float,
+    scat_min  : float,
+    scat_max  : float,
+    weight    : np.ndarray = None,
+    scat_step : float = 0.007,
+    B_step    : float = 0.001,
+    logA_step : float = 0.003,
 ) -> tuple:
     """
     Examples
@@ -456,7 +521,7 @@ def bootstrap_fit(
     return logA, B, scat
 
 
-@njit(fastmath=True, parallel=False)
+@njit(fastmath=False, parallel=False)
 def bootstrap_fit_non_parallel(
     Nbootstrap,
     logY_,
@@ -633,7 +698,7 @@ def A_variance_map(best_fit_file, btstrp_file):
     return df
 
 
-@njit(fastmath=True)
+@njit(fastmath=False)
 def angular_separation(lon1, lat1, lon2, lat2):
     """
     Calculate the angular separation between two points on the sky.
@@ -671,7 +736,7 @@ def angular_separation(lon1, lat1, lon2, lat2):
     return separation
 
 
-@njit(fastmath=True)
+@njit(fastmath=False)
 def opposite_direction(lon, lat):
     """Calculate the opposite direction of a given longitude and latitude."""
     dp_lon = lon + 180 if lon < 0 else lon - 180
@@ -732,7 +797,7 @@ def _map_to_dipole_map_(f, mid):
     return f
 
 
-@njit(fastmath=True)
+@njit(fastmath=False)
 def scan_qty(
     lon_c_arr,
     lat_c_arr,
@@ -907,7 +972,7 @@ def make_los_v_map(data, zmask, cone_size=45, lon_step=4, lat_step=2):
     return Glon, Glat, los_v_map, count_map
 
 
-@njit(fastmath=True)
+@njit(fastmath=False)
 def find_max_dipole_flow(Glon, Glat, los_v_map, count_map):
     # Find the maximum dipole flow
     max_ubf_dp = 0
@@ -1523,6 +1588,107 @@ def grid_around_lonlat(
 
     return glonlat
 
+
+# ---------------------------------------------------------------------------- #
+#                                 Mock scatter                                 #
+# ---------------------------------------------------------------------------- #
+
+
+def eL(size) -> np.ndarray:
+    """
+    Return mock Lx ratio scatter of desired shape.
+
+    Parameters
+    --
+    size : int or tuple of ints
+      The shape of desired output
+    """
+    # Define fitted shape parameters
+    s = 0.6257
+    loc = 0.3795
+    scale = 10.4179
+
+    # Sample random variables from lognormal distribution of desired shape
+    eL = stats.lognorm.rvs(s=s, loc=loc, scale=scale, size=size)
+
+    # Restrain error from going over! the data size (to avoid down scattered L < 0)
+    while (eL > 50).any():
+        mask = eL > 50
+        eL[mask] = stats.lognorm.rvs(s=s, loc=loc, scale=scale, size=np.sum(mask))
+
+    # Get rid of percentage for easy handling
+    eL /= 100
+
+    return eL
+
+
+def eT(size) -> np.ndarray:
+    """
+    Return mock T ratio scatter of desired shape.
+
+    Parameters
+    --
+    size : int or tuple of ints
+      The shape of desired output
+    """
+    # Define fitted shape parameters
+    s = 0.4299
+    loc = -3.2250
+    scale = 9.1580
+
+    # Sample random variables from lognormal distribution of desired shape
+    eT = stats.lognorm.rvs(s=s, loc=loc, scale=scale, size=size)
+
+    # Restrain error from going over the data size (to avoid down scattered T < 0)
+    while (eT > 50).any():
+        mask = eT > 50
+        eT[mask] = stats.lognorm.rvs(s=s, loc=loc, scale=scale, size=np.sum(mask))
+
+    # Get rid of percentage for easy handling
+    eT /= 100
+
+    return eT
+
+
+def eY(Y) -> np.ndarray:
+    """
+    Return mock percentage Ysz scatter of a given dataset.
+
+    Parameters
+    --
+    size : int or tuple of ints
+      The shape of desired output
+    """
+    # Define fitted shape parameters
+    A = 57.6000
+    alpha = -0.3742
+    sigma_log10_eY = 0.1565 # dex
+
+    # Sample random variables from lognormal distribution with a correlation with Ysz
+    eY = A * Y**alpha * 10**np.random.normal(0, sigma_log10_eY, size=Y.shape)
+    
+    # Real data confined SNR>2, we do the same: simulate again if eY > 50
+    while (eY > 50).any():
+        mask = eY > 50
+        eY[mask] = A * Y[mask]**alpha * 10**np.random.normal(0, sigma_log10_eY, size=np.sum(mask))
+
+    # Get rid of percentage
+    eY /= 100
+
+    return eY
+
+
+def scat_boost(yname) -> float:
+    """Return the ratio of intrinsic scatter M21/Y24, to apply a scatter boost.
+    """
+    if yname == 'LX':
+        scat_boost = 0.233 / 0.164
+    elif yname == 'YSZ':
+        scat_boost = 0.146 / 0.110
+    else:
+        scat_boost = 1
+    
+    return scat_boost
 
 
 # ---------------------------------------------------------------------------- #

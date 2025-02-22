@@ -1,20 +1,24 @@
-# ---------------------------------------------
-# This module contains constants used in the
-# project, along with some column names for
-# easy I/O.
-#     - Updated default temperature COLUMNS name
-# to ChandraT.
-#     - Default temperature pivot point is
-# now CX'=CX^(1/0.89), the same conversion as
-# XMM to Chandra temperature.
+# ---------------------------------------------------------------------------- #
+# This module contains constants used in the project, along with some column
+# names for easy I/O.  
+# - Updated default temperature COLUMNS name to ChandraT.
+# - Default temperature pivot point is now CX'=CX^(1/0.89), the same conversion
+# as XMM to Chandra temperature.
+# - Added probabilistic distribution constants to model errors.
 #
 # Author                       : Yujie He
 # Created on (MM/YYYY)         : 03/2024
 # Last Modified on (MM/YYYY)   : 09/2024
-# ---------------------------------------------
+# ---------------------------------------------------------------------------- #
 
 import numpy as np
 from numba import njit
+
+
+# ---------------------------------------------------------------------------- #
+#                                 Column names                                 #
+# ---------------------------------------------------------------------------- #
+
 
 # Make a namespace for our descriptive yet horribly long column names
 COLUMNS_MC = {
@@ -32,6 +36,12 @@ COLUMNS = {
     "YSZ": "Y5R500WithoutRecentAGNHeating",
     "M": "GasMass",
 }
+
+
+# ---------------------------------------------------------------------------- #
+#                              Fitting parameters                              #
+# ---------------------------------------------------------------------------- #
+
 
 # Parameters as in M21 (doi.org/10.1051/0004-6361/202140296) table 2
 # changed pivot value CX to minimum A-B correlation at 2024-02-20
@@ -115,29 +125,6 @@ CONST_MC = {
 }
 
 
-def gamma_to_str(gamma):
-    if gamma == 1:
-        return ""
-    elif gamma == -8 / 5:
-        return "-8/5"
-    elif gamma == -2 / 3:
-        return "-2/3"
-    else:
-        return str(gamma)
-
-
-labels = {
-    "LX-T": {
-        "label": "$L_\\mathrm{{X}}-T$",
-    },
-    "YSZ-T": {"label": "$Y_\\mathrm{{SZ}}-T$"},
-    "M-T": {"label": "$M_\\mathrm{{gas}}-T$"},
-    "LX-YSZ": {"label": "$L_\\mathrm{{X}}-Y_\\mathrm{{SZ}}$"},
-    "LX-M": {"label": "$L_\\mathrm{{X}}-M_\\mathrm{{gas}}$"},
-    "YSZ-M": {"label": "Y_\\mathrm{{SZ}}-M_\\mathrm{{gas}}"},
-}
-
-
 # Global variables for function get_const(). Using of dict have to be outside of the function.
 NAMES = list(CONST.keys())
 ARRAY_CONST = [list(CONST[relation].values()) for relation in CONST.keys()]
@@ -181,7 +168,7 @@ def get_const(relation, key, array_const=ARRAY_CONST):
 LARGE_RANGE = {
     "LX-T": {
         "logA_min": np.log10(0.1),
-        "logA_max": np.log10(3.0),
+        "logA_max": np.log10(4.0),
         "B_min": 1,
         "B_max": 3.5,
         "scat_min": 0.09,
@@ -444,6 +431,12 @@ THREE_MAX_RANGE_TIGHT_SCAT = {
 }
 
 
+# ---------------------------------------------------------------------------- #
+#                             Commonly used results                            #
+# ---------------------------------------------------------------------------- #
+# Access made easier by including in constants.py
+
+
 LC0_BEST_FIT = {
     "LX-T": {
         "A": 1.521,
@@ -468,4 +461,32 @@ LC1_BEST_FIT = {
     "LX-YSZ": {"A": 2.958, "B": 0.874, "scat": 0.150},
     "LX-M": {"A": 1.219, "B": 1.226, "scat": 0.092},
     "YSZ-M": {"A": 3.812, "B": 1.358, "scat": 0.104},
+}
+
+
+# ---------------------------------------------------------------------------- #
+#                                    Legacy                                    #
+# ---------------------------------------------------------------------------- #
+
+
+def gamma_to_str(gamma):
+    if gamma == 1:
+        return ""
+    elif gamma == -8 / 5:
+        return "-8/5"
+    elif gamma == -2 / 3:
+        return "-2/3"
+    else:
+        return str(gamma)
+
+
+labels = {
+    "LX-T": {
+        "label": "$L_\\mathrm{{X}}-T$",
+    },
+    "YSZ-T": {"label": "$Y_\\mathrm{{SZ}}-T$"},
+    "M-T": {"label": "$M_\\mathrm{{gas}}-T$"},
+    "LX-YSZ": {"label": "$L_\\mathrm{{X}}-Y_\\mathrm{{SZ}}$"},
+    "LX-M": {"label": "$L_\\mathrm{{X}}-M_\\mathrm{{gas}}$"},
+    "YSZ-M": {"label": "Y_\\mathrm{{SZ}}-M_\\mathrm{{gas}}"},
 }

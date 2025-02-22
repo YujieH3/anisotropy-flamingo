@@ -243,6 +243,7 @@ if __name__ == '__main__':
 
         # sys.exit(1)                   # for testing
 
+        # Run bootstrapping
         lon_c_arr, lat_c_arr, A_arr, B_arr, scat_arr = scan_bootstrapping(
             Nbootstrap = n_bootstrap,
             A_arr     = A_arr,
@@ -263,6 +264,7 @@ if __name__ == '__main__':
             **FIT_RANGE[scaling_relation],
         )
 
+        # Make dataframe
         df = pd.DataFrame({
             'Glon'        : lon_c_arr, # Glon/Glat means galactic longitude/latitude
             'Glat'        : lat_c_arr,
@@ -271,11 +273,12 @@ if __name__ == '__main__':
             'TotalScatter': scat_arr,
             })
         df.to_csv(output_file, index=False)
-        
+
+        # Output log
         t = datetime.datetime.now()
         print(f'[{t}] Scanning finishied: {output_file}')
         print(f'Time taken: {t - t0}')
-    
+ 
     t = datetime.datetime.now()
     print(f'[{t}] All done!')
     print(f'Time taken: {t - t00}')

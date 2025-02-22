@@ -18,7 +18,7 @@ cosmo = FlatLambdaCDM(H0=68.1, Om0=0.306, Ob0=0.0486)
 
 C = 299792.458                  # the speed of light in km/s
 
-# -----------------------CONFIGURATION------------------------------------------
+# -----------------------CONFIGURATION---------------------------------------- #
 # Input file is a halo catalog with lightcone data.
 #INPUT_FILE = '/data1/yujiehe/data/samples_in_lightcone0_with_trees_duplicate_excision_outlier_excision.csv'
 #OUTPUT_FILE = '/data1/yujiehe/data/fits/bulk_flow_mcmc_lightcone0.csv'
@@ -31,7 +31,7 @@ OVERWRITE = False
 # Relations to fit
 RELATIONS = ['LX-T', 'YSZ-T', 'M-T'] # pick from 'LX-T', 'M-T', 'YSZ-T'
 
-# -----------------------------COMMAND LINE ARGUMENTS---------------------------
+# -----------------------------COMMAND LINE ARGUMENTS------------------------- #
 
 import argparse
 
@@ -55,7 +55,7 @@ OVERWRITE   = args.overwrite
 
 os.environ["OMP_NUM_THREADS"] = f"{N_THREADS}"
 
-# -----------------------END CONFIGURATION--------------------------------------
+# -----------------------END CONFIGURATION------------------------------------ #
 
 
 def log_likelihood(theta, X, Y, z_obs, phi_lc, theta_lc, yname, xname):
