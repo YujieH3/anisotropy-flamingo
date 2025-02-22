@@ -80,28 +80,44 @@ L = data[COLUMNS['LX']].values
 eL = cf.eL(size=L.shape)
 L = L + np.random.choice(a=(1, -1), size=L.shape) * eL * L
 data[COLUMNS['LX']] = L
+data['e'+COLUMNS['LX']] = eL
 
 # Ysz
 Y = data[COLUMNS['YSZ']].values
 eY = cf.eY(Y=Y)
 Y = Y + np.random.choice(a=(1, -1), size=Y.shape) * eY * Y
 data[COLUMNS['YSZ']] = Y
+data['e'+COLUMNS['YSZ']] = eY
 
 # Temperature, Chandra
 T = data[COLUMNS['T']].values
 eT = cf.eT(size=T.shape)
 T = T + np.random.choice(a=(1, -1), size=T.shape) * eT * T
 data[COLUMNS['T']] = T
+data['e'+COLUMNS['T']] = eT
 
 # Temperature, Chandra
-T = data['ChandraT'].values
-eT = cf.eT(size=T.shape)
-T = T + np.random.choice(a=(1, -1), size=T.shape) * eT * T
-data['ChandraT'] = T
+T_ = data['ChandraT'].values
+eT_ = cf.eT(size=T_.shape)
+T_ = T_ + np.random.choice(a=(1, -1), size=T_.shape) * eT_ * T_
+data['ChandraT'] = T_
+data['eChandraT'] = eT_
 
 # ----------------------------------- Save ----------------------------------- #
 
 data.to_csv(OUTPUT_FILE, index=False)
+
+
+
+
+
+
+
+
+
+
+
+
 
 # # --------------------------------- Test fit --------------------------------- #
 

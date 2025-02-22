@@ -6,32 +6,11 @@
 # Created on (MM/YYYY)         : 02/2025
 # Last Modified on (MM/YYYY)   : 02/2025
 
-import emcee
-import numpy as np
-import os
-import sys
-sys.path.append('/cosma/home/do012/dc-he4/anisotropy-flamingo/tools')
-import clusterfit as cf
-from multiprocessing import Pool
-from astropy.cosmology import FlatLambdaCDM
-cosmo = FlatLambdaCDM(H0=68.1, Om0=0.306, Ob0=0.0486)
 
-C = 299792.458                  # the speed of light in km/s
+# ---------------------------------------------------------------------------- #
+#                            Command line arguments                            #
+# ---------------------------------------------------------------------------- #
 
-# -----------------------CONFIGURATION---------------------------------------- #
-# Input file is a halo catalog with lightcone data.
-#INPUT_FILE = '/data1/yujiehe/data/samples_in_lightcone0_with_trees_duplicate_excision_outlier_excision.csv'
-#OUTPUT_FILE = '/data1/yujiehe/data/fits/bulk_flow_mcmc_lightcone0.csv'
-#CHAIN_DIR = '/data1/yujiehe/data/fits/7bulk-flow-model-mcmc-lightcone0'
-INPUT_FILE = '/data1/yujiehe/data/samples_in_lightcone1_with_trees_duplicate_excision_outlier_excision.csv'
-OUTPUT_FILE = '/data1/yujiehe/data/fits/bulk_flow_mcmc_lightcone1.csv'
-CHAIN_DIR = '/data1/yujiehe/data/fits/7bulk-flow-model-mcmc-lightcone1'
-OVERWRITE = False
-
-# Relations to fit
-RELATIONS = ['LX-T', 'YSZ-T', 'M-T'] # pick from 'LX-T', 'M-T', 'YSZ-T'
-
-# -----------------------------COMMAND LINE ARGUMENTS------------------------- #
 
 import argparse
 
@@ -39,29 +18,62 @@ import argparse
 parser = argparse.ArgumentParser(description="Calculate significance map for best fit scans.")
 
 # Add arguments
-parser.add_argument('-i', '--input', type=str, help='Input file', default=INPUT_FILE)
-parser.add_argument('-o', '--output', type=str, help='Output file', default=OUTPUT_FILE)
+parser.add_argument('-i', '--input', type=str, help='Input file')
+parser.add_argument('-o', '--output', type=str, help='Output file')
+parser.add_argument('-d', '--chaindir', type=str, help='Directory to save corner plots.')
+
 parser.add_argument('-n', '--nthreads', type=int, help='Number of cores to use.', default=1)
-parser.add_argument('-d', '--chaindir', type=str, help='Directory to save corner plots.', default=CHAIN_DIR)
-parser.add_argument('--overwrite', action='store_true', help='Overwrite existing.', default=OVERWRITE)
+parser.add_argument('--overwrite', action='store_true', help='Overwrite existing.', default=False)
 
 # Parse the arguments
 args = parser.parse_args()
 INPUT_FILE  = args.input
 OUTPUT_FILE = args.output
 CHAIN_DIR = args.chaindir
+
 N_THREADS = args.nthreads
 OVERWRITE   = args.overwrite
 
+import os
 os.environ["OMP_NUM_THREADS"] = f"{N_THREADS}"
 
-# -----------------------END CONFIGURATION------------------------------------ #
+
+# ---------------------------------------------------------------------------- #
+#                                     Setup                                    #
+# ---------------------------------------------------------------------------- #
 
 
-def log_likelihood(theta, X, Y, z_obs, phi_lc, theta_lc, yname, xname):
-    """
-    X, Y, z_obs, phi_lc, theta_lc, are from the data
-    """
+import emcee
+import numpy as np
+import sys
+sys.path.append('/cosma/home/do012/dc-he4/anisotropy-flamingo/tools')
+import clusterfit as cf
+from multiprocessing import Pool
+
+# Constants
+C = 299792.458                  # the speed of light in km/s
+
+# Relations to fit
+RELATIONS = ['LX-T', 'YSZ-T'] # pick from 'LX-T', 'M-T', 'YSZ-T'
+
+
+# ---------------------------------------------------------------------------- #
+#                              Internal functions                              #
+# ---------------------------------------------------------------------------- #
+
+
+def log_likelihood(theta      : np.ndarray, 
+                   X          : np.ndarray,
+                   Y          : np.ndarray,
+                   z_obs      : np.ndarray,
+                   phi_lc     : np.ndarray,
+                   theta_lc   : np.ndarray,
+                   sigma_obs_Y: np.ndarray,
+                   sigma_obs_X: np.ndarray,
+                   yname      : str,
+                   xname      : str
+    ): 
+
     lp = log_prior(theta)
     if not np.isfinite(lp):
        return -np.inf 
@@ -93,10 +105,10 @@ def log_likelihood(theta, X, Y, z_obs, phi_lc, theta_lc, yname, xname):
     logX_ = cf._logX_(X, CX = cf.CONST_MC[scaling_relation]['CX'])
 
     model = B * logX_ + logA
-    lnL = -0.5 * np.sum((logY_ - model) ** 2 / (sigma**2) + np.log(sigma**2)) # Kostas' implementation
+    sigma_tot2 = sigma_obs_Y**2 + B**2 * sigma_obs_X**2 + sigma**2
+    lnL = -0.5 * np.sum((logY_ - model) ** 2 / (sigma_tot2) + np.log(sigma_tot2)) # Kostas' implementation
 
     return lnL + lp
-
 
 
 # set prior
@@ -105,7 +117,7 @@ def log_prior(theta):
     delta, vlon, vlat, logA, B, sigma = theta # 6 parameters
 
     # If in range, p(theta)=1, else p(theta)=0
-    if -1<logA<1 and 0.5<B<3.5 and 0.05<sigma<1 \
+    if -1<logA<2 and 0.5<B<4 and 0.05<sigma<1 \
         and 0<delta<1 and -180<vlon<180 and -90<vlat<90:
         return 0.0
     else:
@@ -113,7 +125,9 @@ def log_prior(theta):
 
 
 
-
+# ---------------------------------------------------------------------------- #
+#                                  Main matter                                 #
+# ---------------------------------------------------------------------------- #
 
 
 # Load data
@@ -127,52 +141,43 @@ if os.path.exists(OUTPUT_FILE) and not OVERWRITE:
 
 first_entry = True
 
-
-
+# Start
 for scaling_relation in RELATIONS: 
     n_clusters = cf.CONST_MC[scaling_relation]['N']
 
     # Load the data
-    _ = scaling_relation.find('-')
-    yname = scaling_relation[:_]
-    xname = scaling_relation[_+1:]
-    Y = np.array(data[cf.COLUMNS_MC[yname]][:n_clusters])
-    X = np.array(data[cf.COLUMNS_MC[xname]][:n_clusters])
-    # Also load the position data
-    phi_lc   = np.array(data['phi_on_lc'][:n_clusters])
-    theta_lc = np.array(data['theta_on_lc'][:n_clusters])
-    # the observed redshift from lightcone
-    z_obs = np.array(data['ObservedRedshift'][:n_clusters])
+    xname, yname = cf.parse_relation_name(scaling_relation)
 
+    Y = data[cf.COLUMNS_MC[yname]][:n_clusters].values
+    X = data[cf.COLUMNS_MC[xname]][:n_clusters].values
 
-    # scipy estimation of staring point
-    # from scipy.optimize import minimize
-    from scipy.optimize import differential_evolution
-    nll = lambda *args: -log_likelihood(*args)
-    initial = np.array([0, 0, 0, 1, 1, 0.1]) # initial guess
-    bounds = [(0, 0.09), (-180, 180), (-90, 90), (0.1, 1), (0.5, 3.5), (0.05, 1)]
+    phi_lc   = data['phi_on_lc'][:n_clusters].values
+    theta_lc = data['theta_on_lc'][:n_clusters].values
 
-    soln = differential_evolution(nll, args=(X, Y, z_obs, phi_lc, theta_lc, yname, xname), 
-                    bounds=bounds, popsize=10, strategy='rand1bin')
-    print(soln.x)
+    z_obs = data['ObservedRedshift'][:n_clusters].values
+
+    eY = data['e'+cf.COLUMNS_MC[yname]][:n_clusters].values   # in ratio 0-1
+    eX = data['e'+cf.COLUMNS_MC[xname]][:n_clusters].values
+    scat_obs_Y = np.log10(1 + eY) 
+    scat_obs_X = np.log10(1 + eX)
 
     # set the starting point for chain
-    pos0 = soln.x + 1e-2 * np.random.randn(32, 6)
+    pos0 = np.array([0, 0, 0, 1, 1, 0.1]) + 1e-1 * np.random.rand(32, 6)
     nwalkers, ndim = pos0.shape
 
-    # Create a sampler
+    # Sampler on multiple threads
     with Pool() as pool:
         sampler = emcee.EnsembleSampler(nwalkers, 
                                         ndim, 
                                         log_likelihood, 
-                                        args    = (X, Y, z_obs, phi_lc, theta_lc, yname, xname),
-                                        pool    = pool
+                                        args = (X, Y, z_obs, phi_lc, theta_lc, scat_obs_Y, scat_obs_X, yname, xname),
+                                        pool = pool
                                         )
 
         # Run
         sampler.run_mcmc(pos0, 15000, progress=False)  # now the chain is saved. progress spam the standard output, toggled to False
 
-    # Small convergence test
+    # Convergence test
     try:
         tau = sampler.get_autocorr_time()
         print(tau)
@@ -186,6 +191,9 @@ for scaling_relation in RELATIONS:
 
     # Save the chain
     np.save(os.path.join(CHAIN_DIR, f'{scaling_relation}_chain.npy'), flat_samples)
+
+
+# ------------------------------ Postprocessing ------------------------------ #
 
     # For delta we use the 16, 50, 84 quantiles
     delta_distr = flat_samples[:, 0]
@@ -225,9 +233,11 @@ for scaling_relation in RELATIONS:
         
     # Write line by line
     with open(OUTPUT_FILE, mode) as f:
+
         # Write the header on first entry
         if first_entry:
             f.write('scaling_relation,delta,delta_err_lower,delta_err_upper,vlon,vlon_err_lower,vlon_err_upper,vlat,vlat_err_lower,vlat_err_upper,convergence_time\n')
             first_entry = False
+
         # Write the data
         f.write(f'{scaling_relation},{delta},{delta_err_lower},{delta_err_upper},{vlon},{vlon_err_lower},{vlon_err_upper},{vlat},{vlat_err_lower},{vlat_err_upper},{np.mean(tau)}\n')

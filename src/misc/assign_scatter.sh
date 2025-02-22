@@ -47,12 +47,12 @@ do
         continue
     fi
 
-    Do not run if output exists
-    if [ -f $output ]
-    then
-       continue
-    else
-        python /cosma/home/do012/dc-he4/anisotropy-flamingo/src/misc/assign_scatter.py -i $input -o $output -f $fitall
-    fi
+    # # Do not run if output exists
+    # if [ -f $output ]
+    # then
+    #    continue
+    # else
+    python /cosma/home/do012/dc-he4/anisotropy-flamingo/src/misc/assign_scatter.py -i $input -o $output -f $fitall
+    # fi
 
 done
