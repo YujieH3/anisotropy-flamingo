@@ -1,7 +1,7 @@
 #!/bin/bash -l
 
 #SBATCH --ntasks 16           # The number of cores you need...
-#SBATCH -J h0_anisotropy_mc_scatter     #Give it something meaningful.
+#SBATCH -J bfmc_scatter     #Give it something meaningful.
 #SBATCH -o /cosma8/data/do012/dc-he4/log/standard_output_file.%J.out  # J is the job ID, %J is unique for each job.
 #SBATCH -e /cosma8/data/do012/dc-he4/log/standard_error_file.%J.err
 #SBATCH -p cosma-analyse #or some other partition, e.g. cosma, cosma8, etc.
@@ -22,16 +22,18 @@ conda activate halo-cosma
 
 
 # config
-n=16        #multithreading doesn't pay off much
-N=1728      #total number of lightcones
+n=16
+N3=1728      #total number of lightcones
 data_dir="/cosma8/data/do012/dc-he4/mock_lightcones_copy"  #directory of halo_properties_in_ligthcone0000.hdf5 (or 0001, 0002, etc.)
 analyse_dir="/cosma8/data/do012/dc-he4/analysis"           #directory of analysis results
+tree="/cosma8/data/dp004/jch/FLAMINGO/MergerTrees/ScienceRuns/L2800N5040/HYDRO_FIDUCIAL/trees_f0.1_min10_max100/vr_trees.hdf5"
+soap_dir="/cosma8/data/dp004/flamingo/Runs/L2800N5040/HYDRO_FIDUCIAL/SOAP"
 
 # make output directory if doesn't exist
 mkdir $analyse_dir -p
 
 # run analysis
-for i in $(seq 1153 1728)
+for i in $(seq 0 $((N3-1)))
 do
     lc=$(printf "%04d" $i)
     # echo "Analysing lightcone${lc}"
@@ -46,13 +48,13 @@ do
         continue
     fi
 
-    output="${analyse_dir}/lc${lc}/h0_mcmc_scatter.csv"
+    output="${analyse_dir}/lc${lc}/bf_mcmc_scatter.csv"
 
-    if ! [ -f "${output}/h0mc_scatter.done" ] #use a file flag
+    if ! [ -f "${output}/bfmc_scatter.done" ] #use a file flag
     then
-        python /cosma/home/do012/dc-he4/anisotropy-flamingo/src/h0_anisotropy_mcmc/h0mc_scatter.py -i $input -o $output -n $n --overwrite && echo > "${output}/h0mc_scatter.done"
+        python /cosma/home/do012/dc-he4/anisotropy-flamingo/src/bulk_flow_mcmc/bfmc_scatter.py -i $input -o $output -n -$n --overwrite && echo > "${output}/bfmc_scatter.done"
     else
-        echo "h0mc_scatter already done, skipping..."
+        echo "bfmc_scatter already done, skipping..."
     fi
 done
 

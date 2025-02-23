@@ -46,15 +46,11 @@ do
         continue
     fi
 
-    # make mcmc plot directory
-    chaindir="${analyse_dir}/lc${lc}/h0mc_scatter_chains"
-    mkdir $chaindir -p
-
     output="${analyse_dir}/lc${lc}/h0_mcmc_scatter.csv"
 
     if ! [ -f "${output}/h0mc_scatter.done" ] #use a file flag
     then
-        python /cosma/home/do012/dc-he4/anisotropy-flamingo/src/h0_anisotropy_mcmc/h0mc_scatter.py -i $input -o $output -d $chaindir -n $n --overwrite && echo > "${output}/h0mc_scatter.done"
+        python /cosma/home/do012/dc-he4/anisotropy-flamingo/src/h0_anisotropy_mcmc/h0mc_scatter.py -i $input -o $output -n $n --overwrite && echo > "${output}/h0mc_scatter.done"
     else
         echo "h0mc_scatter already done, skipping..."
     fi
