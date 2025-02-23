@@ -72,6 +72,9 @@ for scaling_relation in RELATIONS:
     logY_ = (logY_ - B_fit * logX_ - logA_fit) * cf.scat_boost(yname) + B_fit * logX_ + logA_fit
     Y = cf.Y(logY_, z=z_obs, relation=scaling_relation)
 
+    # Update the data
+    data[COLUMNS[yname]] = Y
+
 
 # -------------------------- Apply measurement error ------------------------- #
 
