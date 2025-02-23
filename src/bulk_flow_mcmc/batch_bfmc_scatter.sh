@@ -48,11 +48,13 @@ do
         continue
     fi
 
+    # Run
     output="${analyse_dir}/lc${lc}/bf_mcmc_scatter.csv"
+    flag="${analyse_dir}/lc${lc}/bfmc_scatter.done"
 
-    if ! [ -f "${output}/bfmc_scatter.done" ] #use a file flag
+    if ! [ -f $flag ] #use a file flag
     then
-        python /cosma/home/do012/dc-he4/anisotropy-flamingo/src/bulk_flow_mcmc/bfmc_scatter.py -i $input -o $output -n -$n --overwrite && echo > "${output}/bfmc_scatter.done"
+        python /cosma/home/do012/dc-he4/anisotropy-flamingo/src/bulk_flow_mcmc/bfmc_scatter.py -i $input -o $output -n -$n --overwrite && echo > $flag
     else
         echo "bfmc_scatter already done, skipping..."
     fi
