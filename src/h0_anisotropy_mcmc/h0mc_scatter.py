@@ -20,7 +20,7 @@ parser = argparse.ArgumentParser(description="Calculate significance map for bes
 # Add arguments
 parser.add_argument('-i', '--input', type=str, help='Input file')
 parser.add_argument('-o', '--output', type=str, help='Output file')
-parser.add_argument('-d', '--chaindir', type=str, help='Directory to save corner plots.')
+parser.add_argument('-d', '--chaindir', type=str, help='Directory to save corner plots.', default=None)
 
 parser.add_argument('-n', '--nthreads', type=int, help='Number of cores to use.', default=1)
 parser.add_argument('--overwrite', action='store_true', help='Overwrite existing.', default=False)
@@ -190,7 +190,8 @@ for scaling_relation in RELATIONS:
     print(flat_samples.shape)
 
     # Save the chain
-    np.save(os.path.join(CHAIN_DIR, f'{scaling_relation}_chain.npy'), flat_samples)
+    if CHAIN_DIR is not None:
+        np.save(os.path.join(CHAIN_DIR, f'{scaling_relation}_chain.npy'), flat_samples)
 
 
 # ------------------------------ Postprocessing ------------------------------ #

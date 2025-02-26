@@ -467,6 +467,8 @@ def bootstrap_fit(
     scat_min  : float,
     scat_max  : float,
     weight    : np.ndarray = None,
+    scat_obs_Y: np.ndarray=np.array([0.0]),
+    scat_obs_X: np.ndarray=np.array([0.0]),
     scat_step : float = 0.007,
     B_step    : float = 0.001,
     logA_step : float = 0.003,
@@ -499,19 +501,28 @@ def bootstrap_fit(
         else:
             bootstrap_weight = weight[idx]
 
+        if (scat_obs_X == np.array([0])).all() and (scat_obs_Y == np.array([0])).all():    
+            bootstrap_scat_obs_X = scat_obs_X
+            bootstrap_scat_obs_Y = scat_obs_Y
+        else:
+            bootstrap_scat_obs_X = scat_obs_X[idx]
+            bootstrap_scat_obs_Y = scat_obs_Y[idx]
+
         params = run_fit(
-            logY_=bootstrap_logY_,
-            logX_=bootstrap_logX_,
-            B_min=B_min,
-            B_max=B_max,
-            logA_min=logA_min,
-            logA_max=logA_max,
-            scat_min=scat_min,
-            scat_max=scat_max,
-            scat_step=scat_step,
-            B_step=B_step,
-            logA_step=logA_step,
-            weight=bootstrap_weight,
+            logY_      = bootstrap_logY_,   # main data
+            logX_      = bootstrap_logX_,
+            B_min      = B_min,             # fit ranges
+            B_max      = B_max,
+            logA_min   = logA_min,
+            logA_max   = logA_max,
+            scat_min   = scat_min,
+            scat_max   = scat_max,
+            scat_step  = scat_step,         # steps
+            B_step     = B_step,
+            logA_step  = logA_step,
+            weight     = bootstrap_weight,  # weight
+            scat_obs_X = bootstrap_scat_obs_X,  # instrument uncertainty
+            scat_obs_Y = bootstrap_scat_obs_Y,
         )
 
         logA[i] = params["logA"]

@@ -25,8 +25,6 @@ n=64         #number of cores
 N=1728      #total number of lightcones
 data_dir="/cosma8/data/do012/dc-he4/mock_lightcones_copy"  #directory of halo_properties_in_ligthcone0000.hdf5 (or 0001, 0002, etc.)
 analyse_dir="/cosma8/data/do012/dc-he4/analysis"           #directory of analysis results
-tree="/cosma8/data/dp004/jch/FLAMINGO/MergerTrees/ScienceRuns/L2800N5040/HYDRO_FIDUCIAL/trees_f0.1_min10_max100/vr_trees.hdf5"
-soap_dir="/cosma8/data/dp004/flamingo/Runs/L2800N5040/HYDRO_FIDUCIAL/SOAP"
 
 # make output directory if doesn't exist
 mkdir $analyse_dir -p

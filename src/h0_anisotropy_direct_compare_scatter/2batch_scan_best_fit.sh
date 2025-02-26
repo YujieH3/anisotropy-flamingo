@@ -29,7 +29,7 @@ analyse_dir="/cosma8/data/do012/dc-he4/analysis"           #directory of analysi
 # make output directory if doesn't exist
 mkdir $analyse_dir -p
 
-cd /cosma/home/do012/dc-he4/anisotropy-flamingo/src/h0_anisotropy_direct_compare
+cd /cosma/home/do012/dc-he4/anisotropy-flamingo/src/h0_anisotropy_direct_compare_scatter
 # run analysis
 for i in $(seq 0 $((N-1)))
 do
@@ -37,7 +37,7 @@ do
     # echo "Analysing lightcone${lc}"
 
     # the halo lightcone input file
-    input="${analyse_dir}/lc${lc}/samples_in_lightcone${lc}_duplicate_excision_outlier_excision.csv"
+    input="${analyse_dir}/lc${lc}/samples_in_lightcone${lc}_duplicate_excision_outlier_excision_scatter_assigned.csv"
 
     # check if the sample file exists
     if [ -f $input ]; then
@@ -47,10 +47,10 @@ do
     fi
 
     output="${analyse_dir}/lc${lc}"
-    if ! [ -f "${output}/scan-best-fit.done" ] && [ -f "${output}/fit-all.done" ] #use a file flag
+    if ! [ -f "${output}/scan-best-fit-scatter.done" ] && [ -f "${output}/fit-all-scatter.done" ] #use a file flag
     then
-        python scan-best-fit.py -i $input -r "${output}/fit_all.csv" -o $output -t $n && echo > "${output}/scan-best-fit.done"
-    else
+        python scan-best-fit.py -i $input -r "${output}/fit_all_scatter.csv" -o $output -t $n && echo > "${output}/scan-best-fit-scatter.done"
+    els-scatter-scatter-scatter_scattere
         echo "scan-best-fit already done or fit_all output not found, skipping..."
     fi
 done

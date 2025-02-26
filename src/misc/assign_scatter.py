@@ -29,7 +29,6 @@ import numpy as np
 import pandas as pd
 
 RELATIONS = ['LX-T', 'YSZ-T'] # pick from 'LX-T', 'M-T', 'YSZ-T'
-FIT_RANGE = cf.LARGE_RANGE
 COLUMNS = cf.COLUMNS
 
 

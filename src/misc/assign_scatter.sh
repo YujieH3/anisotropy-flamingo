@@ -30,7 +30,7 @@ soap_dir="/cosma8/data/dp004/flamingo/Runs/L2800N5040/HYDRO_FIDUCIAL/SOAP"
 # make output directory if doesn't exist
 mkdir $analyse_dir -p
 
-for i in $(seq 0 $((N3-1)))
+for i in $(seq 1182 $((N3-1)))
 do
     lc=$(printf "%04d" $i)
     echo "Analysing lightcone${lc}"
@@ -47,10 +47,10 @@ do
         continue
     fi
 
-    # # Do not run if output exists
+    # Do not run if output exists
     # if [ -f $output ]
     # then
-    #    continue
+    #     continue
     # else
     python /cosma/home/do012/dc-he4/anisotropy-flamingo/src/misc/assign_scatter.py -i $input -o $output -f $fitall
     # fi
