@@ -170,7 +170,7 @@ for scaling_relation in RELATIONS:
         sampler = emcee.EnsembleSampler(nwalkers, 
                                         ndim, 
                                         log_likelihood, 
-                                        args = (X, Y, z_obs, phi_lc, theta_lc, scat_obs_Y, scat_obs_X, yname, xname),
+                                        args = (X, Y, z_obs, phi_lc, theta_lc, scat_obs_Y, scat_obs_X, yname, xname), # Sequence matters!
                                         pool = pool
                                         )
 
