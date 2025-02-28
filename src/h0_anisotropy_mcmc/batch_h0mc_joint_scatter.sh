@@ -1,7 +1,7 @@
 #!/bin/bash -l
 
 #SBATCH --ntasks 16           # The number of cores you need...
-#SBATCH -J h0_mc_scatter_joint     #Give it something meaningful.
+#SBATCH -J h0_mc_joint_scatter     #Give it something meaningful.
 #SBATCH -o /cosma8/data/do012/dc-he4/log/standard_output_file.%J.out  # J is the job ID, %J is unique for each job.
 #SBATCH -e /cosma8/data/do012/dc-he4/log/standard_error_file.%J.err
 #SBATCH -p cosma-analyse #or some other partition, e.g. cosma, cosma8, etc.
@@ -46,14 +46,14 @@ do
     fi
 
     # Run
-    output="${analyse_dir}/lc${lc}/h0_mcmc_scatter_joint.csv"
-    flag="${analyse_dir}/lc${lc}/h0mc_scatter_joint.done"
+    output="${analyse_dir}/lc${lc}/h0_mcmc_joint_scatter.csv"
+    flag="${analyse_dir}/lc${lc}/h0mc_joint_scatter.done"
 
     if ! [ -f $flag ] #use a file flag
     then
-        python /cosma/home/do012/dc-he4/anisotropy-flamingo/src/h0_anisotropy_mcmc/h0mc_scatter_joint.py -i $input -o $output -n $n --overwrite && echo > $flag
+        python /cosma/home/do012/dc-he4/anisotropy-flamingo/src/h0_anisotropy_mcmc/h0mc_joint_scatter.py -i $input -o $output -n $n --overwrite && echo > $flag
     else
-        echo "h0mc_scatter_joint already done, skipping..."
+        echo "h0mc_joint_scatter already done, skipping..."
     fi
 done
 

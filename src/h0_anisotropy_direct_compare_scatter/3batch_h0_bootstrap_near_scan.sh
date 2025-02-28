@@ -1,13 +1,13 @@
 #!/bin/bash -l
 
 #SBATCH --ntasks 118           # The number of cores you need...
-#SBATCH -J h0_anisotropy_bsns     #Give it something meaningful.
+#SBATCH -J h0_bsns_scatter     #Give it something meaningful.
 #SBATCH -o /cosma8/data/do012/dc-he4/log/standard_output_file.%J.out  # J is the job ID, %J is unique for each job.
 #SBATCH -e /cosma8/data/do012/dc-he4/log/standard_error_file.%J.err
 #SBATCH -p cosma-analyse #or some other partition, e.g. cosma, cosma8, etc.
 #SBATCH -A do012 #e.g. dp004
 #SBATCH -t 24:00:00  #D-HH:MM:SS
-#SBATCH --mail-type=BEGIN,END,FAIL,TIME_LIMIT
+#SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mail-user=yujiehe@strw.leidenuniv.nl #PLEASE PUT YOUR EMAIL ADDRESS HERE (without the <>)
 
 module purge
