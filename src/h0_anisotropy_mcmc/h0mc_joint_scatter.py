@@ -49,7 +49,7 @@ parser = argparse.ArgumentParser(description="Calculate significance map for bes
 parser.add_argument('-i', '--input', type=str, help='Input file', default=INPUT_FILE)
 parser.add_argument('-o', '--output', type=str, help='Output file', default=OUTPUT_FILE)
 parser.add_argument('-n', '--nthreads', type=int, help='Number of cores to use.', default=1)
-parser.add_argument('-d', '--chaindir', type=str, help='Directory to save corner plots.', default=CHAIN_DIR)
+parser.add_argument('-d', '--chaindir', type=str, help='Directory to save corner plots.', default=None)
 parser.add_argument('--overwrite', action='store_true', help='Overwrite existing.', default=OVERWRITE)
 
 # Parse the arguments
@@ -236,7 +236,8 @@ flat_samples = sampler.get_chain(discard=4000, thin=80, flat=True)
 print(flat_samples.shape)
 
 # Save the chain
-np.save(os.path.join(CHAIN_DIR, f'{RELATION1}_{RELATION2}_chain.npy'), flat_samples)
+if CHAIN_DIR is not None:
+    np.save(os.path.join(CHAIN_DIR, f'{RELATION1}_{RELATION2}_chain.npy'), flat_samples)
 
 # For delta we use the 16, 50, 84 quantiles
 delta_distr = flat_samples[:, 0]

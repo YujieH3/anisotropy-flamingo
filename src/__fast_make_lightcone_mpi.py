@@ -371,14 +371,3 @@ if rank == 0:
     print('All done.')
 
 
-
-
-
-
-
- 
-
-
-
-    
-
