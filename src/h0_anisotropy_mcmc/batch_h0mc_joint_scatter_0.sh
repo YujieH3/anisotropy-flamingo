@@ -20,7 +20,6 @@ module purge
 conda deactivate
 conda activate halo-cosma
 
-
 # config
 n=16        #multithreading doesn't pay off much
 data_dir="/cosma8/data/do012/dc-he4/mock_lightcones_copy"  #directory of halo_properties_in_ligthcone0000.hdf5 (or 0001, 0002, etc.)
@@ -30,7 +29,7 @@ analyse_dir="/cosma8/data/do012/dc-he4/analysis"           #directory of analysi
 mkdir $analyse_dir -p
 
 # run analysis
-for i in $(seq 0 1727)
+for i in $(seq 0 576)
 do
     lc=$(printf "%04d" $i)
     # echo "Analysing lightcone${lc}"
@@ -56,7 +55,3 @@ do
         echo "h0mc_joint_scatter already done, skipping..."
     fi
 done
-
-    
-    
-
