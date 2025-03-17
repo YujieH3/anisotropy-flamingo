@@ -7,8 +7,8 @@
 # 
 # 
 # Author                       : Yujie He
-# Created on (MM/YYYY)         : 10/2024
-# Last Modified on (MM/YYYY)   : 11/2024
+# Created on (MM/YYYY)         : 02/2025
+# Last Modified on (MM/YYYY)   : 03/2025
 # ---------------------------------------------
 
 
@@ -144,7 +144,7 @@ def get_h0_var(scan_bootstrap_file : str,
 # ------------------------------------------------------------------------------
 
 data_dir = '/cosma8/data/do012/dc-he4/analysis'
-output_file = '/cosma8/data/do012/dc-he4/analysis_all/h0_direct_compare.csv'
+output_file = '/cosma8/data/do012/dc-he4/analysis_all/h0_direct_compare_scatter.csv'
 
 h0_vari = np.array([])
 n_sigma = np.array([])
@@ -152,10 +152,9 @@ max_dipole_glons = []
 max_dipole_glats = []
 lc_list = []                    # save also the lightcone number for direct comparison
 relations = []
-for relation, relation_name in zip(['LX-T', 'YSZ-T', 'M-T'], 
+for relation, relation_name in zip(['LX-T', 'YSZ-T'], 
                                    ['$L_\\mathrm{{X}}-T$',
-                                    '$Y_\\mathrm{{SZ}}-T$',
-                                    '$M_\\mathrm{{gas}}-T$']):
+                                    '$Y_\\mathrm{{SZ}}-T$']):
     h0_variation = []
     significance = []
     for lc in range(1728):
@@ -171,12 +170,12 @@ for relation, relation_name in zip(['LX-T', 'YSZ-T', 'M-T'],
         flag3 = f'{data_dir}/lc{lc00}/scan-bootstrap-near-scan.done'
 
         # set filename
-        btstrp_file = f'{data_dir}/lc{lc00}/scan_bootstrap_{relation}_theta{cone_size}.csv'
-        bestfit_file = f'{data_dir}/lc{lc00}/scan_best_fit_{relation}_theta{cone_size}.csv'
-        fit_all_file = f'{data_dir}/lc{lc00}/fit_all.csv'
+        btstrp_file = f'{data_dir}/lc{lc00}/scan_bootstrap_{relation}_theta{cone_size}_scatter.csv'
+        bestfit_file = f'{data_dir}/lc{lc00}/scan_best_fit_{relation}_theta{cone_size}_scatter.csv'
+        fit_all_file = f'{data_dir}/lc{lc00}/fit_all_scatter.csv'
 
         # check if file exists
-        if os.path.exists(flag1) and os.path.exists(flag2) and os.path.exists(flag3):
+        if os.path.exists(flag1) and os.path.exists(flag2) and os.path.exists(flag3) and os.path.exists(btstrp_file) and os.path.exists(bestfit_file) and os.path.exists(fit_all_file):
             # read in data
             n_sigmas, variation, glons, glats = get_h0_var(
                 btstrp_file,

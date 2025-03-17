@@ -1,6 +1,6 @@
 #!/bin/bash -l
 
-#SBATCH --ntasks 64           # The number of cores you need...
+#SBATCH --ntasks 112          # The number of cores you need...
 #SBATCH -J h0_dc_fit_all_scatter     #Give it something meaningful.
 #SBATCH -o /cosma8/data/do012/dc-he4/log/standard_output_file.%J.out  # J is the job ID, %J is unique for each job.
 #SBATCH -e /cosma8/data/do012/dc-he4/log/standard_error_file.%J.err
@@ -21,7 +21,7 @@ conda activate halo-cosma
 
 
 # config
-n=64         #number of cores
+n=112         #number of cores
 N=1728      #total number of lightcones
 data_dir="/cosma8/data/do012/dc-he4/mock_lightcones_copy"  #directory of halo_properties_in_ligthcone0000.hdf5 (or 0001, 0002, etc.)
 analyse_dir="/cosma8/data/do012/dc-he4/analysis"           #directory of analysis results

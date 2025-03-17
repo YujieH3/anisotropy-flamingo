@@ -9,6 +9,8 @@ import numpy as np
 from numba import njit, prange
 import pandas as pd
 import sys
+import math
+from scipy.special import erfinv
 
 sys.path.append("./")
 from constants import *
@@ -107,6 +109,16 @@ def latex_relation(relation):
     relation = relation.replace("YSZ", "Y_\\mathrm{{SZ}}")
     relation = relation.replace("M", "M_\\mathrm{{gas}}")
     return relation
+
+
+def n_sigma1d(p):
+    n_sigma = np.sqrt(2) * erfinv(1 - p)
+    return n_sigma
+    
+    
+def p_value1d(n_sigma):
+    p_value = 1 - math.erf(n_sigma / np.sqrt(2))
+    return p_value
 
 
 def n_sigma2d(p):
