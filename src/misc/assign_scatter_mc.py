@@ -29,7 +29,7 @@ import numpy as np
 import pandas as pd
 
 RELATIONS = ['LX-T', 'YSZ-T'] # pick from 'LX-T', 'M-T', 'YSZ-T'
-COLUMNS = cf.COLUMNS
+COLUMNS_MC = cf.COLUMNS_MC
 
 
 # ---------------------------------------------------------------------------- #
@@ -49,8 +49,8 @@ for scaling_relation in RELATIONS:
 
     # Load the data
     yname, xname = cf.parse_relation_name(scaling_relation)
-    Y = data[COLUMNS[yname]].values
-    X = data[COLUMNS[xname]].values
+    Y = data[COLUMNS_MC[yname]].values
+    X = data[COLUMNS_MC[xname]].values
 
     # Also load the position data
     phi_lc   = data['phi_on_lc'].values
@@ -59,8 +59,8 @@ for scaling_relation in RELATIONS:
     # the observed redshift from lightcone
     z_obs = data['ObservedRedshift'].values
 
-    logY_ = cf.logY_(Y, z=z_obs, relation=scaling_relation)
-    logX_ = cf.logX_(X, relation=scaling_relation)
+    logY_ = cf.logY_(Y, z=z_obs, relation=scaling_relation) + np.log10(cf.CONST[scaling_relation]['CY']) - np.log10(cf.CONST_MC[scaling_relation]['CY'])
+    logX_ = cf.logX_(X, relation=scaling_relation) + np.log10(cf.CONST[scaling_relation]['CX']) - np.log10(cf.CONST_MC[scaling_relation]['CX'])
 
     # Load the best_fit
     best_fit = pd.read_csv(FIT_ALL_FILE)
@@ -68,42 +68,42 @@ for scaling_relation in RELATIONS:
     # Amplify the scatter
     logA_fit = np.log10(best_fit[best_fit['Relation']==scaling_relation]['BestFitA'].values)
     B_fit = best_fit[best_fit['Relation']==scaling_relation]['BestFitB'].values
-    logY_ = (logY_ - B_fit * logX_ - logA_fit) * cf.scat_boost(yname) + B_fit * logX_ + logA_fit
+    logY_ = (logY_ - B_fit * logX_ - logA_fit) * cf.scat_boost_mc(yname) + B_fit * logX_ + logA_fit
     Y = cf.Y(logY_, z=z_obs, relation=scaling_relation)
 
     # Update the data
-    data[COLUMNS[yname]] = Y
+    data[COLUMNS_MC[yname]] = Y
 
 
 # -------------------------- Apply measurement error ------------------------- #
 
 # X-ray luminosity
-L = data[COLUMNS['LX']].values
+L = data[COLUMNS_MC['LX']].values
 eL = cf.eL(size=L.shape)
 L = L + np.random.choice(a=(1, -1), size=L.shape) * eL * L
-data[COLUMNS['LX']] = L
-data['e'+COLUMNS['LX']] = eL
+data[COLUMNS_MC['LX']] = L
+data['e'+COLUMNS_MC['LX']] = eL
 
 # Ysz
-Y = data[COLUMNS['YSZ']].values
+Y = data[COLUMNS_MC['YSZ']].values
 eY = cf.eY(Y=Y)
 Y = Y + np.random.choice(a=(1, -1), size=Y.shape) * eY * Y
-data[COLUMNS['YSZ']] = Y
-data['e'+COLUMNS['YSZ']] = eY
+data[COLUMNS_MC['YSZ']] = Y
+data['e'+COLUMNS_MC['YSZ']] = eY
 
 # Temperature, FLAMINGO
 T = data[cf.COLUMNS_MC['T']].values
 eT = cf.eT(size=T.shape)
 T = T + np.random.choice(a=(1, -1), size=T.shape) * eT * T
-data[cf.COLUMNS_MC['T']] = T
-data['e'+cf.COLUMNS_MC['T']] = eT
+data[COLUMNS_MC['T']] = T
+data['e'+COLUMNS_MC['T']] = eT
 
 # Temperature, Chandra
-T_ = data[COLUMNS['T']].values
+T_ = data[cf.COLUMNS['T']].values
 eT_ = cf.eT(size=T_.shape)
 T_ = T_ + np.random.choice(a=(1, -1), size=T_.shape) * eT_ * T_
-data[COLUMNS['T']] = T_
-data['e'+COLUMNS['T']] = eT_
+data[cf.COLUMNS['T']] = T_
+data['e'+cf.COLUMNS['T']] = eT_
 
 # ----------------------------------- Save ----------------------------------- #
 

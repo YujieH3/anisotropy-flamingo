@@ -1713,6 +1713,17 @@ def scat_boost(yname) -> float:
     
     return scat_boost
 
+def scat_boost_mc(yname) -> float:
+    """Return the ratio of intrinsic scatter M21/Y24_mc, to apply a scatter boost.
+    """
+    if yname == 'LX':
+        scat_boost = 0.233 / 0.154
+    elif yname == 'YSZ':
+        scat_boost = 0.146 / 0.108
+    else:
+        scat_boost = 1
+    
+    return scat_boost
 
 # ---------------------------------------------------------------------------- #
 #                               Legacy functions                               #

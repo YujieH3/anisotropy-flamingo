@@ -89,8 +89,10 @@ if __name__ == '__main__':
         Y = ClusterData[cf.COLUMNS_MC[yname]][:Nclusters].values
         X = ClusterData[cf.COLUMNS_MC[xname]][:Nclusters].values
         z = ClusterData['ObservedRedshift'][:Nclusters].values
-        logY_ = cf.logY_(Y, z=z, relation=ScalingRelation)
-        logX_ = cf.logX_(X, relation=ScalingRelation)
+
+        # Remember to change fitting constant
+        logY_ = cf.logY_(Y, z=z, relation=ScalingRelation) + np.log10(cf.CONST[ScalingRelation]['CY']) - np.log10(cf.CONST_MC[ScalingRelation]['CY'])
+        logX_ = cf.logX_(X, relation=ScalingRelation) + np.log10(cf.CONST[ScalingRelation]['CX']) - np.log10(cf.CONST_MC[ScalingRelation]['CX'])
 
         # Load error
         eY = ClusterData['e'+cf.COLUMNS_MC[yname]][:Nclusters].values   # in ratio 0-1

@@ -50,7 +50,7 @@ do
     then
         continue
     else
-        python fit-all.py -i $input -o $output -t $n -n 150 --overwrite && echo > "${output}/fit-all-mc-scatter.done"
+        python fit-all-mc.py -i $input -o $output -t $n -n 150 --overwrite && echo > "${output}/fit-all-mc-scatter.done"
     fi
 
 done
