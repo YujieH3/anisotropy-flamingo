@@ -130,6 +130,7 @@ def log_prior(theta):
 
 # Load data
 import pandas as pd
+import warnings
 data = pd.read_csv(INPUT_FILE)
 
 # Skip if the file already exists
@@ -146,18 +147,41 @@ for scaling_relation in RELATIONS:
     # Load the data
     yname, xname = cf.parse_relation_name(scaling_relation)
 
-    Y = data[cf.COLUMNS_MC[yname]][:n_clusters].values
-    X = data[cf.COLUMNS_MC[xname]][:n_clusters].values
+    Y = data[cf.COLUMNS_MC[yname]][:].values
+    X = data[cf.COLUMNS_MC[xname]][:].values
 
-    phi_lc   = data['phi_on_lc'][:n_clusters].values
-    theta_lc = data['theta_on_lc'][:n_clusters].values
+    phi_lc   = data['phi_on_lc'][:].values
+    theta_lc = data['theta_on_lc'][:].values
 
-    z_obs = data['ObservedRedshift'][:n_clusters].values
+    z_obs = data['ObservedRedshift'][:].values
 
-    eY = data['e'+cf.COLUMNS_MC[yname]][:n_clusters].values   # in ratio 0-1
-    eX = data['e'+cf.COLUMNS_MC[xname]][:n_clusters].values
+    eY = data['e'+cf.COLUMNS_MC[yname]][:].values   # in ratio 0-1
+    eX = data['e'+cf.COLUMNS_MC[xname]][:].values
     scat_obs_Y = np.log10(1 + eY) 
     scat_obs_X = np.log10(1 + eX)
+
+    # Get random seed as the lightcone number
+    if '/lc' in INPUT_FILE:
+        _ = INPUT_FILE.find('/lc')
+        lc = INPUT_FILE[_+3:_+7]
+        seed = int(lc)
+    else:
+        seed = 0
+        warnings.warn('No lc string found. No lightcone number detected in the file name, using seed=0.')
+
+    # Randomly select clusters (instead of highest concentration)
+    np.random.seed(seed)
+    select = np.random.choice(len(X), size=n_clusters, replace=False) # replace = false: no repetition
+
+    # Make selection for all quantities that will be used later
+    Y = Y[select]
+    X = X[select]
+    phi_lc = phi_lc[select]
+    theta_lc = theta_lc[select]
+    z_obs = z_obs[select]
+    scat_obs_X = scat_obs_X[select]
+    scat_obs_Y = scat_obs_Y[select]
+
 
     # set the starting point for chain
     pos0 = np.array([0, 0, 0, 1, 1, 0.1]) + 1e-1 * np.random.rand(32, 6)
