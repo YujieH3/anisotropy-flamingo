@@ -1725,6 +1725,27 @@ def scat_boost_mc(yname) -> float:
     
     return scat_boost
 
+
+from scipy.stats import genpareto
+def bootstrap_fit(data, fit_func=genpareto.fit, N=1000):
+    # Bootstrap sampling
+    all_params = []
+    for i in range(N):
+        sample = np.random.choice(data, size=len(data), replace=True)
+        params = fit_func(sample)
+        all_params.append(params)
+    all_params = np.array(all_params)
+
+    # Lower and upper one sigma parameters
+    lower_params = np.zeros_like(params)
+    upper_params = np.zeros_like(params)
+    for i in range(len(params)):
+        lower_params[i] = np.percentile(a=all_params[:,i], q=16)
+        upper_params[i] = np.percentile(a=all_params[:,i], q=84)
+        
+    return lower_params, upper_params
+    
+
 # ---------------------------------------------------------------------------- #
 #                               Legacy functions                               #
 # ---------------------------------------------------------------------------- #
