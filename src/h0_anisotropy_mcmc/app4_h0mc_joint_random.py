@@ -157,6 +157,7 @@ def log_likelihood(theta, X1, Y1, X2, Y2, z_obs, phi_lc, theta_lc, relation1, re
 
 # Load data
 import pandas as pd
+import warnings
 data = pd.read_csv(INPUT_FILE)
 
 # Skip if the file already exists
@@ -172,6 +173,15 @@ n_clusters1 = cf.CONST_MC[RELATION1]['N']
 n_clusters2 = cf.CONST_MC[RELATION2]['N']
 n_clusters = np.min((n_clusters1, n_clusters2))
 
+# Get random seed as the lightcone number
+if '/lc' in INPUT_FILE:
+    _ = INPUT_FILE.find('/lc')
+    lc = INPUT_FILE[_+3:_+7]
+    seed = int(lc)
+else:
+    seed = 0
+    warnings.warn('No lc string found. No lightcone number detected in the file name, using seed=0.')
+
 # Load the data
 _ = RELATION1.find('-')
 yname1 = RELATION1[:_]
@@ -179,16 +189,29 @@ xname1 = RELATION1[_+1:]
 _ = RELATION2.find('-')
 yname2 = RELATION2[:_]
 xname2 = RELATION2[_+1:]
-Y1 = data[cf.COLUMNS_MC[yname1]][:n_clusters].values
-X1 = data[cf.COLUMNS_MC[xname1]][:n_clusters].values
-Y2 = data[cf.COLUMNS_MC[yname2]][:n_clusters].values
-X2 = data[cf.COLUMNS_MC[xname2]][:n_clusters].values
+Y1 = data[cf.COLUMNS_MC[yname1]][:].values
+X1 = data[cf.COLUMNS_MC[xname1]][:].values
+Y2 = data[cf.COLUMNS_MC[yname2]][:].values
+X2 = data[cf.COLUMNS_MC[xname2]][:].values
+
+# Randomly select clusters (instead of highest concentration)
+np.random.seed(seed)
+select = np.random.choice(len(X1), size=n_clusters, replace=False) # replace = false: no repetition
 
 # Also load the position data
-phi_lc   = data['phi_on_lc'][:n_clusters].values
-theta_lc = data['theta_on_lc'][:n_clusters].values
+phi_lc   = data['phi_on_lc'][:].values
+theta_lc = data['theta_on_lc'][:].values
 # the observed redshift from lightcone
-z_obs = data['ObservedRedshift'][:n_clusters].values
+z_obs = data['ObservedRedshift'][:].values
+
+# Random selection for all quantities that will be used later
+Y1 = Y1[select]
+X1 = X1[select]
+Y2 = Y2[select]
+X2 = X2[select]
+phi_lc = phi_lc[select]
+theta_lc = theta_lc[select]
+z_obs = z_obs[select]
 
 # Set starting point
 init = np.array([0.1, 0, 0, 1, 1, 0.1, 1, 1, 0.1]) # delta, vlon, vlat, logA1, B1, C1, logA2, B2, C2

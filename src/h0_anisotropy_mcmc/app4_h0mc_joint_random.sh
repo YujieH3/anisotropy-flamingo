@@ -1,7 +1,7 @@
 #!/bin/bash -l
 
-#SBATCH --ntasks 1           # The number of cores you need...
-#SBATCH -J bfmc_random     #Give it something meaningful.
+#SBATCH --ntasks 4           # The number of cores you need...
+#SBATCH -J h0_joint_random     #Give it something meaningful.
 #SBATCH -o /cosma8/data/do012/dc-he4/log/standard_output_file.%J.out  # J is the job ID, %J is unique for each job.
 #SBATCH -e /cosma8/data/do012/dc-he4/log/standard_error_file.%J.err
 #SBATCH -p cosma-analyse #or some other partition, e.g. cosma, cosma8, etc.
@@ -22,16 +22,15 @@ conda activate halo-cosma
 
 
 # config
+n=4          #multithreading doesn't pay off much
 data_dir="/cosma8/data/do012/dc-he4/mock_lightcones_copy"  #directory of halo_properties_in_ligthcone0000.hdf5 (or 0001, 0002, etc.)
 analyse_dir="/cosma8/data/do012/dc-he4/analysis"           #directory of analysis results
-tree="/cosma8/data/dp004/jch/FLAMINGO/MergerTrees/ScienceRuns/L2800N5040/HYDRO_FIDUCIAL/trees_f0.1_min10_max100/vr_trees.hdf5"
-soap_dir="/cosma8/data/dp004/flamingo/Runs/L2800N5040/HYDRO_FIDUCIAL/SOAP"
 
 # make output directory if doesn't exist
 mkdir $analyse_dir -p
 
 # run analysis
-for i in $(seq 0 1727)
+for i in $(seq 0 1727) # 0 1727
 do
     lc=$(printf "%04d" $i)
     # echo "Analysing lightcone${lc}"
@@ -46,17 +45,14 @@ do
         continue
     fi
 
-    # make mcmc plot directory
-    chaindir="${analyse_dir}/lc${lc}/bfmc_chains"
-    mkdir $chaindir -p
 
     output="${analyse_dir}/lc${lc}"
 
-    if ! [ -f "${output}/bfmc_random.done" ] #use a file flag
+    if ! [ -f "${output}/h0mc_joint_random.done" ] #use a file flag
     then
-        python /cosma/home/do012/dc-he4/anisotropy-flamingo/src/bulk_flow_mcmc/app1_bfmc_random_selection.py -i $input -o "${output}/bf_mcmc_random.csv" -d $chaindir --overwrite && echo > "${output}/bfmc_random.done"
+        python /cosma/home/do012/dc-he4/anisotropy-flamingo/src/h0_anisotropy_mcmc/app4_h0mc_joint_random.py -i $input -o "${output}/h0_mcmc_joint_random.csv" -d $chaindir -n $n --overwrite && echo > "${output}/h0mc_joint_random.done"
     else
-        echo "bfmc_random already done, skipping..."
+        echo "h0mc joint random already done, skipping..."
     fi
 done
 
