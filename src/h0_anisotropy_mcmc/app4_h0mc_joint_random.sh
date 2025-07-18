@@ -50,7 +50,7 @@ do
 
     if ! [ -f "${output}/h0mc_joint_random.done" ] #use a file flag
     then
-        python /cosma/home/do012/dc-he4/anisotropy-flamingo/src/h0_anisotropy_mcmc/app4_h0mc_joint_random.py -i $input -o "${output}/h0_mcmc_joint_random.csv" -d $chaindir -n $n --overwrite && echo > "${output}/h0mc_joint_random.done"
+        python /cosma/home/do012/dc-he4/anisotropy-flamingo/src/h0_anisotropy_mcmc/app4_h0mc_joint_random.py -i $input -o "${output}/h0_mcmc_joint_random.csv" -n $n --overwrite && echo > "${output}/h0mc_joint_random.done"
     else
         echo "h0mc joint random already done, skipping..."
     fi

@@ -11,8 +11,8 @@
 # can be accessed later by
 #   `reader = emcee.backends.HDFBackend(filename)`
 # Author                       : Yujie He
-# Created on (MM/YYYY)         : 06/2024
-# Last Modified on (MM/YYYY)   : 11/2024
+# Created on (MM/YYYY)         : 07/2025
+# Last Modified on (MM/YYYY)   : 07/2025
 # ---------------------------------------------
 
 import emcee
@@ -28,13 +28,6 @@ cosmo = FlatLambdaCDM(H0=68.1, Om0=0.306, Ob0=0.0486)
 C = 299792.458                  # the speed of light in km/s
 
 # -----------------------CONFIGURATION------------------------------------------
-# Input file is a halo catalog with lightcone data.
-#INPUT_FILE = '/data1/yujiehe/data/samples_in_lightcone0_with_trees_duplicate_excision_outlier_excision.csv'
-#OUTPUT_FILE = '/data1/yujiehe/data/fits/bulk_flow_mcmc_lightcone0.csv'
-#CHAIN_DIR = '/data1/yujiehe/data/fits/7bulk-flow-model-mcmc-lightcone0'
-INPUT_FILE = '/data1/yujiehe/data/samples_in_lightcone1_with_trees_duplicate_excision_outlier_excision.csv'
-OUTPUT_FILE = '/data1/yujiehe/data/fits/bulk_flow_mcmc_lightcone1.csv'
-CHAIN_DIR = '/data1/yujiehe/data/fits/7bulk-flow-model-mcmc-lightcone1'
 OVERWRITE = False
 
 # Joint analysis
@@ -49,17 +42,15 @@ import argparse
 parser = argparse.ArgumentParser(description="Calculate significance map for best fit scans.")
 
 # Add arguments
-parser.add_argument('-i', '--input', type=str, help='Input file', default=INPUT_FILE)
-parser.add_argument('-o', '--output', type=str, help='Output file', default=OUTPUT_FILE)
+parser.add_argument('-i', '--input', type=str, help='Input file', default=None)
+parser.add_argument('-o', '--output', type=str, help='Output file', default=None)
 parser.add_argument('-n', '--nthreads', type=int, help='Number of cores to use.', default=1)
-parser.add_argument('-d', '--chaindir', type=str, help='Directory to save corner plots.', default=None)
 parser.add_argument('--overwrite', action='store_true', help='Overwrite existing.', default=OVERWRITE)
 
 # Parse the arguments
 args = parser.parse_args()
 INPUT_FILE  = args.input
 OUTPUT_FILE = args.output
-# CHAIN_DIR = args.chaindir
 N_THREADS = args.nthreads
 OVERWRITE   = args.overwrite
 
@@ -231,7 +222,7 @@ with Pool() as pool:
                                     )
 
     # Run
-    sampler.run_mcmc(pos0, 50_000, progress=False)  # now the chain is saved. progress spam the standard output, toggled to False
+    sampler.run_mcmc(pos0, 50_000, progress=False) 
 
 # Small convergence test
 try:
@@ -244,9 +235,6 @@ except emcee.autocorr.AutocorrError:
 # Get the samples
 flat_samples = sampler.get_chain(discard=4000, thin=80, flat=True)
 print(flat_samples.shape)
-
-# Save the chain
-np.save(os.path.join(CHAIN_DIR, f'{RELATION1}_{RELATION2}_chain.npy'), flat_samples)
 
 # For delta we use the 16, 50, 84 quantiles
 delta_distr = flat_samples[:, 0]
