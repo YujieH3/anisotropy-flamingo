@@ -46,15 +46,11 @@ do
         continue
     fi
 
-    # make mcmc plot directory
-    chaindir="${analyse_dir}/lc${lc}/bfmc_chains"
-    mkdir $chaindir -p
-
     output="${analyse_dir}/lc${lc}"
 
     if ! [ -f "${output}/bfmc_random.done" ] #use a file flag
     then
-        python /cosma/home/do012/dc-he4/anisotropy-flamingo/src/bulk_flow_mcmc/app1_bfmc_random_selection.py -i $input -o "${output}/bf_mcmc_random.csv" -d $chaindir --overwrite && echo > "${output}/bfmc_random.done"
+        python /cosma/home/do012/dc-he4/anisotropy-flamingo/src/bulk_flow_mcmc/app1_bfmc_random_selection.py -i $input -o "${output}/bf_mcmc_random.csv" --overwrite && echo > "${output}/bfmc_random.done"
     else
         echo "bfmc_random already done, skipping..."
     fi
