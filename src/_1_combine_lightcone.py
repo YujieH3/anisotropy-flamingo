@@ -1,7 +1,7 @@
 # ---------------------------------------------
 # This script joins the output of 
-# _c_interpolate_lightcone.py into a halo_lightcone
-# (like) file linked with soap catalogue
+# __fast_make_lightcone_mpi.py into a halo_lightcone
+# (like) file linked with soap catalogue.
 #
 # Author                       : Yujie He
 # Created on (MM/DD/YYYY)      : 01/15/2024

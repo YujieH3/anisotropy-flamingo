@@ -55,7 +55,3 @@ do
         echo "bfmc_random already done, skipping..."
     fi
 done
-
-    
-    
-
