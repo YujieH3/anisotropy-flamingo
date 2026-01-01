@@ -5,7 +5,6 @@
 #
 # Used the conversion table provided by Kostas
 # Author:                      Yujie He
-# Created on (MM/DD/YYYY):   11/08/2023
 # ---------------------------------------------
 
 import numpy as np

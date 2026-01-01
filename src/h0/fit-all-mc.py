@@ -8,17 +8,17 @@
 # Last Modified on (MM/YYYY)   : 09/2024
 # ---------------------------------------------
 
-
 import sys
 sys.path.append('/cosma/home/do012/dc-he4/anisotropy-flamingo/tools')
-import clusterfit as cf
-import numpy as np
-import pandas as pd
+import warnings
 import datetime
 import os
-import warnings
 
+import numpy as np
+import pandas as pd
 from numba import set_num_threads
+
+import clusterfit as cf
 
 # --------------------------------CONFIGURATION---------------------------------
 InputFile = '/data1/yujiehe/data/samples_in_lightcone0_with_trees_duplicate_excision_outlier_excision.csv'

@@ -7,8 +7,6 @@
 # - Added probabilistic distribution constants to model errors.
 #
 # Author                       : Yujie He
-# Created on (MM/YYYY)         : 03/2024
-# Last Modified on (MM/YYYY)   : 09/2024
 # ---------------------------------------------------------------------------- #
 
 import numpy as np

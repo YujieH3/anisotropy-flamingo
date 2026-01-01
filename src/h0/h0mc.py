@@ -1,75 +1,30 @@
-# This script calculates the H0 variation using MCMC.
-#    - use COLUMNS_MC instead of COLUMNS to use raw SOAP spectroscopic-like
-#    core-excised temperature instead of Chandra temperature.
-#
-# Author                       : Yujie He
-# Created on (MM/YYYY)         : 06/2024
-# Last Modified on (MM/YYYY)   : 09/2024
-
-import emcee
-import numpy as np
-import os
-import sys
-
-sys.path.append("/cosma/home/do012/dc-he4/anisotropy-flamingo/tools")
-import clusterfit as cf
-from multiprocessing import Pool
-from astropy.cosmology import FlatLambdaCDM
-
-cosmo = FlatLambdaCDM(H0=68.1, Om0=0.306, Ob0=0.0486)
-
-C = 299792.458  # the speed of light in km/s
-
-# -----------------------CONFIGURATION------------------------------------------
-# Input file is a halo catalog with lightcone data.
-# INPUT_FILE = '/data1/yujiehe/data/samples_in_lightcone0_with_trees_duplicate_excision_outlier_excision.csv'
-# OUTPUT_FILE = '/data1/yujiehe/data/fits/bulk_flow_mcmc_lightcone0.csv'
-# CHAIN_DIR = '/data1/yujiehe/data/fits/7bulk-flow-model-mcmc-lightcone0'
-INPUT_FILE = "/data1/yujiehe/data/samples_in_lightcone1_with_trees_duplicate_excision_outlier_excision.csv"
-OUTPUT_FILE = "/data1/yujiehe/data/fits/bulk_flow_mcmc_lightcone1.csv"
-CHAIN_DIR = "/data1/yujiehe/data/fits/7bulk-flow-model-mcmc-lightcone1"
-OVERWRITE = False
-
-# Relations to fit
-RELATIONS = ["LX-T", "YSZ-T", "M-T"]  # pick from 'LX-T', 'M-T', 'YSZ-T'
-
-# -----------------------------COMMAND LINE ARGUMENTS---------------------------
+#!/usr/bin/env python
+# mpiexec -n <number of cores> python h0mc.py <input.csv> <output.csv>
+# srun does not allocate the correct number of cores. mpiexec by itself does not get cores from the cluster.
+# Currently only works in a batch job script.
+"""
+Author                 : Yujie He
+Created on (MM/YYYY)   : 06/2024
+Description:
+    This script calculates the H0 variation using MCMC, MPI parallelised.
+Recent changes:
+    - use COLUMNS_MC instead of COLUMNS to use raw SOAP spectroscopic-like
+    core-excised temperature instead of Chandra temperature.
+    - use zeus mcmc instead of emcee for faster inference.
+"""
 
 import argparse
+import os
+import sys
+sys.path.append("/cosma/home/do012/dc-he4/anisotropy-flamingo/tools")
 
-# Create the parser
-parser = argparse.ArgumentParser(
-    description="Calculate significance map for best fit scans."
-)
+# from scipy.optimize import differential_evolution
+import pandas as pd
+import numpy as np
+from astropy.cosmology import FlatLambdaCDM
+cosmo = FlatLambdaCDM(H0=68.1, Om0=0.306, Ob0=0.0486)       # FLAMINGO cosmology
 
-# Add arguments
-parser.add_argument("-i", "--input", type=str, help="Input file", default=INPUT_FILE)
-parser.add_argument("-o", "--output", type=str, help="Output file", default=OUTPUT_FILE)
-parser.add_argument(
-    "-n", "--nthreads", type=int, help="Number of cores to use.", default=1
-)
-parser.add_argument(
-    "-d",
-    "--chaindir",
-    type=str,
-    help="Directory to save corner plots.",
-    default=CHAIN_DIR,
-)
-parser.add_argument(
-    "--overwrite", action="store_true", help="Overwrite existing.", default=OVERWRITE
-)
-
-# Parse the arguments
-args = parser.parse_args()
-INPUT_FILE = args.input
-OUTPUT_FILE = args.output
-CHAIN_DIR = args.chaindir
-N_THREADS = args.nthreads
-OVERWRITE = args.overwrite
-
-os.environ["OMP_NUM_THREADS"] = f"{N_THREADS}"
-
-# -----------------------END CONFIGURATION--------------------------------------
+import clusterfit as cf
 
 
 def log_likelihood(theta, X, Y, z_obs, phi_lc, theta_lc, yname, xname):
@@ -105,6 +60,8 @@ def log_likelihood(theta, X, Y, z_obs, phi_lc, theta_lc, yname, xname):
         Y_mod = Y * H0_ratio**-2
     elif yname == "M":
         Y_mod = Y * H0_ratio ** (-5 / 2)  # (DA_modified)**(5/2)/(DA_default)**(5/2)
+    else:
+        raise ValueError(f"Name of Y {yname} not supported. Supported: LX, YSZ, M.")
 
     # To our fit parameters
     logY_ = cf._logY_(
@@ -132,7 +89,7 @@ def log_prior(theta):
     if (
         -1 < logA < 1
         and 0.5 < B < 3.5
-        and 0.05 < sigma < 1
+        and 0.01 < sigma < 1
         and 0 < delta < 1
         and -180 < vlon < 180
         and -90 < vlat < 90
@@ -142,145 +99,222 @@ def log_prior(theta):
         return -np.inf
 
 
-# Load data
-import pandas as pd
 
-data = pd.read_csv(INPUT_FILE)
+if __name__ == '__main__':
+    print('starting')
+    
+    # Relations to fit
+    RELATIONS = ["LX-T", "YSZ-T", "M-T"]  # pick from 'LX-T', 'M-T', 'YSZ-T'
+    
+    # Get the directory where the script is located
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    default_output = os.path.join(script_dir, "output.csv")     # the script directory
 
-# Skip if the file already exists
-if os.path.exists(OUTPUT_FILE) and not OVERWRITE:
-    print(f"File exists: {OUTPUT_FILE}")
-    raise Exception("Output file exists and OVERWRITE==False.")
-
-first_entry = True
-
-
-for scaling_relation in RELATIONS:
-    n_clusters = cf.CONST_MC[scaling_relation]["N"]
-
-    # Load the data
-    _ = scaling_relation.find("-")
-    yname = scaling_relation[:_]
-    xname = scaling_relation[_ + 1 :]
-    Y = np.array(data[cf.COLUMNS_MC[yname]][:n_clusters])
-    X = np.array(data[cf.COLUMNS_MC[xname]][:n_clusters])
-    # Also load the position data
-    phi_lc = np.array(data["phi_on_lc"][:n_clusters])
-    theta_lc = np.array(data["theta_on_lc"][:n_clusters])
-    # the observed redshift from lightcone
-    z_obs = np.array(data["ObservedRedshift"][:n_clusters])
-
-    # scipy estimation of staring point
-    from scipy.optimize import differential_evolution
-
-    nll = lambda *args: -log_likelihood(*args)
-    initial = np.array([0, 0, 0, 1, 1, 0.1])  # initial guess
-    bounds = [(0, 0.09), (-180, 180), (-90, 90), (0.1, 1), (0.5, 3.5), (0.05, 1)]
-
-    soln = differential_evolution(
-        nll,
-        args=(X, Y, z_obs, phi_lc, theta_lc, yname, xname),
-        bounds=bounds,
-        popsize=10,
-        strategy="rand1bin",
+    # Create the parser
+    parser = argparse.ArgumentParser(
+        description="Calculate the H0 variation using MCMC."
     )
-    print(soln.x)
 
-    # set the starting point for chain
-    pos0 = soln.x + 1e-2 * np.random.randn(32, 6)
-    nwalkers, ndim = pos0.shape
+    # Positional arguments
+    parser.add_argument("input", type=str, help="Input file")
+    parser.add_argument("output", type=str, nargs='?', help="Output file (default: script directory)", default=default_output)
 
-    # # create the backend for saving the chain; we choose to save it for later analysis
-    # filename = os.path.join(CHAIN_DIR, f'{scaling_relation}_chain.h5')
-    # if os.path.exists(filename) and not OVERWRITE:
-    #     print(f'File exists: {filename}')
-    #     raise Exception('Chain file exists and OVERWRITE==False.')
-    # else:
-    #     backend = emcee.backends.HDFBackend(filename)
-    #     backend.reset(nwalkers, ndim)
-
-    # Create a sampler
-    with Pool() as pool:
-        sampler = emcee.EnsembleSampler(
-            nwalkers,
-            ndim,
-            log_likelihood,
-            # backend = backend,
-            args=(X, Y, z_obs, phi_lc, theta_lc, yname, xname),
-            pool=pool,
+    # Optional arguments
+    parser.add_argument(
+        "-c", "--savesamples", type=str, help="Directory to save chain", default=None
+        )
+    parser.add_argument('--sampler', type=str, default='zeus', 
+                       choices=['zeus', 'emcee'],
+                       help='MCMC sampler to use')
+    parser.add_argument(
+        "--overwrite", action="store_true", help="Overwrite existing", default=True
         )
 
-        # Run
-        sampler.run_mcmc(
-            pos0, 15000, progress=False
-        )  # now the chain is saved. progress spam the standard output, toggled to False
+    # Parse the arguments
+    args = parser.parse_args()
+    INPUT_FILE = args.input
+    OUTPUT_FILE = args.output
+    SAMPLE_DIR = args.savesamples
+    OVERWRITE = args.overwrite
+    SAMPLER = args.sampler
 
-    # Small convergence test
-    try:
-        tau = sampler.get_autocorr_time()
-        print(tau)
-    except emcee.autocorr.AutocorrError:
-        print("The chain is too short to get a reliable autocorrelation time.")
-        tau = 0
+    # Load data
+    data = pd.read_csv(INPUT_FILE)
 
-    # Get the samples
-    flat_samples = sampler.get_chain(discard=1000, thin=80, flat=True)
-    print(flat_samples.shape)
+    # Skip the script entirely if output file exists and overwrite is set to none.
+    if os.path.exists(OUTPUT_FILE) and not OVERWRITE:
+        print(f"File exists: {OUTPUT_FILE}")
+        raise FileExistsError(f"Output file {OUTPUT_FILE} already exists and OVERWRITE is False.")
 
-    # Save the chain
-    np.save(os.path.join(CHAIN_DIR, f"{scaling_relation}_chain.npy"), flat_samples)
+    first_entry = True
 
-    # For delta we use the 16, 50, 84 quantiles
-    delta_distr = flat_samples[:, 0]
-    lower_delta = np.percentile(delta_distr, 16)
-    median_delta = np.percentile(delta_distr, 50)
-    upper_delta = np.percentile(delta_distr, 84)
+    for scaling_relation in RELATIONS:
 
-    # For saving
-    delta = median_delta
-    delta_err_lower = median_delta - lower_delta
-    delta_err_upper = upper_delta - median_delta
-    print(
-        f"delta: {lower_delta} ~ {upper_delta} \nor {delta} -{delta_err_lower} +{delta_err_upper}"
-    )
+        n_clusters = cf.CONST_MC[scaling_relation]["N"]
 
-    # latitude is not periodic!
-    vlat_distr = flat_samples[:, 2]
-    lower_vlat = np.percentile(vlat_distr, 16)
-    median_vlat = np.percentile(vlat_distr, 50)
-    upper_vlat = np.percentile(vlat_distr, 84)
+        # Load the data
+        _ = scaling_relation.find("-")
+        yname = scaling_relation[:_]
+        xname = scaling_relation[_ + 1 :]
+        Y = np.array(data[cf.COLUMNS_MC[yname]][:n_clusters])
+        X = np.array(data[cf.COLUMNS_MC[xname]][:n_clusters])
+        # Also load the position data
+        phi_lc = np.array(data["phi_on_lc"][:n_clusters])
+        theta_lc = np.array(data["theta_on_lc"][:n_clusters])
+        # the observed redshift from lightcone
+        z_obs = np.array(data["ObservedRedshift"][:n_clusters])
 
-    # For saving
-    vlat = median_vlat
-    vlat_err_lower = median_vlat - lower_vlat
-    vlat_err_upper = upper_vlat - median_vlat
-    print(
-        f"vlat: {lower_vlat} ~ {upper_vlat} \nor {vlat} -{vlat_err_lower} +{vlat_err_upper}"
-    )
 
-    # Find the range w.r.t. the peak.
-    vlon, vlon_err_lower, vlon_err_upper, lower_vlon, upper_vlon = (
-        cf.periodic_error_range(flat_samples[:, 1], full_range=360)
-    )
-    print(
-        f"vlon: {lower_vlon} ~ {upper_vlon} \nor {vlon} -{vlon_err_lower} +{vlon_err_upper}"
-    )
+        # scipy estimation of staring point
+        initial = np.array([0.1, 0, 0, 0.5, 1, 0.1])  # initial guess
 
-    # Save the best fit parameters
-    if first_entry:
-        mode = "w"
-    else:
-        mode = "a"
+        # nll = lambda *args: -log_likelihood(*args)
+        # bounds = [(0, 0.3), (-180, 180), (-90, 90), (0.1, 1), (0.5, 3.5), (0.01, 1)] # delta, vlon, vlat, logA, B, sigma
 
-    # Write line by line
-    with open(OUTPUT_FILE, mode) as f:
-        # Write the header on first entry
+        # soln = differential_evolution(
+        #     nll,
+        #     args=(X, Y, z_obs, phi_lc, theta_lc, yname, xname),
+        #     bounds=bounds,
+        #     popsize=10,
+        #     strategy="rand1bin",
+        # )
+        # print("Scipy differential evolution starting point", soln.x)
+
+        # MCMC setup
+        ndim = 6        # number of parameters, fixed
+        nwalkers = 48   # 
+        nchains = 4     # independent chains (ZEUS/EMCEE is ensemble sampler, 
+                        # different walker in same chain still communicate with each other)
+        nsteps = 10_000  # maximum steps (set this to a large value, since we use convergence callback)
+
+        pos0 = initial + 1e-2 * np.random.randn(nwalkers, ndim) # soln.x + ... if using scipy evolution
+
+        if SAMPLER == 'zeus':
+            import zeus
+            from zeus import ChainManager
+
+            from mpi4py import MPI
+            comm = MPI.COMM_WORLD
+            print(f"Rank {comm.Get_rank()} of {comm.Get_size()}", flush=True)
+
+            with ChainManager(nchains) as cm:
+                rank = cm.get_rank
+
+                # cb = zeus.callbacks.ParallelSplitRCallback(epsilon=0.01, chainmanager=cm) # Callbacks bugs out, doesn't really work
+                sampler = zeus.EnsembleSampler(nwalkers, 
+                                            ndim, 
+                                            log_likelihood, 
+                                            args=(X, Y, z_obs, phi_lc, theta_lc, yname, xname), 
+                                            pool=cm.get_pool)
+                sampler.run_mcmc(pos0, nsteps)#, callbacks=cb)
+                flat_samples = sampler.get_chain(flat=True, discard=0.5)  # type: ignore # burn first half
+
+                # Save the samples
+                if SAMPLE_DIR is not None:
+                    sample_file = os.path.join(SAMPLE_DIR, f'chain_{scaling_relation}_rank{rank}.npy')
+                    np.save(sample_file, flat_samples)
+                
+        elif SAMPLER == 'emcee':
+            import emcee
+            from schwimmbad import MPIPool
+
+            from mpi4py import MPI
+            comm = MPI.COMM_WORLD
+            print(f"Rank {comm.Get_rank()} of {comm.Get_size()}", flush=True)
+
+            # Create a sampler
+            with MPIPool() as pool:
+                if not pool.is_master():
+                    pool.wait()
+                    sys.exit(0)
+
+                sampler = emcee.EnsembleSampler(
+                    nwalkers,
+                    ndim,
+                    log_likelihood,
+                    args=(X, Y, z_obs, phi_lc, theta_lc, yname, xname),
+                    pool=pool,
+                )
+
+                sampler.run_mcmc(
+                    pos0, nsteps, progress=False
+                )
+
+                # TODO add save chain 
+
+            # Small convergence test
+            try:
+                tau = sampler.get_autocorr_time()
+                print(tau)
+            except emcee.autocorr.AutocorrError:
+                print("The chain is too short to get a reliable autocorrelation time.")
+                tau = 0
+
+            # Get the samples
+            flat_samples = sampler.get_chain(discard=nsteps//2, flat=True)
+            
+
+        else:
+            raise ValueError(f"Sampler {SAMPLER} not supported. Currently supports: ['emcee', 'zeus'].")
+
+
+
+        # Result processing and saving
+        print(flat_samples.shape)
+
+        # For delta we use the 16, 50, 84 quantiles
+        delta_distr = flat_samples[:, 0]
+        lower_delta = np.percentile(delta_distr, 16)
+        median_delta = np.percentile(delta_distr, 50)
+        upper_delta = np.percentile(delta_distr, 84)
+
+        # For saving
+        delta = median_delta
+        delta_err_lower = median_delta - lower_delta
+        delta_err_upper = upper_delta - median_delta
+        print(
+            f"delta: {lower_delta} ~ {upper_delta} \nor {delta} -{delta_err_lower} +{delta_err_upper}"
+        )
+
+        # Latitude is not periodic
+        vlat_distr = flat_samples[:, 2]
+        lower_vlat = np.percentile(vlat_distr, 16)
+        median_vlat = np.percentile(vlat_distr, 50)
+        upper_vlat = np.percentile(vlat_distr, 84)
+
+        # For saving
+        vlat = median_vlat
+        vlat_err_lower = median_vlat - lower_vlat
+        vlat_err_upper = upper_vlat - median_vlat
+        print(
+            f"vlat: {lower_vlat} ~ {upper_vlat} \nor {vlat} -{vlat_err_lower} +{vlat_err_upper}"
+        )
+
+        # Find the range w.r.t. the peak.
+        vlon, vlon_err_lower, vlon_err_upper, lower_vlon, upper_vlon = (
+            cf.periodic_error_range(flat_samples[:, 1], full_range=360)
+        )
+        print(
+            f"vlon: {lower_vlon} ~ {upper_vlon} \nor {vlon} -{vlon_err_lower} +{vlon_err_upper}"
+        )
+
+        # Save the best fit parameters
         if first_entry:
+            mode = "w"
+        else:
+            mode = "a"
+
+        # Write line by line
+        with open(OUTPUT_FILE, mode) as f:
+
+            # Write the header on first entry
+            if first_entry:
+                f.write(
+                    "scaling_relation,delta,delta_err_lower,delta_err_upper,vlon,vlon_err_lower,vlon_err_upper,vlat,vlat_err_lower,vlat_err_upper\n"
+                )
+                first_entry = False
+
+            # Write the data
             f.write(
-                "scaling_relation,delta,delta_err_lower,delta_err_upper,vlon,vlon_err_lower,vlon_err_upper,vlat,vlat_err_lower,vlat_err_upper,convergence_time\n"
+                f"{scaling_relation},{delta},{delta_err_lower},{delta_err_upper},{vlon},{vlon_err_lower},{vlon_err_upper},{vlat},{vlat_err_lower},{vlat_err_upper}\n"
             )
-            first_entry = False
-        # Write the data
-        f.write(
-            f"{scaling_relation},{delta},{delta_err_lower},{delta_err_upper},{vlon},{vlon_err_lower},{vlon_err_upper},{vlat},{vlat_err_lower},{vlat_err_upper},{np.mean(tau)}\n"
-        )
