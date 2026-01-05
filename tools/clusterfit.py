@@ -147,14 +147,14 @@ def E(z, Omega_m=0.306, Omega_L=0.694):
 
 @njit(fastmath=False)
 def _logX_(X, CX):
-    """logX' = X / CX"""
+    """logX' = log(X / CX)"""
     result = np.log10(X / CX)
     return result
 
 
 @njit(fastmath=False)
 def _logY_(Y, z, CY, gamma, Omega_m=0.306, Omega_L=0.694):
-    """logY' = Y / CY * E(z)^gamma"""
+    """logY' = log(Y / CY * E(z)^gamma)"""
     Ez = E(z=z, Omega_m=Omega_m, Omega_L=Omega_L)
     result = np.log10(Y / CY * Ez**gamma)
     return result
