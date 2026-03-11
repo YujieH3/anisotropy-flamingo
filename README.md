@@ -68,10 +68,9 @@ the injected scatter.
 
 ## Contact
 
-This repository is mainly to keep the work open and reproducible . As a result,
-the code might not be as user-friendly, but over time I will gradually put
-in things to make it easier to use (which is also important for its number one
-user, me)! If you have any questions, comments, or if you spotted a bug, feel
-free to drop me an email or open an issue! I'll be happy to answer.
+This repository is mainly to keep the work open and reproducible. As a result,
+the code might not be as user-friendly. If you have any questions, comments, 
+or if you spotted a bug, feel free to drop me an email or open an issue.
+I'll be happy to answer.
 
 Email: yujiehe@strw.leidenuniv.nl
