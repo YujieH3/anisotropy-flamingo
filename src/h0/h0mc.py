@@ -168,18 +168,6 @@ if __name__ == '__main__':
         # scipy estimation of staring point
         initial = np.array([0.1, 0, 0, 0.5, 1, 0.1])  # initial guess
 
-        # nll = lambda *args: -log_likelihood(*args)
-        # bounds = [(0, 0.3), (-180, 180), (-90, 90), (0.1, 1), (0.5, 3.5), (0.01, 1)] # delta, vlon, vlat, logA, B, sigma
-
-        # soln = differential_evolution(
-        #     nll,
-        #     args=(X, Y, z_obs, phi_lc, theta_lc, yname, xname),
-        #     bounds=bounds,
-        #     popsize=10,
-        #     strategy="rand1bin",
-        # )
-        # print("Scipy differential evolution starting point", soln.x)
-
         # MCMC setup
         ndim = 6        # number of parameters, fixed
         nwalkers = 48   # 

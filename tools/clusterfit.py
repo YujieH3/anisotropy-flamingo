@@ -1530,7 +1530,7 @@ def scat_boost_mc(yname) -> float:
 
 
 from scipy.stats import genpareto
-def bootstrap_fit(data, fit_func=genpareto.fit, N=1000):
+def bootstrap_fit_distribution(data, fit_func=genpareto.fit, N=1000):
     # Bootstrap sampling
     all_params = []
     for i in range(N):
