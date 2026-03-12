@@ -2,48 +2,26 @@
 #                                    Imports                                   #
 # ---------------------------------------------------------------------------- #
 
-
-import scipy.stats as stats
-import astropy.coordinates as coord
-import numpy as np
-from numba import njit, prange
-import pandas as pd
 import sys
 import math
-from scipy.special import erfinv
-
-sys.path.append("./")
-from constants import *
-import h5py
-import healpy as hp
 import warnings
 
+import numpy as np
+import pandas as pd
+import h5py
+import healpy as hp
+import scipy.stats as stats
+import astropy.coordinates as coord
 
+from numba import njit, prange
+from scipy.special import erfinv
 from astropy.cosmology import FlatLambdaCDM
+from scipy.stats import genpareto
 
 
 # ---------------------------------------------------------------------------- #
 #                            Simple helper functions                           #
 # ---------------------------------------------------------------------------- #
-
-
-def Ysz(obs: pd.DataFrame) -> np.ndarray:
-    """Extract the M21 Ysz parameters in kpc^2.
-    """
-    # M21 fiducial cosmology
-    cosmo = FlatLambdaCDM(H0=70, Om0=0.3)
-    
-    # Get data needed
-    Y5r500 = obs['Y(r/no_ksz_arcmin^2)'].values
-    Yerr = obs['e_Y'].values
-    z = obs['z'].values
-
-    # SNR ratio selection to keep 260 objects
-    mask = (Y5r500 > 0) & (Y5r500/Yerr > 2)             
-    DA = cosmo.angular_diameter_distance(z[mask]).to('kpc').value
-    Ysz = Y5r500[mask] * (np.pi/60/180)**2 * DA**2      # eq2 of M21
-
-    return Ysz
 
 
 def Rx(theta: float) -> np.matrix:
@@ -143,68 +121,6 @@ def parse_relation_name(relation):
 def E(z, Omega_m=0.306, Omega_L=0.694):
     Ez = (Omega_m * (1 + z) ** 3 + Omega_L) ** 0.5
     return Ez
-
-
-@njit(fastmath=False)
-def _logX_(X, CX):
-    """logX' = log(X / CX)"""
-    result = np.log10(X / CX)
-    return result
-
-
-@njit(fastmath=False)
-def _logY_(Y, z, CY, gamma, Omega_m=0.306, Omega_L=0.694):
-    """logY' = log(Y / CY * E(z)^gamma)"""
-    Ez = E(z=z, Omega_m=Omega_m, Omega_L=Omega_L)
-    result = np.log10(Y / CY * Ez**gamma)
-    return result
-
-
-@njit(fastmath=False)
-def logX_(X, relation):
-    """Same as _logX_ but with predifined constants for specific scaling
-    relations.
-
-    Parameters
-    ---
-    `relation`
-        Accepts one of three options: 'LX-T', 'LX-YSZ', 'YSZ-T'
-    Specify relation to use default parameters.
-    """
-    return _logX_(X=X, CX=get_const(relation, "CX"))
-
-
-@njit(fastmath=False)
-def logY_(Y, z, relation, Omega_m=0.306, Omega_L=0.694):
-    """Same as _logY_ but with predefined constants for specific scaling
-    relations.
-
-    Parameters
-    ---
-    `relation`
-        Accepts one of six options: 'LX-T', 'LX-YSZ', 'YSZ-T', 'M-T', 'LX-M',
-        'YSZ-M'. Specify relation to use default parameters defined in global
-        constant CONST.
-    """
-    return _logY_(
-        Y=Y,
-        z=z,
-        CY=get_const(relation, "CY"),
-        gamma=get_const(relation, "gamma"),
-        Omega_m=Omega_m,
-        Omega_L=Omega_L,
-    )
-
-
-@njit(fastmath=False)
-def Y(logY_, z, relation, Omega_m=0.306, Omega_L=0.694):
-    """The reverse function of `logY_`. Returns physical value Y given logY_.
-    """
-    Ez = E(z=z, Omega_m=Omega_m, Omega_L=Omega_L)
-    CY = get_const(relation, 'CY')
-    gamma = get_const(relation, 'gamma')
-    Y = 10**(logY_) / Ez**gamma * CY
-    return Y
 
 
 # ---------------------------------------------------------------------------- #
@@ -1529,7 +1445,6 @@ def scat_boost_mc(yname) -> float:
     return scat_boost
 
 
-from scipy.stats import genpareto
 def bootstrap_fit_distribution(data, fit_func=genpareto.fit, N=1000):
     # Bootstrap sampling
     all_params = []
@@ -1547,18 +1462,3 @@ def bootstrap_fit_distribution(data, fit_func=genpareto.fit, N=1000):
         upper_params[i] = np.percentile(a=all_params[:,i], q=84)
         
     return lower_params, upper_params
-    
-
-# ---------------------------------------------------------------------------- #
-#                               Legacy functions                               #
-# ---------------------------------------------------------------------------- #
-
-
-def predictY_(X_, **params):
-    """Predict Y' given X' and best fit parameters `logA` and `B`."""
-    return 10 ** (params["logA"] + params["B"] * np.log10(X_))
-
-
-def predictlogY_(logX_, **params):
-    """Predict logY' given logX' and best fit parameters `logA` and `B`."""
-    return params["logA"] + params["B"] * logX_
