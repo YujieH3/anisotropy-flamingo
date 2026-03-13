@@ -1,0 +1,3 @@
+[submodule "tools/academic-mplstyle"]
+	path = tools/academic-mplstyle
+	url = https://github.com/YujieH3/academic-mplstyle.git

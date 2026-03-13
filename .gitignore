@@ -1,0 +1,13 @@
+.*
+data
+fortran
+legacy
+tests
+
+*.log
+*__pycache__*
+
+tools.__pycache__
+
+!.gitignore
+!.gitmodules
