@@ -9,7 +9,6 @@ import warnings
 import numpy as np
 import pandas as pd
 import h5py
-import healpy as hp
 import scipy.stats as stats
 import astropy.coordinates as coord
 
@@ -117,10 +116,24 @@ def parse_relation_name(relation):
     return relation[:_], relation[_ + 1 :]  # Y, X
 
 
-@njit(fastmath=False)
 def E(z, Omega_m=0.306, Omega_L=0.694):
     Ez = (Omega_m * (1 + z) ** 3 + Omega_L) ** 0.5
     return Ez
+
+
+def logX_(X, CX):
+    """Compute logX' = X / CX
+    """
+    _logX_CX_ = np.log10(X / CX)
+    return _logX_CX_
+
+
+def logY_(Y, z, CY, gamma, Omega_m=0.306, Omega_L=0.694):
+    """Compute logY' = Y / CY * E(z)^gamma
+    """
+    Ez = E(z=z, Omega_m=Omega_m, Omega_L=Omega_L)
+    _logY_CY_ = np.log10(Y / CY * Ez**gamma)
+    return _logY_CY_
 
 
 # ---------------------------------------------------------------------------- #
@@ -1060,36 +1073,41 @@ def lonshift(lon, x, radian=True):
 
 def periodic_error_range(data, peak_value=None, full_range=360, bins=30):
     """
-    Find the +- 34 percentile for distribution of quantities that are periodic,
-    e.g. longitudes. Return peak, lower err, upper err, lower value, upper value.
-    Pick what is useful for you. For some plots you might need the lower and upper
-    value, while for others (e.g. plt.errorbar()) you might need lower err and
-    uppper err.
+    Find the 16/84 percentile range for a periodic quantity (e.g. longitude).
+    Returns (peak, lower_err, upper_err, lower_value, upper_value).
 
-    Note: latitude is non-periodic.
+    Shifts data to centre on the peak before computing percentiles so that
+    distributions near the ±(full_range/2) boundary are handled correctly.
+    lower_err and upper_err are always positive.
+    lower_value / upper_value are in the original coordinate range.
+
+    Note: latitude is non-periodic — use np.percentile directly.
     """
-    distr = data.copy()  # make a copy so that we doesn't change the original array
+    half_range = full_range / 2
+    distr = data.copy()
 
-    # Find peak of the distribution if not found already
+    # Rough peak from unshifted histogram
     if peak_value is None:
         hist, edges = np.histogram(distr, bins=bins, density=True)
         peak_value = edges[np.argmax(hist)]
 
-    # # Shift to peak=0 to avoid breaking near the edge
-    # distr = (distr - peak_value - half_range) % full_range - half_range # Despite the shift, keep the range as -half_range to +half_range
+    # Shift to peak=0, then refine the peak estimate on the centred data
+    distr_shifted = (distr - peak_value + half_range) % full_range - half_range
+    hist, edges = np.histogram(distr_shifted, bins=bins, density=True)
+    peak_value = (peak_value + edges[np.argmax(hist)] + half_range) % full_range - half_range
 
-    # 34th percentile around the peak value
-    peak_percentile = np.sum(distr < peak_value) / len(distr) * 100
+    # Final shift with refined peak
+    distr_shifted = (distr - peak_value + half_range) % full_range - half_range
 
-    lower_value = np.percentile(distr, (peak_percentile - 34) % 100)
-    upper_value = np.percentile(distr, (peak_percentile + 34) % 100)
+    # 16/84 percentiles on centred data; errors are simply p/m distance from 0
+    lower_shifted, upper_shifted = np.percentile(distr_shifted, [16, 84])
+    lower_err = -lower_shifted
+    upper_err =  upper_shifted
 
-    # # Convert back to the original coordinates
-    # lower_value = (lower_err + peak_value + half_range) % full_range - half_range
-    # upper_value = (upper_err + peak_value + half_range) % full_range - half_range
+    # Convert bounds back to original coordinates
+    lower_value = (peak_value + lower_shifted + half_range) % full_range - half_range
+    upper_value = (peak_value + upper_shifted + half_range) % full_range - half_range
 
-    lower_err = (peak_value - lower_value) % full_range
-    upper_err = (upper_value - peak_value) % full_range
     return peak_value, lower_err, upper_err, lower_value, upper_value
 
 
