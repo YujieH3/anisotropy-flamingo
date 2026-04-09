@@ -13,7 +13,7 @@ Example:
 
 import os
 import sys
-sys.path.append("../tools")
+sys.path.append("/home/hey4/anisotropy-flamingo/tools")
 
 import unyt as u
 import pandas as pd
@@ -22,6 +22,8 @@ from loguru import logger
 from numpy.typing import ArrayLike
 from astropy.cosmology import FlatLambdaCDM
 import astropy
+import corner
+import matplotlib.pyplot as plt
 
 import clusterfit as cf
 
@@ -31,11 +33,12 @@ import clusterfit as cf
 
 # INPUT_FILE = "../data/Sample-Lx-Tx-CS.txt"
 OUTPUT_DIR = "../data/processed"
-SAMPLE_DIR = OUTPUT_DIR
+SAMPLE_DIR = None # OUTPUT_DIR
 SAMPLER = "emcee" # zeus seems to be much slower
 NUM_RELATION = 0
-SHUFFLE = False
 NSTEPS = 50_000
+SHUFFLE = False
+PROGRESS_BAR = False
 
 # Global pivots
 TEXP_PIVOT = 177 * u.s
@@ -65,47 +68,7 @@ OMEGA_L = 0.7
 cosmo = FlatLambdaCDM(H0=70, Om0=OMEGA_M)
 c_km_s = 299792.458 * u.km / u.s      # km/s
 
-USE_CONC = NUM_RELATION in (2, 3)
-if NUM_RELATION == 0:
-    # ----------------------------------- Lx-T ----------------------------------- #
-    INPUT_FILE = "../data/Sample-Lx-Tx-CS.txt"
-    Y_PIVOT = 5.5 * 1e42 * u.erg / u.s
-    X_PIVOT = 1.8 * u.keV
-    Z_PIVOT = 0.137
-    # FIXED redshift evolution
-    GAMMA = 1.88
-    ALPHA_Y = -2.0
-    ALPHA_X = 0.0
-elif NUM_RELATION == 1:
-    # ---------------------------------- Mgas-T ---------------------------------- #
-    INPUT_FILE = "../data/Sample-Mgas-Tx-CS.txt"
-    Y_PIVOT = 1.53 * 1e13 * u.Msun
-    X_PIVOT = 1.8 * u.keV
-    Z_PIVOT = 0.133
-    # FIXED redshift evolution for Mgas correction (your default)
-    GAMMA = -1.0
-    ALPHA_Y = -2.5
-    ALPHA_X = 0.0
-elif NUM_RELATION == 2:
-    # ----------------------------------- Ysz-T ---------------------------------- #
-    INPUT_FILE = "../data/Sample-Ysz-Tx-CS.txt"
-    Y_PIVOT = 23 * u.kpc**2
-    X_PIVOT = 2.3 * u.keV
-    Z_PIVOT = 0.139
-    # FIXED redshift evolution (as requested)
-    GAMMA = -2.0
-    ALPHA_Y = -2.0
-    ALPHA_X = 0.0
-elif NUM_RELATION == 3:
-    # --------------------------------- Mgas-Ysz --------------------------------- #
-    INPUT_FILE = "../data/Sample-Mgas-Ysz-no-Mgas-T-CS.txt"
-    Y_PIVOT = 1.7 * 1e13 * u.Msun  # in 1e13 Msun units, because we divide Mgas(1e11) by 100
-    X_PIVOT = 24 * u.kpc**2
-    Z_PIVOT = 0.15
-    # FIXED redshift evolution
-    GAMMA = 0.5
-    ALPHA_Y = -2.5
-    ALPHA_X = -2.0
+USE_CONC = None  # set in __main__ after argparse
 
 # ---------------------------------------------------------------------------- #
 #                                   Functions                                  #
@@ -219,9 +182,71 @@ if __name__ == '__main__':
                         help="Use MPI (mpiexec -n N python h0mc.py --mpi)")
     parser.add_argument("--ncores", type=int, default=1,
                         help="Local cores (default: 1 = serial)")
+    parser.add_argument("--input-file", type=str, default=None)
+    parser.add_argument("--output-dir", type=str, default=OUTPUT_DIR)
+    parser.add_argument("--sample-dir", type=str, default=SAMPLE_DIR)
+    parser.add_argument("--sampler", type=str, default=SAMPLER)
+    parser.add_argument("--num-relation", type=int, default=NUM_RELATION)
+    parser.add_argument("--nsteps", type=int, default=NSTEPS)
+    parser.add_argument("--shuffle", action="store_true", default=SHUFFLE)
+    parser.add_argument("--progress-bar", action="store_true", default=PROGRESS_BAR)
+    parser.add_argument("--corner-plot", action="store_true", default=False,
+                        help="Save a corner (diagonal) plot of the posterior samples")
     args = parser.parse_args()
 
-    logger.info("Initialising...")
+    OUTPUT_DIR = args.output_dir
+    SAMPLE_DIR = args.sample_dir
+    SAMPLER = args.sampler
+    NUM_RELATION = args.num_relation
+    NSTEPS = args.nsteps
+    SHUFFLE = args.shuffle
+    PROGRESS_BAR = args.progress_bar
+
+    USE_CONC = NUM_RELATION in (2, 3)
+    if NUM_RELATION == 0:
+        # ----------------------------------- Lx-T ----------------------------------- #
+        INPUT_FILE = "../data/Sample-Lx-Tx-CS.txt"
+        Y_PIVOT = 5.5 * 1e42 * u.erg / u.s
+        X_PIVOT = 1.8 * u.keV
+        Z_PIVOT = 0.137
+        # FIXED redshift evolution
+        GAMMA = 1.88
+        ALPHA_Y = -2.0
+        ALPHA_X = 0.0
+    elif NUM_RELATION == 1:
+        # ---------------------------------- Mgas-T ---------------------------------- #
+        INPUT_FILE = "../data/Sample-Mgas-Tx-CS.txt"
+        Y_PIVOT = 1.53 * 1e13 * u.Msun
+        X_PIVOT = 1.8 * u.keV
+        Z_PIVOT = 0.133
+        # FIXED redshift evolution for Mgas correction (your default)
+        GAMMA = -1.0
+        ALPHA_Y = -2.5
+        ALPHA_X = 0.0
+    elif NUM_RELATION == 2:
+        # ----------------------------------- Ysz-T ---------------------------------- #
+        INPUT_FILE = "../data/Sample-Ysz-Tx-CS.txt"
+        Y_PIVOT = 23 * u.kpc**2
+        X_PIVOT = 2.3 * u.keV
+        Z_PIVOT = 0.139
+        # FIXED redshift evolution (as requested)
+        GAMMA = -1.0
+        ALPHA_Y = -2.0
+        ALPHA_X = 0.0
+    elif NUM_RELATION == 3:
+        # --------------------------------- Mgas-Ysz --------------------------------- #
+        INPUT_FILE = "../data/Sample-Mgas-Ysz-no-Mgas-T-CS.txt"
+        Y_PIVOT = 1.7 * 1e13 * u.Msun  # in 1e13 Msun units, because we divide Mgas(1e11) by 100
+        X_PIVOT = 24 * u.kpc**2
+        Z_PIVOT = 0.15
+        # FIXED redshift evolution
+        GAMMA = 0.5
+        ALPHA_Y = -2.5
+        ALPHA_X = -2.0
+    if args.input_file is not None:
+        INPUT_FILE = args.input_file
+
+    logger.info("Initialising ...")
     first_entry = True
 
     if SAMPLER.lower() == "zeus":
@@ -235,6 +260,8 @@ if __name__ == '__main__':
         )
 
 # --------------------------------- Load data -------------------------------- #
+
+    logger.info("Loading {}", INPUT_FILE)
 
     data = read_sample(path=INPUT_FILE)
 
@@ -266,22 +293,26 @@ if __name__ == '__main__':
         X = data['T'] * u.keV
         Xmax = data['T_max'] * u.keV
         Xmin = data['T_min'] * u.keV
-    elif NUM_RELATION == 3: # Ysz-Mgas
+    elif NUM_RELATION == 3: # Mgas-Ysz
         Y5R500 = data['Y5R500(arcmin)']
         DA = cosmo.angular_diameter_distance(z).to('kpc').value * u.kpc
-        Y = Y5R500 * (np.pi/60/180)**2 * DA**2
-        Y_sigma = data['e_Y5R500'] * (np.pi/60/180)**2 * DA**2
-        X = data['Mgas(1e11)'] * 1e11 * u.Msun
-        Xmax = data['Mgas_max'] * 1e11 * u.Msun
-        Xmin = data['Mgas_min'] * 1e11 * u.Msun
+        X = Y5R500 * (np.pi/60/180)**2 * DA**2
+        X_sigma = data['e_Y5R500'] * (np.pi/60/180)**2 * DA**2
+        Y = data['Mgas(1e11)'] * 1e11 * u.Msun
+        Ymax = data['Mgas_max'] * 1e11 * u.Msun
+        Ymin = data['Mgas_min'] * 1e11 * u.Msun
     else:
         logger.debug("Other relation not ready yet.")
 
     try:
         Y_sigma = 0.5 * (Ymax - Ymin) / (Y * np.log(10))
     except NameError:
-        Y_sigma
-    X_sigma = 0.5 * (Xmax - Xmin) / (X * np.log(10))
+        Y_sigma = Y_sigma / (Y * np.log(10))
+    try:
+        X_sigma = 0.5 * (Xmax - Xmin) / (X * np.log(10))
+    except NameError:
+        X_sigma = X_sigma / (X * np.log(10))
+
     texp = data['EXP_TIME(s)'] * u.s
     conc = data['conc_R500'] if USE_CONC else None
 
@@ -337,7 +368,7 @@ if __name__ == '__main__':
     elif SAMPLER == 'emcee':
         sampler = emcee.EnsembleSampler(
             nwalkers, ndim, log_likelihood_global, pool=pool)
-        sampler.run_mcmc(pos0, nsteps, progress=True)
+        sampler.run_mcmc(pos0, nsteps, progress=PROGRESS_BAR)
 
         # Convergence test
         try:
@@ -359,7 +390,7 @@ if __name__ == '__main__':
 
     # Save the samples
     if SAMPLE_DIR is not None:
-        sample_file = os.path.join(SAMPLE_DIR, 'chain.npy')
+        sample_file = os.path.join(SAMPLE_DIR, f're{NUM_RELATION}sh{int(SHUFFLE)}.npy')
         np.save(sample_file, flat_samples)
         logger.success("Flat samples saved to {}", sample_file)
 
@@ -382,7 +413,7 @@ if __name__ == '__main__':
     )
 
     # Save results
-    output_file = os.path.join(OUTPUT_DIR, f"re{NUM_RELATION}.txt")
+    output_file = os.path.join(OUTPUT_DIR, f"re{NUM_RELATION}sh{int(SHUFFLE)}.txt")
     mode = "a" if os.path.isfile(output_file) else "w"
     with open(output_file, mode) as f:
         if first_entry:
@@ -402,3 +433,22 @@ if __name__ == '__main__':
             f"{flag_converge}\n"
         )
     logger.success("Data written to {output_file}", output_file=output_file)
+
+    if args.corner_plot:
+
+        param_labels = [
+            r"$\delta$", r"$\ell_{\rm dip}$", r"$b_{\rm dip}$",
+            r"$\log a$", r"$b$", r"$\sigma_{\rm intr}$", r"$k_{\rm exp}$",
+        ]
+        if USE_CONC:
+            param_labels.append(r"$k_{\rm conc}$")
+        fig = corner.corner(flat_samples, labels=param_labels, quantiles=[0.16, 0.5, 0.84],
+                            show_titles=True)
+        # Override dglon (index 1) diagonal title with the periodic result
+        lon_title = r"$\ell_{{\rm dip}}$ = {:.2f}$_{{-{:.2f}}}^{{+{:.2f}}}$".format(
+            dglon, dglon_err_lower, dglon_err_upper)
+        fig.axes[ndim + 1].set_title(lon_title)
+        plot_file = os.path.join(OUTPUT_DIR, f"re{NUM_RELATION}sh{int(SHUFFLE)}_corner.png")
+        fig.savefig(plot_file, bbox_inches="tight", dpi=300)
+        plt.close(fig)
+        logger.success("Corner plot saved to {}", plot_file)

@@ -3,6 +3,7 @@ data
 fortran
 legacy
 tests
+logs
 
 *.log
 *__pycache__*
